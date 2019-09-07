@@ -1,39 +1,33 @@
 package main
 
 import (
+	"bufio"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"net"
-	"net/http"
 	"time"
 )
 
-func demoHandler(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-type", "text/plain")
-	_, err := w.Write([]byte("Hello from anywhere"))
-	if err != nil {
-		fmt.Printf("write response error: %v\n", err)
-	}
-}
-
 func main() {
-	http.HandleFunc("/", demoHandler)
-	tlsCert, err := tls.LoadX509KeyPair("../credential/server.pem", "../credential/server.key")
+	tlsCert, err := tls.LoadX509KeyPair("../credential/server.crt", "../credential/server.key")
 	if err != nil {
 		panic(err)
 	}
-	ca, err := ioutil.ReadFile("../credential/ca.pem")
+	ca, err := ioutil.ReadFile("../credential/ca.crt")
 	if err != nil {
 		panic(err)
 	}
-	clientCertPool := x509.NewCertPool()
-	clientCertPool.AppendCertsFromPEM(ca)
+	certPool := x509.NewCertPool()
+	ok := certPool.AppendCertsFromPEM(ca)
+	if !ok {
+		panic("error while add ca to certPool")
+	}
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{tlsCert},
-		//ClientAuth:   tls.RequireAndVerifyClientCert,
-		//ClientCAs:    clientCertPool,
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		ClientCAs:    certPool,
 	}
 	ln, err := tls.Listen("tcp", ":1111", tlsConfig)
 	defer func() {
@@ -44,12 +38,12 @@ func main() {
 	}()
 	for {
 		conn, err := ln.Accept()
-		if err := conn.SetDeadline(<-time.After(5 * time.Second)); err != nil {
-			fmt.Printf("set readtimeout error: %v", err)
-		}
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("accept conn error: %v", err)
 			continue
+		}
+		if err := conn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
+			fmt.Printf("set readtimeout error: %v", err)
 		}
 		go handleConnection(conn)
 
@@ -58,15 +52,21 @@ func main() {
 }
 
 func handleConnection(conn net.Conn) {
-	buffer := make([]byte, 0)
-	n, err := conn.Read(buffer)
-	if err != nil {
-		fmt.Printf("read from conn error: %v\n", err)
-	} else {
-		fmt.Printf("got message: %v", string(buffer[:n]))
-	}
-	_, err = conn.Write([]byte("Got it"))
-	if err != nil {
-		fmt.Printf("send message error : %v", err)
+	defer conn.Close()
+	r := bufio.NewReader(conn)
+	for {
+		msg, err := r.ReadString('\n')
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		fmt.Printf("got message : %v\n", msg)
+
+		n, err := conn.Write([]byte(msg))
+		if err != nil {
+			fmt.Println(n, err)
+			return
+		}
 	}
 }
