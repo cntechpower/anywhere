@@ -8,8 +8,6 @@ import (
 	"net"
 	"net/http"
 	"time"
-
-	"github.com/siddontang/go-log/log"
 )
 
 func demoHandler(w http.ResponseWriter, req *http.Request) {
@@ -41,7 +39,7 @@ func main() {
 	defer func() {
 		err := ln.Close()
 		if err != nil {
-			log.Fatal("close error: %v", err)
+			fmt.Printf("close error: %v", err)
 		}
 	}()
 	for {
@@ -50,7 +48,7 @@ func main() {
 			fmt.Printf("set readtimeout error: %v", err)
 		}
 		if err != nil {
-			log.Println(err)
+			fmt.Println(err)
 			continue
 		}
 		go handleConnection(conn)
