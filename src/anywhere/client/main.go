@@ -1,49 +1,37 @@
 package main
 
 import (
-	"crypto/tls"
-	"crypto/x509"
+	_conn "anywhere/conn"
+	"anywhere/tls"
+	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net"
-	"time"
 )
 
 func main() {
-	clientCert, err := tls.LoadX509KeyPair("../credential/client.crt", "../credential/client.key")
+	tlsConfig, err := tls.ParseTlsConfig("../credential/client.crt", "../credential/client.key", "../credential/ca.crt")
 	if err != nil {
 		panic(err)
 	}
-	caCertBytes, err := ioutil.ReadFile("../credential/ca.crt")
+	conn, err := tls.DialTlsServer("127.0.0.1", 1111, tlsConfig)
 	if err != nil {
 		panic(err)
 	}
-	clientCertPool := x509.NewCertPool()
-	if ok := clientCertPool.AppendCertsFromPEM(caCertBytes); !ok {
-		panic(err)
-	}
-	conf := &tls.Config{
-		RootCAs:            clientCertPool,
-		Certificates:       []tls.Certificate{clientCert},
-		InsecureSkipVerify: true,
-	}
-	tlsDialer := &net.Dialer{
-		Timeout:  5 * time.Second,
-		Deadline: time.Time{},
-	}
-	conn, err := tls.DialWithDialer(tlsDialer, "tcp", "127.0.0.1:1111", conf)
+	p, err := json.Marshal(&_conn.Package{
+		Version: "3.19.09.0",
+		Type:    "admin",
+		Message: "HelloWorldFromClient",
+	})
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("connected to %v\n", conn.RemoteAddr())
-	n, err := conn.Write([]byte("hello\n"))
-	if err != nil {
-		fmt.Printf("n is %v, err is %v\n", n, err)
+	if _, err := conn.Write(p); err != nil {
+		fmt.Printf("send message error: %v", err)
 	}
-	buf := make([]byte, 100)
-	n, err = conn.Read(buf)
+
+	buf := make([]byte, 2000)
+	n, err := conn.Read(buf)
 	if err != nil {
-		fmt.Println(n, err)
+		fmt.Println(err, string(buf[:n]))
 		return
 	}
 	fmt.Println(string(buf[:n]))
