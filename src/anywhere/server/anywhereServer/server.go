@@ -129,9 +129,9 @@ func (s *anyWhereServer) ListAgentInfo() {
 	s.agentListRwMutex.RLock()
 	defer s.agentListRwMutex.RUnlock()
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"AgentId", "AgentAddr"})
-	for _, v := range s.agentList {
-		table.Append([]string{v.agentId, v.agentAddr.String()})
+	table.SetHeader([]string{"Agent_Id", "Agent_Addr"})
+	for _, agent := range s.agentList {
+		table.Append([]string{agent.agentId, agent.agentAddr.String()})
 	}
 	table.Render()
 }
