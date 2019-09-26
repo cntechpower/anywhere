@@ -1,33 +1,33 @@
 package main
 
 import (
-	"anywhere/conn"
-	_tls "anywhere/tls"
+	"anywhere/server/anywhereServer"
+	"anywhere/util"
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
-func ListenKillSignal() chan os.Signal {
-	quitChan := make(chan os.Signal, 1)
-	signal.Notify(quitChan, os.Interrupt, os.Kill, syscall.SIGTERM, syscall.SIGUSR2 /*graceful-shutdown*/)
-	return quitChan
-}
-
 func main() {
-	tlsConfig, err := _tls.ParseTlsConfig("../credential/server.crt", "../credential/server.key", "../credential/ca.crt")
-	if err != nil {
+	//tlsConfig, err := _tls.ParseTlsConfig("../credential/server.crt", "../credential/server.key", "../credential/ca.crt")
+	//if err != nil {
+	//	panic(err)
+	//}
+	//if err := conn.ListenAndServeTls(1111, tlsConfig); err != nil {
+	//	panic(err)
+	//}
+	s := anywhereServer.InitServerInstance("server-id", "1111", true, true)
+	if err := s.SetCredentials("../credential/server.crt", "../credential/server.key", "../credential/ca.crt"); err != nil {
 		panic(err)
 	}
-	if err := conn.ListenAndServeTls(1111, tlsConfig); err != nil {
-		panic(err)
-	}
-	serverExitChan := ListenKillSignal()
+	s.Start()
+	serverExitChan := util.ListenKillSignal()
 
 	select {
 	case <-serverExitChan:
 		fmt.Println("Exiting...")
+		s.ListAgentInfo()
+	case <-s.ExitChan:
+		fmt.Println("server exit")
+
 	}
 
 }

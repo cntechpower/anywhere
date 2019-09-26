@@ -8,13 +8,26 @@ import (
 	"time"
 )
 
+type Listener struct {
+	ListenerType    string
+	ListenAddress   net.Addr
+	ConnectionsChan chan *net.Conn
+	Connections     map[string]*net.Conn
+}
+
 func ListenAndServeTls(port int, config *tls.Config) error {
 	addr := fmt.Sprintf("0.0.0.0:%v", port)
 	ln, err := tls.Listen("tcp", addr, config)
 	if err != nil {
 		return err
 	}
-	go func(ln net.Listener) {
+	listener := &Listener{
+		ListenerType:    "test",
+		ListenAddress:   ln.Addr(),
+		ConnectionsChan: make(chan *net.Conn, 0),
+		Connections:     make(map[string]*net.Conn),
+	}
+	go func(ln net.Listener, l *Listener) {
 		for {
 			conn, err := ln.Accept()
 			if err != nil {
@@ -24,40 +37,29 @@ func ListenAndServeTls(port int, config *tls.Config) error {
 			if err := conn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
 				fmt.Printf("set readtimeout error: %v", err)
 			}
-			go handleConnection(conn)
+			l.Connections[conn.RemoteAddr().String()] = &conn
+			l.ConnectionsChan <- &conn
 		}
-	}(ln)
+	}(ln, listener)
+	go handleConnection(listener)
 	return nil
 }
 
-func handleConnection(conn net.Conn) {
-	defer conn.Close()
-	d := json.NewDecoder(conn)
-	var msg Package
-	if err := d.Decode(&msg); err != nil {
-		fmt.Printf("decode error :%v\n", err)
-		if _, err := conn.Write([]byte("invalid message\n")); err != nil {
-			fmt.Printf("error while send invalid message warning to client: %v\n", err)
-		}
-		if err := conn.Close(); err != nil {
-			fmt.Printf("error while close connection: %v\n", err)
-		}
-	} else {
-		fmt.Println(msg)
-		p, err := json.Marshal(&Package{
-			Version: "3.19.09.0",
-			Type:    "admin",
-			Message: "HelloWorldFromServer",
-		})
-		if err != nil {
-			panic(err)
-		}
-		if _, err := conn.Write(p); err != nil {
-			fmt.Printf("send message error: %v", err)
-		}
-
+func handleConnection(listener *Listener) {
+	for conn := range listener.ConnectionsChan {
+		go func(c net.Conn) {
+			d := json.NewDecoder(c)
+			var msg Package
+			if err := d.Decode(&msg); err != nil {
+				fmt.Println("Decode Package Error")
+			}
+			fmt.Println(msg)
+			if err := c.Close(); err != nil {
+				fmt.Printf("Error Close Conn: %v\n", err)
+			}
+		}(*conn)
 	}
-	time.Sleep(1 * time.Millisecond)
+
 }
 
 func GetDialer() *net.Dialer {
