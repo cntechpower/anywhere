@@ -2,12 +2,9 @@ package model
 
 import "net"
 
-type Agent struct {
-	Id           string
-	ServerId     string
-	Addr         net.Addr
-	ProxyConfigs []ProxyConfig
-}
+const (
+	NEWPROXY = "NEWPROXY"
+)
 
 type ProxyConfig struct {
 	RemoteAddr net.Addr

@@ -2,6 +2,7 @@ package anywhereServer
 
 import (
 	"anywhere/conn"
+	"anywhere/log"
 	"fmt"
 	"net"
 	"os"
@@ -24,9 +25,15 @@ type anyWhereServer struct {
 	proxyMutex       sync.Mutex
 	isHttpOn         bool
 	httpMutex        sync.Mutex
-	agents           map[string]Agent
+	agents           map[string]AgentInfo
 	agentListRwMutex sync.RWMutex
-	ExitChan         chan struct{}
+	ExitChan         chan error
+}
+
+type AgentInfo struct {
+	Id       string
+	ServerId string
+	Addr     net.Addr
 }
 
 var serverInstance *anyWhereServer
@@ -41,9 +48,9 @@ func InitServerInstance(serverId string, port int, isProxyOn, isHttpOn bool) *an
 		proxyMutex:       sync.Mutex{},
 		isHttpOn:         isHttpOn,
 		httpMutex:        sync.Mutex{},
-		agents:           make(map[string]Agent, 0),
+		agents:           make(map[string]AgentInfo, 0),
 		agentListRwMutex: sync.RWMutex{},
-		ExitChan:         make(chan struct{}, 0),
+		ExitChan:         make(chan error, 0),
 	}
 	return serverInstance
 }
@@ -65,25 +72,23 @@ func (s *anyWhereServer) Start() {
 
 	ln, err := _tls.Listen("tcp", s.serverAddr.String(), s.credential)
 	if err != nil {
-		fmt.Println(err)
-		s.ExitChan <- struct{}{}
+		s.ExitChan <- err
 	}
 	s.listener = ln
 	go func() {
 		for {
 			conn, err := s.listener.Accept()
 			if err != nil {
-				fmt.Printf("accept conn error: %v", err)
+				log.Error("accept conn error: %v", err)
 				continue
 			}
 			if err := conn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
-				fmt.Printf("set readtimeout error: %v", err)
+				log.Error("set readTimeout error: %v", err)
 			}
-			s.RegisterAgent(Agent{
-				Id:           "agent-id",
-				ServerId:     s.serverId,
-				Addr:         conn.RemoteAddr(),
-				ProxyConfigs: nil,
+			s.RegisterAgent(AgentInfo{
+				Id:       "agent-id",
+				ServerId: s.serverId,
+				Addr:     conn.RemoteAddr(),
 			})
 			go handleConnection(conn)
 		}
@@ -93,12 +98,20 @@ func (s *anyWhereServer) Start() {
 func handleConnection(c net.Conn) {
 	msg, err := conn.ReadRequest(c)
 	if err != nil {
-		fmt.Printf("read error %v", err)
-	} else {
-		fmt.Println(msg)
-		if err := conn.SendResponse(c, 200, "Got It"); err != nil {
-			fmt.Printf("send response error: %v", err)
-		}
+		log.Error("read from %v error %v ", c.RemoteAddr().String(), err)
+		fmt.Println(c.RemoteAddr().String())
+		_ = c.Close()
+		return
+	}
+	switch msg.ReqType {
+	case NEWPROXY:
+	default:
+
+	}
+
+	log.Info("%v", msg)
+	if err := conn.SendResponse(c, 200, "Got It"); err != nil {
+		log.Error("send response error: %v", err)
 	}
 }
 
@@ -123,7 +136,7 @@ func (s *anyWhereServer) ListAgentInfo() {
 	table.Render()
 }
 
-func (s *anyWhereServer) RegisterAgent(info Agent) (isUpdate bool) {
+func (s *anyWhereServer) RegisterAgent(info AgentInfo) (isUpdate bool) {
 	s.agentListRwMutex.Lock()
 	defer s.agentListRwMutex.Unlock()
 	if _, ok := s.agents[info.Addr.String()]; ok {
@@ -133,7 +146,7 @@ func (s *anyWhereServer) RegisterAgent(info Agent) (isUpdate bool) {
 	return isUpdate
 }
 
-func (s *anyWhereServer) RemoveAgent(info Agent) {
+func (s *anyWhereServer) RemoveAgent(info AgentInfo) {
 	s.agentListRwMutex.Lock()
 	defer s.agentListRwMutex.Unlock()
 	delete(s.agents, info.Addr.String())

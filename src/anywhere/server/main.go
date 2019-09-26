@@ -1,9 +1,9 @@
 package main
 
 import (
+	"anywhere/log"
 	"anywhere/server/anywhereServer"
 	"anywhere/util"
-	"fmt"
 
 	"github.com/spf13/cobra"
 )
@@ -33,6 +33,7 @@ func main() {
 }
 
 func run(_ *cobra.Command, _ []string) error {
+	log.InitStdLogger()
 	s := anywhereServer.InitServerInstance("server-id", port, true, true)
 	if err := s.SetCredentials(certFile, keyFile, caFile); err != nil {
 		return err
@@ -42,10 +43,10 @@ func run(_ *cobra.Command, _ []string) error {
 
 	select {
 	case <-serverExitChan:
-		fmt.Println("Exiting...")
+		log.Info("Server Existing")
 		s.ListAgentInfo()
-	case <-s.ExitChan:
-		fmt.Println("server exit")
+	case err := <-s.ExitChan:
+		panic(err)
 
 	}
 	return nil
