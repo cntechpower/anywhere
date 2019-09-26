@@ -1,70 +1,55 @@
 package conn
 
 import (
-	"crypto/tls"
+	"anywhere/model"
 	"encoding/json"
-	"fmt"
 	"net"
-	"time"
 )
 
-type Listener struct {
-	ListenerType    string
-	ListenAddress   net.Addr
-	ConnectionsChan chan *net.Conn
-	Connections     map[string]*net.Conn
-}
-
-func ListenAndServeTls(port int, config *tls.Config) error {
-	addr := fmt.Sprintf("0.0.0.0:%v", port)
-	ln, err := tls.Listen("tcp", addr, config)
+func SendRequest(c net.Conn, v, t, m string) error {
+	p, err := json.Marshal(&model.RequestMsg{
+		Version: v,
+		ReqType: t,
+		Message: m,
+	})
 	if err != nil {
 		return err
 	}
-	listener := &Listener{
-		ListenerType:    "test",
-		ListenAddress:   ln.Addr(),
-		ConnectionsChan: make(chan *net.Conn, 0),
-		Connections:     make(map[string]*net.Conn),
+	if _, err := c.Write(p); err != nil {
+		return err
 	}
-	go func(ln net.Listener, l *Listener) {
-		for {
-			conn, err := ln.Accept()
-			if err != nil {
-				fmt.Printf("accept conn error: %v", err)
-				continue
-			}
-			if err := conn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
-				fmt.Printf("set readtimeout error: %v", err)
-			}
-			l.Connections[conn.RemoteAddr().String()] = &conn
-			l.ConnectionsChan <- &conn
-		}
-	}(ln, listener)
-	go handleConnection(listener)
 	return nil
 }
 
-func handleConnection(listener *Listener) {
-	for conn := range listener.ConnectionsChan {
-		go func(c net.Conn) {
-			d := json.NewDecoder(c)
-			var msg Package
-			if err := d.Decode(&msg); err != nil {
-				fmt.Println("Decode Package Error")
-			}
-			fmt.Println(msg)
-			if err := c.Close(); err != nil {
-				fmt.Printf("Error Close Conn: %v\n", err)
-			}
-		}(*conn)
+func ReadRequest(c net.Conn) (model.RequestMsg, error) {
+	d := json.NewDecoder(c)
+	var msg model.RequestMsg
+	if err := d.Decode(&msg); err != nil {
+		return msg, err
 	}
+	return msg, nil
 
 }
 
-func GetDialer() *net.Dialer {
-	return &net.Dialer{
-		Timeout:  5 * time.Second,
-		Deadline: time.Time{},
+func SendResponse(c net.Conn, code int, m string) error {
+	p, err := json.Marshal(&model.ResponseMsg{
+		Code:    code,
+		Message: m,
+	})
+	if err != nil {
+		return err
 	}
+	if _, err := c.Write(p); err != nil {
+		return err
+	}
+	return nil
+}
+
+func ReadResponse(c net.Conn) (model.ResponseMsg, error) {
+	d := json.NewDecoder(c)
+	var rsp model.ResponseMsg
+	if err := d.Decode(&rsp); err != nil {
+		return rsp, err
+	}
+	return rsp, nil
 }

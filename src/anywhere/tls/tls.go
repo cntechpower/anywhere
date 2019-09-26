@@ -1,15 +1,21 @@
 package tls
 
 import (
-	"anywhere/conn"
 	"crypto/tls"
 	_tls "crypto/tls"
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"net"
+	"time"
 )
 
+func getDialer() *net.Dialer {
+	return &net.Dialer{
+		Timeout:  5 * time.Second,
+		Deadline: time.Time{},
+	}
+}
 func ParseTlsConfig(certFile, keyFile, caFile string) (*tls.Config, error) {
 	tlsCert, err := _tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
@@ -40,7 +46,7 @@ func DialTlsServer(ip string, port int, config *_tls.Config) (c *_tls.Conn, err 
 		return nil, fmt.Errorf("wrong format of port: %v", port)
 	}
 	addr := fmt.Sprintf("%v:%v", ip, port)
-	c, err = _tls.DialWithDialer(conn.GetDialer(), "tcp", addr, config)
+	c, err = _tls.DialWithDialer(getDialer(), "tcp", addr, config)
 	if err != nil {
 		return nil, err
 	}

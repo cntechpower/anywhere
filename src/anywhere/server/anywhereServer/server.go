@@ -2,13 +2,13 @@ package anywhereServer
 
 import (
 	"anywhere/conn"
-	"encoding/json"
 	"fmt"
 	"net"
 	"os"
 	"sync"
 	"time"
 
+	. "anywhere/model"
 	"anywhere/tls"
 	_tls "crypto/tls"
 
@@ -24,26 +24,14 @@ type anyWhereServer struct {
 	proxyMutex       sync.Mutex
 	isHttpOn         bool
 	httpMutex        sync.Mutex
-	agentList        map[string]agentInfo
+	agents           map[string]Agent
 	agentListRwMutex sync.RWMutex
 	ExitChan         chan struct{}
 }
 
-type agentInfo struct {
-	agentId         string
-	serverId        string
-	agentAddr       net.Addr
-	proxyConfigList []proxyConfig
-}
-
-type proxyConfig struct {
-	remoteAddr net.Addr
-	localAddr  net.Addr
-}
-
 var serverInstance *anyWhereServer
 
-func InitServerInstance(serverId, port string, isProxyOn, isHttpOn bool) *anyWhereServer {
+func InitServerInstance(serverId string, port int, isProxyOn, isHttpOn bool) *anyWhereServer {
 	addrString := fmt.Sprintf("0.0.0.0:%v", port)
 	addr, _ := net.ResolveTCPAddr("tcp", addrString)
 	serverInstance = &anyWhereServer{
@@ -53,7 +41,7 @@ func InitServerInstance(serverId, port string, isProxyOn, isHttpOn bool) *anyWhe
 		proxyMutex:       sync.Mutex{},
 		isHttpOn:         isHttpOn,
 		httpMutex:        sync.Mutex{},
-		agentList:        make(map[string]agentInfo, 0),
+		agents:           make(map[string]Agent, 0),
 		agentListRwMutex: sync.RWMutex{},
 		ExitChan:         make(chan struct{}, 0),
 	}
@@ -91,11 +79,11 @@ func (s *anyWhereServer) Start() {
 			if err := conn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
 				fmt.Printf("set readtimeout error: %v", err)
 			}
-			s.RegisterAgent(agentInfo{
-				agentId:         "agent-id",
-				serverId:        s.serverId,
-				agentAddr:       conn.RemoteAddr(),
-				proxyConfigList: nil,
+			s.RegisterAgent(Agent{
+				Id:           "agent-id",
+				ServerId:     s.serverId,
+				Addr:         conn.RemoteAddr(),
+				ProxyConfigs: nil,
 			})
 			go handleConnection(conn)
 		}
@@ -103,15 +91,14 @@ func (s *anyWhereServer) Start() {
 }
 
 func handleConnection(c net.Conn) {
-	d := json.NewDecoder(c)
-	var msg conn.Package
-	if err := d.Decode(&msg); err != nil {
-		fmt.Println("Decode Package Error")
-	}
-	fmt.Println(msg)
-	if err := c.Close(); err != nil {
-		fmt.Printf("Error Close Conn: %v\n", err)
-
+	msg, err := conn.ReadRequest(c)
+	if err != nil {
+		fmt.Printf("read error %v", err)
+	} else {
+		fmt.Println(msg)
+		if err := conn.SendResponse(c, 200, "Got It"); err != nil {
+			fmt.Printf("send response error: %v", err)
+		}
 	}
 }
 
@@ -123,31 +110,31 @@ func (s *anyWhereServer) SetProxyEnable() {
 }
 
 func (s *anyWhereServer) ListAgentInfo() {
-	if s.agentList == nil {
+	if s.agents == nil {
 		return
 	}
 	s.agentListRwMutex.RLock()
 	defer s.agentListRwMutex.RUnlock()
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Agent_Id", "Agent_Addr"})
-	for _, agent := range s.agentList {
-		table.Append([]string{agent.agentId, agent.agentAddr.String()})
+	for _, agent := range s.agents {
+		table.Append([]string{agent.Id, agent.Addr.String()})
 	}
 	table.Render()
 }
 
-func (s *anyWhereServer) RegisterAgent(info agentInfo) (isUpdate bool) {
+func (s *anyWhereServer) RegisterAgent(info Agent) (isUpdate bool) {
 	s.agentListRwMutex.Lock()
 	defer s.agentListRwMutex.Unlock()
-	if _, ok := s.agentList[info.agentAddr.String()]; ok {
+	if _, ok := s.agents[info.Addr.String()]; ok {
 		isUpdate = true
 	}
-	s.agentList[info.agentAddr.String()] = info
+	s.agents[info.Addr.String()] = info
 	return isUpdate
 }
 
-func (s *anyWhereServer) RemoveAgent(info agentInfo) {
+func (s *anyWhereServer) RemoveAgent(info Agent) {
 	s.agentListRwMutex.Lock()
 	defer s.agentListRwMutex.Unlock()
-	delete(s.agentList, info.agentAddr.String())
+	delete(s.agents, info.Addr.String())
 }

@@ -4,19 +4,38 @@ import (
 	"anywhere/server/anywhereServer"
 	"anywhere/util"
 	"fmt"
+
+	"github.com/spf13/cobra"
 )
 
+var port int
+var certFile, keyFile, caFile string
+
 func main() {
-	//tlsConfig, err := _tls.ParseTlsConfig("../credential/server.crt", "../credential/server.key", "../credential/ca.crt")
-	//if err != nil {
-	//	panic(err)
-	//}
-	//if err := conn.ListenAndServeTls(1111, tlsConfig); err != nil {
-	//	panic(err)
-	//}
-	s := anywhereServer.InitServerInstance("server-id", "1111", true, true)
-	if err := s.SetCredentials("../credential/server.crt", "../credential/server.key", "../credential/ca.crt"); err != nil {
+	var rootCmd = &cobra.Command{
+		Use:   "anywhered --help",
+		Short: "This is A Proxy Server ",
+		Long:  `anywhere Version 0.0.1`,
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := run(cmd, args); err != nil {
+				panic(err)
+			}
+		},
+	}
+	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 1111, "anywhered serve port")
+	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "../credential/server.crt", "cert file")
+	rootCmd.PersistentFlags().StringVar(&keyFile, "key", "../credential/server.key", "key file")
+	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "../credential/ca.crt", "ca file")
+	if err := rootCmd.Execute(); err != nil {
 		panic(err)
+	}
+
+}
+
+func run(_ *cobra.Command, _ []string) error {
+	s := anywhereServer.InitServerInstance("server-id", port, true, true)
+	if err := s.SetCredentials(certFile, keyFile, caFile); err != nil {
+		return err
 	}
 	s.Start()
 	serverExitChan := util.ListenKillSignal()
@@ -29,5 +48,5 @@ func main() {
 		fmt.Println("server exit")
 
 	}
-
+	return nil
 }
