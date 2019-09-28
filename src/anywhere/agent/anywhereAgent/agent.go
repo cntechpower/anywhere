@@ -3,7 +3,7 @@ package anywhereAgent
 import (
 	"anywhere/conn"
 	"anywhere/log"
-	. "anywhere/model"
+	"anywhere/model"
 	"anywhere/tls"
 	"anywhere/util"
 	_tls "crypto/tls"
@@ -16,7 +16,7 @@ type Agent struct {
 	Addr         *net.TCPAddr
 	credential   *_tls.Config
 	AdminConn    *conn.AdminConn
-	ProxyConfigs []ProxyConfig
+	ProxyConfigs []model.ProxyConfig
 	version      string
 	status       string
 }
@@ -69,4 +69,13 @@ func (a *Agent) Stop() {
 		log.Info("Agent Stopping...")
 	}
 	a.status = "STOPPED"
+}
+
+func (a *Agent) SendProxyConfig(remotePort, localIp, localPort string) error {
+	p, err := model.NewProxyConfigMsg(remotePort, localIp, localPort)
+	if err != nil {
+		return err
+	}
+	msg := model.NewRequestMsg(a.version, model.PkgReqNewproxy, p)
+	return a.AdminConn.Send(msg)
 }

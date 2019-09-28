@@ -88,20 +88,20 @@ func (s *anyWhereServer) Start() {
 			agent := NewAgentInfo("agent-id", "server-id", c)
 			s.RegisterAgent(agent)
 
-			go handleConnection(agent.AdminConn, func() {
+			go handleConnection(agent.AdminConn, func(c conn.Conn, err2 error) {
+				log.Error("handel connection error: %v", err2.Error())
+				c.Close()
 				s.ExitChan <- fmt.Errorf("test error")
 			})
 		}
 	}()
 }
 
-func handleConnection(c conn.Conn, funcOnError func()) {
+func handleConnection(c conn.Conn, funcOnError func(c conn.Conn, err error)) {
 	msg := &model.RequestMsg{}
 	err := c.Receive(msg)
 	if err != nil {
-		log.Error("read from %v error %v ", c.GetRemoteAddr(), err)
-		c.Close()
-		return
+		funcOnError(c, err)
 	}
 	switch msg.ReqType {
 	case model.PkgReqNewproxy:
@@ -111,7 +111,7 @@ func handleConnection(c conn.Conn, funcOnError func()) {
 	}
 	rsp := model.NewResponseMsg(200, "got it")
 	if err := c.Send(rsp); err != nil {
-		log.Fatal("Send rsp error: %v", err)
+		funcOnError(c, err)
 	}
 }
 

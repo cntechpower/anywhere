@@ -1,7 +1,6 @@
 package conn
 
 import (
-	"anywhere/model"
 	"net"
 	"sync"
 	"time"
@@ -21,13 +20,4 @@ func NewAdminConn(c net.Conn) *AdminConn {
 		failReason:      "",
 		failCount:       0,
 	}}
-}
-
-func (c *AdminConn) SendProxyConfig(remotePort, localIp, localPort, version string) error {
-	p, err := model.NewProxyConfigMsg(remotePort, localIp, localPort)
-	if err != nil {
-		return err
-	}
-	msg := model.NewRequestMsg(version, model.PkgReqNewproxy, p)
-	return c.Send(msg)
 }
