@@ -15,23 +15,23 @@ const (
 )
 
 type ProxyConfig struct {
-	RemoteAddr net.Addr
-	LocalAddr  net.Addr
+	RemoteAddr string
+	LocalAddr  string
 }
 
-func NewProxyConfigMsg(remotePort, localIp, localPort string) *ProxyConfig {
+func NewProxyConfigMsg(remotePort, localIp, localPort string) (*ProxyConfig, error) {
 	remoteAddr, err := util.GetAddrByIpPort("0.0.0.0", remotePort)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	localAddr, err := util.GetAddrByIpPort(localIp, localPort)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	return &ProxyConfig{
-		RemoteAddr: remoteAddr,
-		LocalAddr:  localAddr,
-	}
+		RemoteAddr: remoteAddr.String(),
+		LocalAddr:  localAddr.String(),
+	}, nil
 
 }
 
@@ -75,4 +75,13 @@ func NewHeartBeatMsg(c net.Conn) HeartBeatMsg {
 		remoteAddr: c.RemoteAddr(),
 		sendTime:   time.Now(),
 	}
+}
+
+func ParseProxyConfig(data []byte) (*ProxyConfig, error) {
+	msg := &ProxyConfig{}
+	err := json.Unmarshal(data, msg)
+	if err != nil {
+		return &ProxyConfig{}, err
+	}
+	return msg, nil
 }

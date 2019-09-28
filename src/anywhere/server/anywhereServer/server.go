@@ -3,6 +3,7 @@ package anywhereServer
 import (
 	"anywhere/conn"
 	"anywhere/log"
+	"anywhere/model"
 	"anywhere/util"
 	"fmt"
 	"net"
@@ -10,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	. "anywhere/model"
 	"anywhere/tls"
 	_tls "crypto/tls"
 
@@ -26,17 +26,9 @@ type anyWhereServer struct {
 	proxyMutex    sync.Mutex
 	isHttpOn      bool
 	httpMutex     sync.Mutex
-	agents        map[string]AgentInfo
+	agents        map[string]*AgentInfo
 	agentsRwMutex sync.RWMutex
 	ExitChan      chan error
-}
-
-type AgentInfo struct {
-	Id         string
-	ServerId   string
-	RemoteAddr net.Addr
-	AdminConn  *conn.AdminConn
-	DataConn   []net.Conn
 }
 
 var serverInstance *anyWhereServer
@@ -53,9 +45,9 @@ func InitServerInstance(serverId, port string, isProxyOn, isHttpOn bool) *anyWhe
 		proxyMutex:    sync.Mutex{},
 		isHttpOn:      isHttpOn,
 		httpMutex:     sync.Mutex{},
-		agents:        make(map[string]AgentInfo, 0),
+		agents:        make(map[string]*AgentInfo, 0),
 		agentsRwMutex: sync.RWMutex{},
-		ExitChan:      make(chan error, 0),
+		ExitChan:      make(chan error, 1),
 	}
 	return serverInstance
 }
@@ -74,11 +66,15 @@ func (s *anyWhereServer) SetCredentials(certFile, keyFile, caFile string) error 
 }
 
 func (s *anyWhereServer) Start() {
+	if s.credential == nil || s.serverId == "" {
+		panic("server not init")
+	}
 	ln, err := _tls.Listen("tcp", s.serverAddr.String(), s.credential)
 	if err != nil {
-		s.ExitChan <- err
+		panic(err)
 	}
 	s.listener = ln
+
 	go func() {
 		for {
 			c, err := s.listener.Accept()
@@ -89,34 +85,33 @@ func (s *anyWhereServer) Start() {
 			if err := c.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
 				log.Error("set readTimeout error: %v", err)
 			}
-			s.RegisterAgent(AgentInfo{
-				Id:         "agent-id",
-				ServerId:   s.serverId,
-				RemoteAddr: c.RemoteAddr(),
-				AdminConn:  conn.NewAdminConn(c),
+			agent := NewAgentInfo("agent-id", "server-id", c)
+			s.RegisterAgent(agent)
+
+			go handleConnection(agent.AdminConn, func() {
+				s.ExitChan <- fmt.Errorf("test error")
 			})
-			go handleConnection(c)
 		}
 	}()
 }
 
-func handleConnection(c net.Conn) {
-	msg, err := conn.ReadRequest(c)
+func handleConnection(c conn.Conn, funcOnError func()) {
+	msg := &model.RequestMsg{}
+	err := c.Receive(msg)
 	if err != nil {
-		log.Error("read from %v error %v ", c.RemoteAddr().String(), err)
-		fmt.Println(c.RemoteAddr().String())
-		_ = c.Close()
+		log.Error("read from %v error %v ", c.GetRemoteAddr(), err)
+		c.Close()
 		return
 	}
 	switch msg.ReqType {
-	case PkgReqNewproxy:
+	case model.PkgReqNewproxy:
+		m, _ := model.ParseProxyConfig(msg.Message)
+		log.Info("got PkgReqNewproxy: %v, %v", m.RemoteAddr, m.LocalAddr)
 	default:
-
 	}
-
-	log.Info("%v", msg)
-	if err := conn.SendResponse(c, 200, "Got It"); err != nil {
-		log.Error("send response error: %v", err)
+	rsp := model.NewResponseMsg(200, "got it")
+	if err := c.Send(rsp); err != nil {
+		log.Fatal("Send rsp error: %v", err)
 	}
 }
 
@@ -134,14 +129,14 @@ func (s *anyWhereServer) ListAgentInfo() {
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Agent_Id", "Agent_Addr"})
+	table.SetHeader([]string{"Id", "Addr", "Status"})
 	for _, agent := range s.agents {
-		table.Append([]string{agent.Id, agent.RemoteAddr.String()})
+		table.Append([]string{agent.Id, agent.RemoteAddr.String(), agent.AdminConn.GetStatus().String()})
 	}
 	table.Render()
 }
 
-func (s *anyWhereServer) RegisterAgent(info AgentInfo) (isUpdate bool) {
+func (s *anyWhereServer) RegisterAgent(info *AgentInfo) (isUpdate bool) {
 	s.agentsRwMutex.Lock()
 	defer s.agentsRwMutex.Unlock()
 	if _, ok := s.agents[info.RemoteAddr.String()]; ok {

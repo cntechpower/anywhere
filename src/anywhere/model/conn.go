@@ -18,7 +18,8 @@ type Conn interface {
 	SetHealthy()
 	SetBad()
 	GetStatus() ConnStatus
-	HeartBeatLoop()
+	HeartBeatLoop(f func(c net.Conn) error)
+	Close()
 }
 
 type baseConn struct {

@@ -9,6 +9,10 @@ import (
 
 type CStatus string
 
+func (s CStatus) String() string {
+	return string(s)
+}
+
 const (
 	CStatusHealthy CStatus = "CStatusHealthy"
 	CStatusBad     CStatus = "CStatusBad"
@@ -19,7 +23,10 @@ type Conn interface {
 	setHealthy()
 	setBad()
 	GetStatus() CStatus
-	HeartBeatLoop()
+	GetRemoteAddr() string
+	HeartBeatLoop(f func(c net.Conn) error)
+	Send(interface{}) error
+	Receive(interface{}) error
 	Close()
 }
 

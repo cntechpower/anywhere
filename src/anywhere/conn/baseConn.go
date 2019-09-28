@@ -58,6 +58,10 @@ func (c *baseConn) Receive(rsp interface{}) error {
 	return nil
 }
 
+func (c *baseConn) GetRemoteAddr() string {
+	return c.conn.RemoteAddr().String()
+}
+
 func (c *baseConn) Close() {
 	_ = c.conn.Close()
 }
