@@ -8,8 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var port int
-var certFile, keyFile, caFile string
+var port, certFile, keyFile, caFile string
 
 func main() {
 	var rootCmd = &cobra.Command{
@@ -22,7 +21,7 @@ func main() {
 			}
 		},
 	}
-	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 1111, "anywhered serve port")
+	rootCmd.PersistentFlags().StringVarP(&port, "port", "p", "1111", "anywhered serve port")
 	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "../credential/server.crt", "cert file")
 	rootCmd.PersistentFlags().StringVar(&keyFile, "key", "../credential/server.key", "key file")
 	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "../credential/ca.crt", "ca file")

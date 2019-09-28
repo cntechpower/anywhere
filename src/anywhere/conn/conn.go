@@ -4,21 +4,23 @@ import (
 	"anywhere/model"
 	"encoding/json"
 	"net"
+	"time"
 )
 
-func SendRequest(c net.Conn, v, t, m string) error {
-	p, err := json.Marshal(&model.RequestMsg{
-		Version: v,
-		ReqType: t,
-		Message: m,
-	})
-	if err != nil {
-		return err
-	}
-	if _, err := c.Write(p); err != nil {
-		return err
-	}
-	return nil
+type CStatus string
+
+const (
+	CStatusHealthy CStatus = "CStatusHealthy"
+	CStatusBad     CStatus = "CStatusBad"
+	CStatusInit    CStatus = "Init"
+)
+
+type Conn interface {
+	setHealthy()
+	setBad()
+	GetStatus() CStatus
+	HeartBeatLoop()
+	Close()
 }
 
 func ReadRequest(c net.Conn) (model.RequestMsg, error) {
@@ -52,4 +54,14 @@ func ReadResponse(c net.Conn) (model.ResponseMsg, error) {
 		return rsp, err
 	}
 	return rsp, nil
+}
+
+func HeartBeatLoop(c net.Conn) {
+	go func() {
+		for {
+			p, _ := json.Marshal(model.NewHeartBeatMsg(c))
+			_, _ = c.Write(p)
+			time.Sleep(2 * time.Second)
+		}
+	}()
 }

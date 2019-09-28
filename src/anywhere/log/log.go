@@ -12,20 +12,23 @@ type Logger interface {
 }
 
 func Info(msg string, args ...interface{}) {
-	getLogger().logInfo(msg, args)
+	getLogger().logInfo(msg, args...)
 }
 
 func Error(msg string, args ...interface{}) {
-	getLogger().logError(msg, args)
+	getLogger().logError(msg, args...)
 }
 
 func Fatal(msg string, args ...interface{}) {
-	getLogger().logFatal(msg, args)
+	getLogger().logFatal(msg, args...)
 }
 
 var logger Logger
 
 func getLogger() Logger {
+	if logger == nil {
+		panic("logger not init")
+	}
 	return logger
 }
 

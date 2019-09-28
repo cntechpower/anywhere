@@ -3,6 +3,7 @@ package anywhereServer
 import (
 	"anywhere/conn"
 	"anywhere/log"
+	"anywhere/util"
 	"fmt"
 	"net"
 	"os"
@@ -17,40 +18,44 @@ import (
 )
 
 type anyWhereServer struct {
-	serverId         string
-	serverAddr       *net.TCPAddr
-	credential       *_tls.Config
-	listener         net.Listener
-	isProxyOn        bool
-	proxyMutex       sync.Mutex
-	isHttpOn         bool
-	httpMutex        sync.Mutex
-	agents           map[string]AgentInfo
-	agentListRwMutex sync.RWMutex
-	ExitChan         chan error
+	serverId      string
+	serverAddr    *net.TCPAddr
+	credential    *_tls.Config
+	listener      net.Listener
+	isProxyOn     bool
+	proxyMutex    sync.Mutex
+	isHttpOn      bool
+	httpMutex     sync.Mutex
+	agents        map[string]AgentInfo
+	agentsRwMutex sync.RWMutex
+	ExitChan      chan error
 }
 
 type AgentInfo struct {
-	Id       string
-	ServerId string
-	Addr     net.Addr
+	Id         string
+	ServerId   string
+	RemoteAddr net.Addr
+	AdminConn  *conn.AdminConn
+	DataConn   []net.Conn
 }
 
 var serverInstance *anyWhereServer
 
-func InitServerInstance(serverId string, port int, isProxyOn, isHttpOn bool) *anyWhereServer {
-	addrString := fmt.Sprintf("0.0.0.0:%v", port)
-	addr, _ := net.ResolveTCPAddr("tcp", addrString)
+func InitServerInstance(serverId, port string, isProxyOn, isHttpOn bool) *anyWhereServer {
+	addr, err := util.GetAddrByIpPort("0.0.0.0", port)
+	if err != nil {
+		panic(err)
+	}
 	serverInstance = &anyWhereServer{
-		serverId:         serverId,
-		serverAddr:       addr,
-		isProxyOn:        isProxyOn,
-		proxyMutex:       sync.Mutex{},
-		isHttpOn:         isHttpOn,
-		httpMutex:        sync.Mutex{},
-		agents:           make(map[string]AgentInfo, 0),
-		agentListRwMutex: sync.RWMutex{},
-		ExitChan:         make(chan error, 0),
+		serverId:      serverId,
+		serverAddr:    addr,
+		isProxyOn:     isProxyOn,
+		proxyMutex:    sync.Mutex{},
+		isHttpOn:      isHttpOn,
+		httpMutex:     sync.Mutex{},
+		agents:        make(map[string]AgentInfo, 0),
+		agentsRwMutex: sync.RWMutex{},
+		ExitChan:      make(chan error, 0),
 	}
 	return serverInstance
 }
@@ -69,7 +74,6 @@ func (s *anyWhereServer) SetCredentials(certFile, keyFile, caFile string) error 
 }
 
 func (s *anyWhereServer) Start() {
-
 	ln, err := _tls.Listen("tcp", s.serverAddr.String(), s.credential)
 	if err != nil {
 		s.ExitChan <- err
@@ -77,20 +81,21 @@ func (s *anyWhereServer) Start() {
 	s.listener = ln
 	go func() {
 		for {
-			conn, err := s.listener.Accept()
+			c, err := s.listener.Accept()
 			if err != nil {
-				log.Error("accept conn error: %v", err)
+				log.Error("accept c error: %v", err)
 				continue
 			}
-			if err := conn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
+			if err := c.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
 				log.Error("set readTimeout error: %v", err)
 			}
 			s.RegisterAgent(AgentInfo{
-				Id:       "agent-id",
-				ServerId: s.serverId,
-				Addr:     conn.RemoteAddr(),
+				Id:         "agent-id",
+				ServerId:   s.serverId,
+				RemoteAddr: c.RemoteAddr(),
+				AdminConn:  conn.NewAdminConn(c),
 			})
-			go handleConnection(conn)
+			go handleConnection(c)
 		}
 	}()
 }
@@ -104,7 +109,7 @@ func handleConnection(c net.Conn) {
 		return
 	}
 	switch msg.ReqType {
-	case NEWPROXY:
+	case PkgReqNewproxy:
 	default:
 
 	}
@@ -126,28 +131,28 @@ func (s *anyWhereServer) ListAgentInfo() {
 	if s.agents == nil {
 		return
 	}
-	s.agentListRwMutex.RLock()
-	defer s.agentListRwMutex.RUnlock()
+	s.agentsRwMutex.RLock()
+	defer s.agentsRwMutex.RUnlock()
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Agent_Id", "Agent_Addr"})
 	for _, agent := range s.agents {
-		table.Append([]string{agent.Id, agent.Addr.String()})
+		table.Append([]string{agent.Id, agent.RemoteAddr.String()})
 	}
 	table.Render()
 }
 
 func (s *anyWhereServer) RegisterAgent(info AgentInfo) (isUpdate bool) {
-	s.agentListRwMutex.Lock()
-	defer s.agentListRwMutex.Unlock()
-	if _, ok := s.agents[info.Addr.String()]; ok {
+	s.agentsRwMutex.Lock()
+	defer s.agentsRwMutex.Unlock()
+	if _, ok := s.agents[info.RemoteAddr.String()]; ok {
 		isUpdate = true
 	}
-	s.agents[info.Addr.String()] = info
+	s.agents[info.RemoteAddr.String()] = info
 	return isUpdate
 }
 
 func (s *anyWhereServer) RemoveAgent(info AgentInfo) {
-	s.agentListRwMutex.Lock()
-	defer s.agentListRwMutex.Unlock()
-	delete(s.agents, info.Addr.String())
+	s.agentsRwMutex.Lock()
+	defer s.agentsRwMutex.Unlock()
+	delete(s.agents, info.RemoteAddr.String())
 }
