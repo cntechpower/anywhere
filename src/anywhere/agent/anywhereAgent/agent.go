@@ -55,12 +55,8 @@ func (a *Agent) Start() {
 	if a.status == "RUNNING" {
 		panic("agent already started")
 	}
-	c, err := tls.DialTlsServer(a.Addr.IP.String(), a.Addr.Port, a.credential)
-	if err != nil {
-		panic(err)
-	}
-	a.AdminConn = conn.NewAdminConn(c)
-	a.status = "RUNNING"
+	a.connectControlConn()
+	go a.ControlConnHeartBeatLoop(1)
 }
 
 func (a *Agent) Stop() {
@@ -69,13 +65,4 @@ func (a *Agent) Stop() {
 		log.Info("Agent Stopping...")
 	}
 	a.status = "STOPPED"
-}
-
-func (a *Agent) SendProxyConfig(remotePort, localIp, localPort string) error {
-	p, err := model.NewProxyConfigMsg(remotePort, localIp, localPort)
-	if err != nil {
-		return err
-	}
-	msg := model.NewRequestMsg(a.version, model.PkgReqNewproxy, p)
-	return a.AdminConn.Send(msg)
 }

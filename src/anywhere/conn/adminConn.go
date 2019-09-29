@@ -15,8 +15,8 @@ func NewAdminConn(c net.Conn) *AdminConn {
 		conn:            c,
 		status:          CStatusInit,
 		statusMutex:     sync.RWMutex{},
-		lastAckSendTime: time.Time{},
-		lastAckRcvTime:  time.Time{},
+		LastAckSendTime: time.Time{},
+		LastAckRcvTime:  time.Time{},
 		failReason:      "",
 		failCount:       0,
 	}}

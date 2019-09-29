@@ -11,32 +11,45 @@ type baseConn struct {
 	conn            net.Conn
 	status          CStatus
 	statusMutex     sync.RWMutex
-	lastAckSendTime time.Time
-	lastAckRcvTime  time.Time
+	LastAckSendTime time.Time
+	LastAckRcvTime  time.Time
 	failReason      string
 	failCount       int
 }
 
-func (c *baseConn) setHealthy() {
+func (c *baseConn) SetHealthy() {
 	c.statusMutex.Lock()
 	defer c.statusMutex.Unlock()
 	c.status = CStatusHealthy
+	c.LastAckSendTime = time.Now()
 	c.failCount = 0
 }
 
-func (c *baseConn) setBad() {
+func (c *baseConn) SetBad(reason string) {
 	c.statusMutex.Lock()
 	defer c.statusMutex.Unlock()
+	c.status = CStatusBad
 	c.failCount++
-	if c.failCount >= 3 {
-		c.status = CStatusBad
-	}
+	c.failReason = reason
+
+}
+
+func (c *baseConn) GetFailCount() int {
+	c.statusMutex.RLock()
+	defer c.statusMutex.RUnlock()
+	return c.failCount
 }
 
 func (c *baseConn) GetStatus() CStatus {
 	c.statusMutex.RLock()
 	defer c.statusMutex.RUnlock()
 	return c.status
+}
+
+func (c *baseConn) GetFailReason() string {
+	c.statusMutex.RLock()
+	defer c.statusMutex.RUnlock()
+	return c.failReason
 }
 
 func (c *baseConn) Send(m interface{}) error {
@@ -64,17 +77,11 @@ func (c *baseConn) GetRemoteAddr() string {
 
 func (c *baseConn) Close() {
 	_ = c.conn.Close()
+	c.statusMutex.Lock()
+	defer c.statusMutex.Unlock()
+	c.status = CStatusClosed
 }
 
-func (c *baseConn) HeartBeatLoop(f func(c net.Conn) error) {
-	go func() {
-		for {
-			if err := f(c.conn); err != nil {
-				c.setBad()
-			} else {
-				c.setHealthy()
-			}
-			time.Sleep(2 * time.Second)
-		}
-	}()
+func (c *baseConn) GetRawConn() net.Conn {
+	return c.conn
 }

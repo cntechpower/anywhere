@@ -11,18 +11,21 @@ func (s CStatus) String() string {
 }
 
 const (
-	CStatusHealthy CStatus = "CStatusHealthy"
-	CStatusBad     CStatus = "CStatusBad"
+	CStatusHealthy CStatus = "Healthy"
+	CStatusBad     CStatus = "Bad"
 	CStatusInit    CStatus = "Init"
+	CStatusClosed  CStatus = "Closed"
 )
 
 type Conn interface {
-	setHealthy()
-	setBad()
+	SetHealthy()
+	SetBad(string)
+	GetFailCount() int
 	GetStatus() CStatus
+	GetFailReason() string
 	GetRemoteAddr() string
-	HeartBeatLoop(f func(c net.Conn) error)
 	Send(interface{}) error
 	Receive(interface{}) error
 	Close()
+	GetRawConn() net.Conn
 }

@@ -1,0 +1,60 @@
+package anywhereAgent
+
+import (
+	"anywhere/conn"
+	"anywhere/log"
+	"anywhere/model"
+	"anywhere/tls"
+	_tls "crypto/tls"
+	"time"
+)
+
+func (a *Agent) connectControlConn() {
+	var c *_tls.Conn
+	for {
+		var err error
+		c, err = tls.DialTlsServer(a.Addr.IP.String(), a.Addr.Port, a.credential)
+		if err != nil {
+			log.Error("can not connect to server %v, error: %v", a.Addr, err)
+			// sleep 5 second and retry
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		break
+	}
+	a.AdminConn = conn.NewAdminConn(c)
+	a.status = "RUNNING"
+	if err := a.SendRegisterPkg(); err != nil {
+		log.Error("can not send register pkg to server %v, error: %v", a.Addr, err)
+	}
+}
+
+func (a *Agent) ControlConnHeartBeatLoop(dur int) {
+	go func() {
+		for {
+
+			//check conn status first
+			//if a.AdminConn.GetStatus() == conn.CStatusBad || a.AdminConn.GetFailCount() >= 3 {
+			if a.AdminConn.GetFailCount() >= 3 {
+				log.Error("control connection not healthy, status: %v, failCount: %v, failReason: %v", a.AdminConn.GetStatus(), a.AdminConn.GetFailCount(), a.AdminConn.GetFailReason())
+				a.connectControlConn()
+				log.Info("rebuild control connection to server %v, addr %v", a.ServerId, a.Addr)
+				//after control conn rebuild, set conn status to healthy
+				a.AdminConn.SetHealthy()
+			}
+
+			//if conn status is ok ,generate pkg and send
+			m := model.NewHeartBeatMsg(a.AdminConn.GetRawConn())
+			msg := model.NewRequestMsg(a.version, model.PkgReqHeartBeat, a.Id, "", m)
+			err := a.AdminConn.Send(msg)
+			if err != nil {
+				a.AdminConn.SetBad(err.Error())
+			} else {
+				a.AdminConn.SetHealthy()
+			}
+			log.Info("send heartbeat to %v, error: %v", a.Addr, err)
+			time.Sleep(time.Duration(dur) * time.Second)
+		}
+	}()
+
+}

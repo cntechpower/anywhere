@@ -50,6 +50,5 @@ func DialTlsServer(ip string, port int, config *_tls.Config) (c *_tls.Conn, err 
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("connected to %v\n", c.RemoteAddr())
 	return c, nil
 }
