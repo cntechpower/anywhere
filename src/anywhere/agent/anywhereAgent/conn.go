@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func (a *Agent) connectControlConn() {
+func (a *Agent) getTlsConnToServer() *_tls.Conn {
 	var c *_tls.Conn
 	for {
 		var err error
@@ -20,11 +20,15 @@ func (a *Agent) connectControlConn() {
 			time.Sleep(5 * time.Second)
 			continue
 		}
-		break
+		return c
 	}
-	a.AdminConn = conn.NewAdminConn(c)
+}
+
+func (a *Agent) connectControlConn() {
+	c := a.getTlsConnToServer()
+	a.AdminConn = conn.NewBaseConn(c)
 	a.status = "RUNNING"
-	if err := a.SendRegisterPkg(); err != nil {
+	if err := a.SendControlConnRegisterPkg(); err != nil {
 		log.Error("can not send register pkg to server %v, error: %v", a.Addr, err)
 	}
 }
@@ -57,4 +61,20 @@ func (a *Agent) ControlConnHeartBeatLoop(dur int) {
 		}
 	}()
 
+}
+
+func (a *Agent) connectDataConn() {
+	//init 10 data connections
+	for i := 0; i < 10; i++ {
+		c := a.getTlsConnToServer()
+		baseC := conn.NewBaseConn(c)
+		m := model.NewDataConnRegisterMsg(a.Id)
+		msg := model.NewRequestMsg(a.version, model.PkgDataConnRegister, a.Id, "", m)
+		if err := baseC.Send(msg); err != nil {
+			i--
+			log.Error("init data conn error :%v", err)
+			continue
+		}
+		a.DataConn = append(a.DataConn, baseC)
+	}
 }

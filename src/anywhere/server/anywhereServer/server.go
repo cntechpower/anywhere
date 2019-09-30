@@ -7,6 +7,7 @@ import (
 	_tls "crypto/tls"
 	"net"
 	"os"
+	"strconv"
 	"sync"
 
 	"github.com/olekukonko/tablewriter"
@@ -21,7 +22,7 @@ type anyWhereServer struct {
 	proxyMutex    sync.Mutex
 	isHttpOn      bool
 	httpMutex     sync.Mutex
-	agents        map[string]*AgentInfo
+	agents        map[string]*Agent
 	agentsRwMutex sync.RWMutex
 	ExitChan      chan error
 }
@@ -40,14 +41,10 @@ func InitServerInstance(serverId, port string, isProxyOn, isHttpOn bool) *anyWhe
 		proxyMutex:    sync.Mutex{},
 		isHttpOn:      isHttpOn,
 		httpMutex:     sync.Mutex{},
-		agents:        make(map[string]*AgentInfo, 0),
+		agents:        make(map[string]*Agent, 0),
 		agentsRwMutex: sync.RWMutex{},
 		ExitChan:      make(chan error, 1),
 	}
-	return serverInstance
-}
-
-func GetServerInstance() *anyWhereServer {
 	return serverInstance
 }
 
@@ -77,10 +74,7 @@ func (s *anyWhereServer) Start() {
 				log.Error("accept c error: %v", err)
 				continue
 			}
-			go s.handleNewConnection(c, func(c net.Conn, err2 error) {
-				log.Error("handel connection error: %v", err2.Error())
-				_ = c.Close()
-			})
+			go s.handleNewConnection(c)
 
 		}
 	}()
@@ -91,6 +85,13 @@ func (s *anyWhereServer) SetProxyEnable() {
 	defer s.proxyMutex.Unlock()
 	s.isProxyOn = true
 
+}
+
+func (s *anyWhereServer) isAgentExist(id string) bool {
+	if _, ok := s.agents[id]; ok {
+		return true
+	}
+	return false
 }
 
 func (s *anyWhereServer) ListAgentInfo() {
@@ -107,17 +108,48 @@ func (s *anyWhereServer) ListAgentInfo() {
 	table.Render()
 }
 
-func (s *anyWhereServer) RegisterAgent(info *AgentInfo) (isUpdate bool) {
+func (s *anyWhereServer) ListProxyConfig() {
+	if s.agents == nil {
+		return
+	}
+	s.agentsRwMutex.RLock()
+	defer s.agentsRwMutex.RUnlock()
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"AgentId", "PORT", "Addr"})
+	for _, agent := range s.agents {
+		for _, proxyConfig := range agent.ProxyConfigs {
+			table.Append([]string{agent.Id, proxyConfig.RemoteAddr, proxyConfig.LocalAddr})
+		}
+	}
+	table.Render()
+}
+
+func (s *anyWhereServer) ListDataConn() {
+	if s.agents == nil {
+		return
+	}
+	s.agentsRwMutex.RLock()
+	defer s.agentsRwMutex.RUnlock()
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetAutoFormatHeaders(false)
+	table.SetHeader([]string{"AgentId", "LocalAddr", "RemoteAddr", "InUsed"})
+	for _, agent := range s.agents {
+		for _, c := range agent.DataConn {
+			table.Append([]string{agent.Id, c.GetRawConn().LocalAddr().String(), c.GetRawConn().RemoteAddr().String(), strconv.FormatBool(c.InUsed)})
+		}
+	}
+	table.Render()
+}
+
+func (s *anyWhereServer) RegisterAgent(info *Agent) (isUpdate bool) {
 	s.agentsRwMutex.Lock()
 	defer s.agentsRwMutex.Unlock()
-	if _, ok := s.agents[info.Id]; ok {
-		isUpdate = true
-	}
+	isUpdate = s.isAgentExist(info.Id)
 	s.agents[info.Id] = info
 	return isUpdate
 }
 
-func (s *anyWhereServer) RemoveAgent(info AgentInfo) {
+func (s *anyWhereServer) RemoveAgent(info Agent) {
 	s.agentsRwMutex.Lock()
 	defer s.agentsRwMutex.Unlock()
 	delete(s.agents, info.RemoteAddr.String())

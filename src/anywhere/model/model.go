@@ -10,17 +10,26 @@ import (
 type ReqType string
 
 const (
-	PkgReqNewproxy  ReqType = "PkgReqNewproxy"
-	PkgReqHeartBeat ReqType = "ReqHeartBeat"
-	PkgRegister     ReqType = "PkgRegister"
+	PkgReqNewproxy         ReqType = "PkgReqNewproxy"
+	PkgReqHeartBeat        ReqType = "ReqHeartBeat"
+	PkgControlConnRegister ReqType = "PkgControlConnRegister"
+	PkgDataConnRegister    ReqType = "PkgDataConnRegister"
 )
 
-type RegisterMsg struct {
+type AgentRegisterMsg struct {
 	AgentId string
 }
 
-func NewRegisterMsg(id string) *RegisterMsg {
-	return &RegisterMsg{AgentId: id}
+func NewAgentRegisterMsg(id string) *AgentRegisterMsg {
+	return &AgentRegisterMsg{AgentId: id}
+}
+
+type DataConnRegisterMsg struct {
+	AgentId string
+}
+
+func NewDataConnRegisterMsg(id string) *DataConnRegisterMsg {
+	return &DataConnRegisterMsg{AgentId: id}
 }
 
 type ProxyConfig struct {
@@ -109,11 +118,20 @@ func ParseHeartBeatPkg(data []byte) (*HeartBeatMsg, error) {
 
 }
 
-func ParseRegisterPkg(data []byte) (*RegisterMsg, error) {
-	msg := &RegisterMsg{}
+func ParseControlRegisterPkg(data []byte) (*AgentRegisterMsg, error) {
+	msg := &AgentRegisterMsg{}
 	err := json.Unmarshal(data, msg)
 	if err != nil {
-		return &RegisterMsg{}, err
+		return &AgentRegisterMsg{}, err
+	}
+	return msg, nil
+}
+
+func ParseDataConnRegisterPkg(data []byte) (*DataConnRegisterMsg, error) {
+	msg := &DataConnRegisterMsg{}
+	err := json.Unmarshal(data, msg)
+	if err != nil {
+		return &DataConnRegisterMsg{}, err
 	}
 	return msg, nil
 }

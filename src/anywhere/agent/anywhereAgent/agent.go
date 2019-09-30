@@ -15,7 +15,8 @@ type Agent struct {
 	ServerId     string
 	Addr         *net.TCPAddr
 	credential   *_tls.Config
-	AdminConn    *conn.AdminConn
+	AdminConn    *conn.BaseConn
+	DataConn     []*conn.BaseConn
 	ProxyConfigs []model.ProxyConfig
 	version      string
 	status       string
@@ -57,6 +58,7 @@ func (a *Agent) Start() {
 	}
 	a.connectControlConn()
 	go a.ControlConnHeartBeatLoop(1)
+	a.connectDataConn()
 }
 
 func (a *Agent) Stop() {

@@ -45,6 +45,8 @@ func run(_ *cobra.Command, _ []string) error {
 	case <-serverExitChan:
 		log.Info("Server Existing")
 		s.ListAgentInfo()
+		s.ListProxyConfig()
+		s.ListDataConn()
 	case err := <-s.ExitChan:
 		panic(err)
 

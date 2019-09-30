@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-type baseConn struct {
+type BaseConn struct {
 	conn            net.Conn
 	status          CStatus
 	statusMutex     sync.RWMutex
@@ -17,7 +17,7 @@ type baseConn struct {
 	failCount       int
 }
 
-func (c *baseConn) SetHealthy() {
+func (c *BaseConn) SetHealthy() {
 	c.statusMutex.Lock()
 	defer c.statusMutex.Unlock()
 	c.status = CStatusHealthy
@@ -25,7 +25,7 @@ func (c *baseConn) SetHealthy() {
 	c.failCount = 0
 }
 
-func (c *baseConn) SetBad(reason string) {
+func (c *BaseConn) SetBad(reason string) {
 	c.statusMutex.Lock()
 	defer c.statusMutex.Unlock()
 	c.status = CStatusBad
@@ -34,25 +34,25 @@ func (c *baseConn) SetBad(reason string) {
 
 }
 
-func (c *baseConn) GetFailCount() int {
+func (c *BaseConn) GetFailCount() int {
 	c.statusMutex.RLock()
 	defer c.statusMutex.RUnlock()
 	return c.failCount
 }
 
-func (c *baseConn) GetStatus() CStatus {
+func (c *BaseConn) GetStatus() CStatus {
 	c.statusMutex.RLock()
 	defer c.statusMutex.RUnlock()
 	return c.status
 }
 
-func (c *baseConn) GetFailReason() string {
+func (c *BaseConn) GetFailReason() string {
 	c.statusMutex.RLock()
 	defer c.statusMutex.RUnlock()
 	return c.failReason
 }
 
-func (c *baseConn) Send(m interface{}) error {
+func (c *BaseConn) Send(m interface{}) error {
 	p, err := json.Marshal(m)
 	if err != nil {
 		return err
@@ -63,7 +63,7 @@ func (c *baseConn) Send(m interface{}) error {
 	return nil
 }
 
-func (c *baseConn) Receive(rsp interface{}) error {
+func (c *BaseConn) Receive(rsp interface{}) error {
 	d := json.NewDecoder(c.conn)
 	if err := d.Decode(&rsp); err != nil {
 		return err
@@ -71,17 +71,29 @@ func (c *baseConn) Receive(rsp interface{}) error {
 	return nil
 }
 
-func (c *baseConn) GetRemoteAddr() string {
+func (c *BaseConn) GetRemoteAddr() string {
 	return c.conn.RemoteAddr().String()
 }
 
-func (c *baseConn) Close() {
+func (c *BaseConn) Close() {
 	_ = c.conn.Close()
 	c.statusMutex.Lock()
 	defer c.statusMutex.Unlock()
 	c.status = CStatusClosed
 }
 
-func (c *baseConn) GetRawConn() net.Conn {
+func (c *BaseConn) GetRawConn() net.Conn {
 	return c.conn
+}
+
+func NewBaseConn(c net.Conn) *BaseConn {
+	return &BaseConn{
+		conn:            c,
+		status:          CStatusInit,
+		statusMutex:     sync.RWMutex{},
+		LastAckSendTime: time.Time{},
+		LastAckRcvTime:  time.Time{},
+		failReason:      "",
+		failCount:       0,
+	}
 }
