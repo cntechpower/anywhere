@@ -111,7 +111,8 @@ func (s *anyWhereServer) ListAgentInfo() {
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Id", "Addr", "LastAck", "Status"})
+	table.SetAutoFormatHeaders(false)
+	table.SetHeader([]string{"AgentId", "AgentAddr", "LastAck", "Status"})
 	for _, agent := range s.agents {
 		table.Append([]string{agent.Id, agent.RemoteAddr.String(), agent.AdminConn.LastAckRcvTime.Format("2006-01-02 15:04:05"), agent.AdminConn.GetStatus().String()})
 	}
@@ -125,7 +126,8 @@ func (s *anyWhereServer) ListProxyConfig() {
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"AgentId", "PORT", "Addr"})
+	table.SetAutoFormatHeaders(false)
+	table.SetHeader([]string{"AgentId", "Port", "Addr"})
 	for _, agent := range s.agents {
 		for _, proxyConfig := range agent.ProxyConfigs {
 			table.Append([]string{agent.Id, proxyConfig.RemoteAddr, proxyConfig.LocalAddr})
@@ -142,10 +144,12 @@ func (s *anyWhereServer) ListDataConn() {
 	defer s.agentsRwMutex.RUnlock()
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"AgentId", "LocalAddr", "RemoteAddr", "InUsed"})
+	table.SetHeader([]string{"AgentId", "LocalAddr", "RemoteAddr", "Status", "InUsed", "LastAckSend", "LastACKRcv"})
 	for _, agent := range s.agents {
 		for _, c := range agent.DataConn {
-			table.Append([]string{agent.Id, c.GetRawConn().LocalAddr().String(), c.GetRawConn().RemoteAddr().String(), strconv.FormatBool(c.InUsed)})
+			table.Append([]string{agent.Id, c.LocalAddr().String(), c.RemoteAddr().String(),
+				c.GetStatus().String(), strconv.FormatBool(c.InUsed),
+				c.LastAckSendTime.Format("2006-01-02 15:04:05"), c.LastAckRcvTime.Format("2006-01-02 15:04:05")})
 		}
 	}
 	table.Render()

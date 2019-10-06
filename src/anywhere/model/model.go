@@ -14,6 +14,7 @@ const (
 	PkgReqHeartBeat        ReqType = "ReqHeartBeat"
 	PkgControlConnRegister ReqType = "PkgControlConnRegister"
 	PkgDataConnRegister    ReqType = "PkgDataConnRegister"
+	PkgDataConnTunnel      ReqType = "PkgDataConnTunnel"
 )
 
 type AgentRegisterMsg struct {
@@ -99,6 +100,14 @@ func NewHeartBeatMsg(c net.Conn) HeartBeatMsg {
 	}
 }
 
+type TunnelBeginMsg struct {
+	LocalAddr string
+}
+
+func NewTunnelBeginMsg(addr string) *TunnelBeginMsg {
+	return &TunnelBeginMsg{LocalAddr: addr}
+}
+
 func ParseProxyConfig(data []byte) (*ProxyConfig, error) {
 	msg := &ProxyConfig{}
 	err := json.Unmarshal(data, msg)
@@ -132,6 +141,15 @@ func ParseDataConnRegisterPkg(data []byte) (*DataConnRegisterMsg, error) {
 	err := json.Unmarshal(data, msg)
 	if err != nil {
 		return &DataConnRegisterMsg{}, err
+	}
+	return msg, nil
+}
+
+func ParseTunnelBeginPkg(data []byte) (*TunnelBeginMsg, error) {
+	msg := &TunnelBeginMsg{}
+	err := json.Unmarshal(data, msg)
+	if err != nil {
+		return &TunnelBeginMsg{}, err
 	}
 	return msg, nil
 }

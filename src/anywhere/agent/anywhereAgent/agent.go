@@ -58,7 +58,9 @@ func (a *Agent) Start() {
 	}
 	a.connectControlConn()
 	go a.ControlConnHeartBeatLoop(1)
-	a.connectDataConn()
+	a.connectDataConn(10)
+	//go a.dataConnHeartBeatLoop(1)
+	go a.dataConnTunnelWatchLoop(1)
 }
 
 func (a *Agent) Stop() {

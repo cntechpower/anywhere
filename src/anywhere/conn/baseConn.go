@@ -8,8 +8,7 @@ import (
 )
 
 type BaseConn struct {
-	conn            net.Conn
-	connMutex       sync.Mutex
+	net.Conn
 	status          CStatus
 	statusMutex     sync.RWMutex
 	LastAckSendTime time.Time
@@ -58,14 +57,14 @@ func (c *BaseConn) Send(m interface{}) error {
 	if err != nil {
 		return err
 	}
-	if _, err := c.conn.Write(p); err != nil {
+	if _, err := c.Write(p); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (c *BaseConn) Receive(rsp interface{}) error {
-	d := json.NewDecoder(c.conn)
+	d := json.NewDecoder(c)
 	if err := d.Decode(&rsp); err != nil {
 		return err
 	}
@@ -73,25 +72,12 @@ func (c *BaseConn) Receive(rsp interface{}) error {
 }
 
 func (c *BaseConn) GetRemoteAddr() string {
-	return c.conn.RemoteAddr().String()
-}
-
-func (c *BaseConn) Close() {
-	_ = c.conn.Close()
-	c.statusMutex.Lock()
-	defer c.statusMutex.Unlock()
-	c.status = CStatusClosed
-}
-
-func (c *BaseConn) GetRawConn() net.Conn {
-	c.connMutex.Lock()
-	defer c.connMutex.Unlock()
-	return c.conn
+	return c.RemoteAddr().String()
 }
 
 func NewBaseConn(c net.Conn) *BaseConn {
 	return &BaseConn{
-		conn:            c,
+		Conn:            c,
 		status:          CStatusInit,
 		statusMutex:     sync.RWMutex{},
 		LastAckSendTime: time.Time{},

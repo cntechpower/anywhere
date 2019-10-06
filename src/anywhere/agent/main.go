@@ -12,5 +12,6 @@ func main() {
 	_ = a.SetCredentials("../credential/client.crt", "../credential/client.key", "../credential/ca.crt")
 	a.Start()
 	_ = a.SendProxyConfig("3333", "127.0.0.1", "3306")
-	time.Sleep(100 * time.Second)
+	_ = a.SendProxyConfig("3334", "10.0.0.2", "80")
+	time.Sleep(1000000 * time.Second)
 }

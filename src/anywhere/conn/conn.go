@@ -26,6 +26,6 @@ type Conn interface {
 	GetRemoteAddr() string
 	Send(interface{}) error
 	Receive(interface{}) error
-	Close()
+	Close() error
 	GetRawConn() net.Conn
 }

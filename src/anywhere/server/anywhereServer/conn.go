@@ -6,7 +6,6 @@ import (
 	"anywhere/model"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net"
 	"time"
 )
@@ -36,6 +35,7 @@ func (s *anyWhereServer) handleNewConnection(c net.Conn) {
 		} else {
 			log.Info("add data conn for agent %v", m.AgentId)
 			s.addDataConnToAgent(m.AgentId, c)
+			//go s.handleDataConnection(m.AgentId)
 		}
 	default:
 		log.Error("agent %v not register", msg.From)
@@ -53,7 +53,7 @@ func (s *anyWhereServer) handleAdminConnection(id string) {
 	for {
 		if err := s.agents[id].AdminConn.Receive(&msg); err != nil {
 			log.Error("receive from %v admin conn error: %v, wait client reconnecting", id, err)
-			s.agents[id].AdminConn.Close()
+			_ = s.agents[id].AdminConn.Close()
 			return
 		}
 		switch msg.ReqType {
@@ -61,15 +61,44 @@ func (s *anyWhereServer) handleAdminConnection(id string) {
 			m, _ := model.ParseProxyConfig(msg.Message)
 			log.Info("got PkgReqNewproxy: %v, %v", m.RemoteAddr, m.LocalAddr)
 			s.addProxyConfig(id, m.RemoteAddr, m.LocalAddr)
+			go s.handelProxyConn(s.listenPort(m.RemoteAddr), m.LocalAddr, id)
 		case model.PkgReqHeartBeat:
 			m, _ := model.ParseHeartBeatPkg(msg.Message)
-			log.Info("got PkgReqHeartBeat from %v, sendTime: %v", m.LocalAddr, m.SendTime.String())
 			s.SetControlConnHealthy(id, m.SendTime)
 		default:
 			log.Error("got unknown ReqType: %v from %v", msg.ReqType, id)
 			s.CloseControlConnWithResp(id, fmt.Errorf("got unknown ReqType: %v from %v", msg.ReqType, id))
 		}
 	}
+}
+
+func (s *anyWhereServer) handleDataConnection(id string) {
+	if len(s.agents[id].DataConn) < 1 {
+		log.Fatal("handle on nil data connection: %v", id)
+	}
+	//heartbeat check
+	go func() {
+		msg := &model.RequestMsg{}
+		for _, c := range s.agents[id].DataConn {
+			if err := c.Receive(&msg); err != nil {
+				log.Error("receive from %v data conn error: %v, close this data conn", id, err)
+				_ = c.Close()
+				//s.agents[id].DataConn = append(s.agents[id].DataConn[:idx], s.agents[id].DataConn[idx+1:]...)
+				continue
+			}
+			switch msg.ReqType {
+			case model.PkgReqHeartBeat:
+				m, _ := model.ParseHeartBeatPkg(msg.Message)
+				c.LastAckSendTime = m.SendTime
+				c.LastAckRcvTime = time.Now()
+				c.SetHealthy()
+			default:
+				log.Error("got unknown ReqType: %v from %v", msg.ReqType, id)
+				_ = c.Close()
+
+			}
+		}
+	}()
 }
 
 func (s *anyWhereServer) SetControlConnHealthy(id string, ackSendTime time.Time) {
@@ -91,29 +120,4 @@ func (s *anyWhereServer) addDataConnToAgent(id string, c net.Conn) {
 			InUsed:   false,
 		},
 	)
-}
-
-func (s *anyWhereServer) getDataConnToAgent(id string) (*conn.BaseConn, error) {
-	if !s.isAgentExist(id) {
-		return nil, fmt.Errorf("not init")
-	}
-	for _, c := range s.agents[id].DataConn {
-		if !c.InUsed {
-			return c.BaseConn, nil
-		}
-	}
-	return nil, fmt.Errorf("no data conn available")
-}
-
-func (s *anyWhereServer) startProxyJoin(dst, src net.Conn) {
-	if _, err := io.Copy(dst, src); err != nil {
-		log.Error("io copy got error %v", err)
-	}
-}
-
-func (s *anyWhereServer) StartProxy(dst, src conn.BaseConn) {
-	dstConn := dst.GetRawConn()
-	srcConn := src.GetRawConn()
-	go s.startProxyJoin(dstConn, srcConn)
-	go s.startProxyJoin(srcConn, dstConn)
 }
