@@ -5,6 +5,7 @@ import (
 	"anywhere/tls"
 	"anywhere/util"
 	_tls "crypto/tls"
+	"fmt"
 	"net"
 	"os"
 	"strconv"
@@ -16,9 +17,10 @@ import (
 type anyWhereServer struct {
 	serverId      string
 	serverAddr    *net.TCPAddr
+	isTls         bool
 	credential    *_tls.Config
 	listener      net.Listener
-	isProxyOn     bool
+	proxyListener []net.Listener
 	proxyMutex    sync.Mutex
 	isHttpOn      bool
 	httpMutex     sync.Mutex
@@ -29,7 +31,7 @@ type anyWhereServer struct {
 
 var serverInstance *anyWhereServer
 
-func InitServerInstance(serverId, port string, isProxyOn, isHttpOn bool) *anyWhereServer {
+func InitServerInstance(serverId, port string, isHttpOn, isTls bool) *anyWhereServer {
 	addr, err := util.GetAddrByIpPort("0.0.0.0", port)
 	if err != nil {
 		panic(err)
@@ -37,9 +39,9 @@ func InitServerInstance(serverId, port string, isProxyOn, isHttpOn bool) *anyWhe
 	serverInstance = &anyWhereServer{
 		serverId:      serverId,
 		serverAddr:    addr,
-		isProxyOn:     isProxyOn,
 		proxyMutex:    sync.Mutex{},
 		isHttpOn:      isHttpOn,
+		isTls:         isTls,
 		httpMutex:     sync.Mutex{},
 		agents:        make(map[string]*Agent, 0),
 		agentsRwMutex: sync.RWMutex{},
@@ -57,9 +59,23 @@ func (s *anyWhereServer) SetCredentials(certFile, keyFile, caFile string) error 
 	return nil
 }
 
+func (s *anyWhereServer) checkServerInit() error {
+	if s.isTls && s.credential == nil {
+		return fmt.Errorf("credential is empty, but server is using tls")
+	}
+	if s.serverId == "" {
+		return fmt.Errorf("serverId is empty")
+	}
+	if s.serverAddr == nil {
+		return fmt.Errorf("serverAddr is empty")
+	}
+	return nil
+
+}
+
 func (s *anyWhereServer) Start() {
-	if s.credential == nil || s.serverId == "" {
-		panic("server not init")
+	if err := s.checkServerInit(); err != nil {
+		panic(err)
 	}
 	ln, err := _tls.Listen("tcp", s.serverAddr.String(), s.credential)
 	if err != nil {
@@ -78,13 +94,6 @@ func (s *anyWhereServer) Start() {
 
 		}
 	}()
-}
-
-func (s *anyWhereServer) SetProxyEnable() {
-	s.proxyMutex.Lock()
-	defer s.proxyMutex.Unlock()
-	s.isProxyOn = true
-
 }
 
 func (s *anyWhereServer) isAgentExist(id string) bool {

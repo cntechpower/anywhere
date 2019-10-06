@@ -9,6 +9,7 @@ import (
 )
 
 var port, certFile, keyFile, caFile, serverId string
+var isTlsOn, isHttpOn bool
 
 func main() {
 	var rootCmd = &cobra.Command{
@@ -23,6 +24,8 @@ func main() {
 	}
 	rootCmd.PersistentFlags().StringVarP(&port, "port", "p", "1111", "anywhered serve port")
 	rootCmd.PersistentFlags().StringVarP(&serverId, "server-id", "s", "anywhered-1", "anywhered server id")
+	rootCmd.PersistentFlags().BoolVar(&isTlsOn, "tls", true, "weather to use tls")
+	rootCmd.PersistentFlags().BoolVar(&isHttpOn, "http", false, "http web admin interface")
 	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "../credential/server.crt", "cert file")
 	rootCmd.PersistentFlags().StringVar(&keyFile, "key", "../credential/server.key", "key file")
 	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "../credential/ca.crt", "ca file")
@@ -34,9 +37,11 @@ func main() {
 
 func run(_ *cobra.Command, _ []string) error {
 	log.InitStdLogger()
-	s := anywhereServer.InitServerInstance(serverId, port, true, true)
-	if err := s.SetCredentials(certFile, keyFile, caFile); err != nil {
-		return err
+	s := anywhereServer.InitServerInstance(serverId, port, isHttpOn, isTlsOn)
+	if isTlsOn {
+		if err := s.SetCredentials(certFile, keyFile, caFile); err != nil {
+			return err
+		}
 	}
 	s.Start()
 	serverExitChan := util.ListenKillSignal()

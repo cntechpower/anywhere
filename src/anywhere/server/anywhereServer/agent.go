@@ -7,12 +7,13 @@ import (
 )
 
 type Agent struct {
-	Id           string
-	ServerId     string
-	RemoteAddr   net.Addr
-	AdminConn    *conn.BaseConn
-	DataConn     []DataConnStatus
-	ProxyConfigs []model.ProxyConfig
+	Id               string
+	ServerId         string
+	RemoteAddr       net.Addr
+	AdminConn        *conn.BaseConn
+	DataConn         []DataConnStatus
+	ProxyConfigs     []model.ProxyConfig
+	chanProxyConfigs chan model.ProxyConfig
 }
 
 type DataConnStatus struct {

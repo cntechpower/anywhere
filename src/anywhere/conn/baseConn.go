@@ -9,6 +9,7 @@ import (
 
 type BaseConn struct {
 	conn            net.Conn
+	connMutex       sync.Mutex
 	status          CStatus
 	statusMutex     sync.RWMutex
 	LastAckSendTime time.Time
@@ -83,6 +84,8 @@ func (c *BaseConn) Close() {
 }
 
 func (c *BaseConn) GetRawConn() net.Conn {
+	c.connMutex.Lock()
+	defer c.connMutex.Unlock()
 	return c.conn
 }
 

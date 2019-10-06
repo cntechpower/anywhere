@@ -6,6 +6,7 @@ import (
 	"anywhere/model"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"time"
 )
@@ -62,7 +63,7 @@ func (s *anyWhereServer) handleAdminConnection(id string) {
 			s.addProxyConfig(id, m.RemoteAddr, m.LocalAddr)
 		case model.PkgReqHeartBeat:
 			m, _ := model.ParseHeartBeatPkg(msg.Message)
-			log.Info("got PkgReqHeartBeat from %v, sendTime: %v", m.RemoteAddr, m.SendTime.String())
+			log.Info("got PkgReqHeartBeat from %v, sendTime: %v", m.LocalAddr, m.SendTime.String())
 			s.SetControlConnHealthy(id, m.SendTime)
 		default:
 			log.Error("got unknown ReqType: %v from %v", msg.ReqType, id)
@@ -102,4 +103,17 @@ func (s *anyWhereServer) getDataConnToAgent(id string) (*conn.BaseConn, error) {
 		}
 	}
 	return nil, fmt.Errorf("no data conn available")
+}
+
+func (s *anyWhereServer) startProxyJoin(dst, src net.Conn) {
+	if _, err := io.Copy(dst, src); err != nil {
+		log.Error("io copy got error %v", err)
+	}
+}
+
+func (s *anyWhereServer) StartProxy(dst, src conn.BaseConn) {
+	dstConn := dst.GetRawConn()
+	srcConn := src.GetRawConn()
+	go s.startProxyJoin(dstConn, srcConn)
+	go s.startProxyJoin(srcConn, dstConn)
 }
