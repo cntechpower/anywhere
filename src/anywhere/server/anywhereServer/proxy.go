@@ -33,41 +33,61 @@ func (s *anyWhereServer) listenPort(addr string) *net.TCPListener {
 }
 
 func (s *anyWhereServer) getAvailDataConn(id string) (*conn.BaseConn, error) {
-	for idx, c := range s.agents[id].DataConn {
+	for _, c := range s.agents[id].DataConn {
 		if !c.InUsed {
-			//TODO: set InUsed not work, so remove this conn from dataConn
-			s.agents[id].DataConn = append(s.agents[id].DataConn[:idx], s.agents[id].DataConn[idx+1:]...)
-			//c.InUsed = true
-			//c.BaseConn.Send()
+			c.InUsed = true
 			return c.BaseConn, nil
 		}
 	}
 	return nil, fmt.Errorf("no data conn available")
 }
 
-func (s *anyWhereServer) handelProxyConn(ln *net.TCPListener, localAddr, agentId string) {
+func (s *anyWhereServer) releaseDataConn(id string, bc *conn.BaseConn) {
+	log.Info("release %v data conn", bc.RemoteAddr())
+	for _, c := range s.agents[id].DataConn {
+		if c.BaseConn == bc {
+			c.InUsed = false
+			return
+		}
+	}
+	log.Info("no conn to release")
+}
+
+func (s *anyWhereServer) handelTunnelConnection(ln *net.TCPListener, localAddr, agentId string) {
 	for {
 		c, err := ln.AcceptTCP()
 		if err != nil {
 			log.Error("got conn from %v err: %v", ln.Addr(), err)
 			continue
 		}
-		dst, err := s.getAvailDataConn(agentId)
-		if err != nil {
-			log.Error("get conn error %v", err)
-			_ = c.Close()
-			return
-		}
-		log.Info("got proxy conn from %v to %v", c.RemoteAddr(), ln.Addr())
-		p := model.NewTunnelBeginMsg(localAddr)
-		pkg := model.NewRequestMsg("0.0.1", model.PkgDataConnTunnel, s.serverId, "", p)
-		pByte, _ := json.Marshal(pkg)
-		_, err = dst.Write(pByte)
-		if err != nil {
-			log.Error("send tunnel begin to client error: %v", err)
-		} else {
-			go conn.JoinConn(c, dst.Conn)
-		}
+		go s.tunnelHandler(c, localAddr, agentId)
 
 	}
+}
+
+func (s *anyWhereServer) tunnelHandler(c net.Conn, localAddr, agentId string) {
+	dst, err := s.getAvailDataConn(agentId)
+	if err != nil {
+		log.Error("get conn error %v", err)
+		_ = c.Close()
+		return
+	}
+
+	//call agent to join conn
+	p := model.NewTunnelBeginMsg(localAddr)
+	pkg := model.NewRequestMsg("0.0.1", model.PkgDataConnTunnel, s.serverId, "", p)
+	pByte, _ := json.Marshal(pkg)
+	_, err = dst.Write(pByte)
+	if err != nil {
+		log.Error("send tunnel begin to client error: %v", err)
+		return
+	}
+
+	//server join conn
+	//dst.CancelHeartBeatSend()
+	//dst.CancelHeartBeatReceive()
+	//dst.StopRcvChan <- struct{}{}
+	conn.JoinConn(dst.Conn, c)
+	s.releaseDataConn(agentId, dst)
+
 }

@@ -11,12 +11,12 @@ type Agent struct {
 	ServerId         string
 	RemoteAddr       net.Addr
 	AdminConn        *conn.BaseConn
-	DataConn         []DataConnStatus
+	DataConn         []*DataConn
 	ProxyConfigs     []model.ProxyConfig
 	chanProxyConfigs chan model.ProxyConfig
 }
 
-type DataConnStatus struct {
+type DataConn struct {
 	*conn.BaseConn
 	InUsed bool
 }
@@ -27,6 +27,6 @@ func NewAgentInfo(agentId, serverId string, c net.Conn) *Agent {
 		ServerId:   serverId,
 		RemoteAddr: c.RemoteAddr(),
 		AdminConn:  conn.NewBaseConn(c),
-		DataConn:   nil,
+		DataConn:   make([]*DataConn, 0),
 	}
 }

@@ -5,7 +5,9 @@ import (
 	"anywhere/log"
 	"anywhere/model"
 	"anywhere/tls"
+	"context"
 	_tls "crypto/tls"
+	"encoding/json"
 	"net"
 	"time"
 )
@@ -40,8 +42,8 @@ func (a *Agent) ControlConnHeartBeatLoop(dur int) {
 
 			//check conn status first
 			//if a.AdminConn.GetStatus() == conn.CStatusBad || a.AdminConn.GetFailCount() >= 3 {
-			if a.AdminConn.GetFailCount() >= 3 {
-				log.Error("control connection not healthy, status: %v, failCount: %v, failReason: %v", a.AdminConn.GetStatus(), a.AdminConn.GetFailCount(), a.AdminConn.GetFailReason())
+			if a.AdminConn.GetStatus() == conn.CStatusBad {
+				log.Error("control connection not healthy, status: %v, failReason: %v", a.AdminConn.GetStatus(), a.AdminConn.GetFailReason())
 				a.connectControlConn()
 				log.Info("rebuild control connection to server %v, addr %v", a.ServerId, a.Addr)
 				//after control conn rebuild, set conn status to healthy
@@ -79,19 +81,27 @@ func (a *Agent) connectDataConn(count int) {
 	}
 }
 
-func (a *Agent) dataConnHeartBeatLoop(dur int) {
-	go func() {
-		for {
-			for idx, c := range a.DataConn {
-				if c.GetFailCount() >= 3 {
-					log.Error("data connection not healthy, status: %v, failCount: %v, failReason: %v", c.GetStatus(), c.GetFailCount(), c.GetFailReason())
+func (a *Agent) dataConnHeartBeatSendLoop(dur int) {
+
+	for idx, c := range a.DataConn {
+		ctx := context.Background()
+		ctx, cancel := context.WithCancel(ctx)
+		c.CancelHeartBeatSend = cancel
+		go func(idx int, c *conn.BaseConn, ctx context.Context) {
+			defer log.Error("data conn heartbeat loop for %v exit", c.LocalAddr())
+			for {
+				select {
+				case <-c.StopSendChan:
+					return
+				default:
+				}
+				if c.GetStatus() == conn.CStatusBad {
+					log.Error("data connection not healthy, status: %v, failReason: %v", c.GetStatus(), c.GetFailReason())
 					a.DataConn = append(a.DataConn[:idx], a.DataConn[idx+1:]...)
+					_ = c.Close()
 					a.connectDataConn(1)
 					log.Info("rebuild data connection to server %v, addr %v", a.ServerId, a.Addr)
-					//after data conn rebuild, set conn status to healthy
-					c.SetHealthy()
 				}
-
 				//if conn status is ok ,generate pkg and send
 				m := model.NewHeartBeatMsg(a.AdminConn)
 				msg := model.NewRequestMsg(a.version, model.PkgReqHeartBeat, a.Id, "", m)
@@ -101,10 +111,11 @@ func (a *Agent) dataConnHeartBeatLoop(dur int) {
 				} else {
 					c.SetHealthy()
 				}
+				time.Sleep(time.Duration(dur) * time.Second)
 			}
-			time.Sleep(time.Duration(dur) * time.Second)
-		}
-	}()
+
+		}(idx, c, ctx)
+	}
 }
 
 func (a *Agent) dataConnTunnelWatchLoop(dur int) {
@@ -112,8 +123,15 @@ func (a *Agent) dataConnTunnelWatchLoop(dur int) {
 
 		for idx, c := range a.DataConn {
 			go func(idx int, c *conn.BaseConn) {
+				defer log.Error("tunnel watch loop for %v exit", c.LocalAddr())
+
 				msg := &model.RequestMsg{}
 				for {
+					select {
+					case <-c.StopRcvChan:
+						return
+					default:
+					}
 					if err := c.Receive(&msg); err != nil {
 						log.Error("receive from data conn error: %v, close this data conn", err)
 						_ = c.Close()
@@ -124,11 +142,21 @@ func (a *Agent) dataConnTunnelWatchLoop(dur int) {
 						m, _ := model.ParseTunnelBeginPkg(msg.Message)
 						log.Info("got tunnel request: %v", m.LocalAddr)
 						lc, err := net.Dial("tcp", m.LocalAddr)
-						a.DataConn = append(a.DataConn[:idx], a.DataConn[idx+1:]...)
 						if err != nil {
 							log.Error("dial local addr %v error: %v", m.LocalAddr, err)
 						} else {
-							conn.JoinConn(c, lc)
+							//c.CancelHeartBeatSend()
+							//c.CancelHeartBeatReceive()
+							c.StopSendChan <- struct{}{}
+							p := model.NewTunnelBeginMsg("")
+							pkg := model.NewRequestMsg("0.0.1", model.PkgDataConnTunnel, a.Id, "", p)
+							pByte, _ := json.Marshal(pkg)
+							if _, err = c.Write(pByte); err != nil {
+								log.Info("response to server tunnel pkg error: %v", err)
+							}
+							//c.StopRcvChan <- struct{}{}
+							conn.JoinConn(lc, c)
+							lc.Close()
 						}
 
 					default:

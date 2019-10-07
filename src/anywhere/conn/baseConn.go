@@ -1,6 +1,8 @@
 package conn
 
 import (
+	"anywhere/log"
+	"context"
 	"encoding/json"
 	"net"
 	"sync"
@@ -9,12 +11,15 @@ import (
 
 type BaseConn struct {
 	net.Conn
-	status          CStatus
-	statusMutex     sync.RWMutex
-	LastAckSendTime time.Time
-	LastAckRcvTime  time.Time
-	failReason      string
-	failCount       int
+	status                 CStatus
+	statusMutex            sync.RWMutex
+	failReason             string
+	LastAckSendTime        time.Time
+	LastAckRcvTime         time.Time
+	CancelHeartBeatSend    context.CancelFunc
+	CancelHeartBeatReceive context.CancelFunc
+	StopSendChan           chan struct{}
+	StopRcvChan            chan struct{}
 }
 
 func (c *BaseConn) SetHealthy() {
@@ -22,22 +27,14 @@ func (c *BaseConn) SetHealthy() {
 	defer c.statusMutex.Unlock()
 	c.status = CStatusHealthy
 	c.LastAckSendTime = time.Now()
-	c.failCount = 0
 }
 
 func (c *BaseConn) SetBad(reason string) {
 	c.statusMutex.Lock()
 	defer c.statusMutex.Unlock()
 	c.status = CStatusBad
-	c.failCount++
 	c.failReason = reason
 
-}
-
-func (c *BaseConn) GetFailCount() int {
-	c.statusMutex.RLock()
-	defer c.statusMutex.RUnlock()
-	return c.failCount
 }
 
 func (c *BaseConn) GetStatus() CStatus {
@@ -77,12 +74,15 @@ func (c *BaseConn) GetRemoteAddr() string {
 
 func NewBaseConn(c net.Conn) *BaseConn {
 	return &BaseConn{
-		Conn:            c,
-		status:          CStatusInit,
-		statusMutex:     sync.RWMutex{},
-		LastAckSendTime: time.Time{},
-		LastAckRcvTime:  time.Time{},
-		failReason:      "",
-		failCount:       0,
+		Conn:                   c,
+		status:                 CStatusInit,
+		statusMutex:            sync.RWMutex{},
+		LastAckSendTime:        time.Time{},
+		LastAckRcvTime:         time.Time{},
+		CancelHeartBeatReceive: func() { log.Error("InitCancelHeartBeatReceiveFunc") },
+		CancelHeartBeatSend:    func() { log.Error("InitCancelHeartBeatSendFunc") },
+		failReason:             "",
+		StopSendChan:           make(chan struct{}, 0),
+		StopRcvChan:            make(chan struct{}, 0),
 	}
 }
