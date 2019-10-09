@@ -60,12 +60,13 @@ func (s *anyWhereServer) handelTunnelConnection(ln *net.TCPListener, localAddr, 
 			log.Error("got conn from %v err: %v", ln.Addr(), err)
 			continue
 		}
-		go s.tunnelHandler(c, localAddr, agentId)
+		//go s.tunnelHandlerWithoutPool(c, localAddr, agentId)
+		go s.tunnelHandlerWithPool(c, localAddr, agentId)
 
 	}
 }
 
-func (s *anyWhereServer) tunnelHandler(c net.Conn, localAddr, agentId string) {
+func (s *anyWhereServer) tunnelHandlerWithoutPool(c net.Conn, localAddr, agentId string) {
 	dst, err := s.getAvailDataConn(agentId)
 	if err != nil {
 		log.Error("get conn error %v", err)
@@ -89,5 +90,34 @@ func (s *anyWhereServer) tunnelHandler(c net.Conn, localAddr, agentId string) {
 	//dst.StopRcvChan <- struct{}{}
 	conn.JoinConn(dst.Conn, c)
 	s.releaseDataConn(agentId, dst)
+
+}
+
+func (s *anyWhereServer) tunnelHandlerWithPool(c net.Conn, localAddr, agentId string) {
+	dst, err := conn.GetFromPool(agentId)
+	if err != nil {
+		log.Error("get conn error %v", err)
+		_ = c.Close()
+		return
+	}
+
+	//call agent to join conn
+	p := model.NewTunnelBeginMsg(localAddr)
+	pkg := model.NewRequestMsg("0.0.1", model.PkgDataConnTunnel, s.serverId, "", p)
+	pByte, _ := json.Marshal(pkg)
+	_, err = dst.Write(pByte)
+	if err != nil {
+		log.Error("send tunnel begin to client error: %v", err)
+		return
+	}
+
+	//clear conn rcv buffer
+	//_, _ = ioutil.ReadAll(dst)
+
+	//server join conn
+	//dst.CancelHeartBeatSend()
+	//dst.CancelHeartBeatReceive()
+	//dst.StopRcvChan <- struct{}{}
+	conn.JoinConn(dst.Conn, c)
 
 }

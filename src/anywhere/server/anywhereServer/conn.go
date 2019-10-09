@@ -34,7 +34,10 @@ func (s *anyWhereServer) handleNewConnection(c net.Conn) {
 			_ = c.Close()
 		} else {
 			log.Info("add data conn for agent %v", m.AgentId)
-			s.addDataConnToAgent(m.AgentId, c)
+			//s.addDataConnToAgent(m.AgentId, c)
+			if err := conn.PutToPool(m.AgentId, c); err != nil {
+				log.Error("put to poll error %v", err)
+			}
 			//s.handleDataConnection(m.AgentId,c)
 		}
 	default:

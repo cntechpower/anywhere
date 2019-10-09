@@ -156,7 +156,6 @@ func (a *Agent) dataConnTunnelWatchLoop(dur int) {
 							}
 							//c.StopRcvChan <- struct{}{}
 							conn.JoinConn(lc, c)
-							lc.Close()
 						}
 
 					default:

@@ -1,6 +1,7 @@
 package anywhereServer
 
 import (
+	"anywhere/conn"
 	"anywhere/log"
 	"anywhere/tls"
 	"anywhere/util"
@@ -77,6 +78,8 @@ func (s *anyWhereServer) Start() {
 	if err := s.checkServerInit(); err != nil {
 		panic(err)
 	}
+	conn.InitConnPool(10)
+	go conn.HealthyCheck(conn.HeartBeatCheckFunc)
 	ln, err := _tls.Listen("tcp", s.serverAddr.String(), s.credential)
 	if err != nil {
 		panic(err)
