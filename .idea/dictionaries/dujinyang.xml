@@ -1,9 +1,12 @@
 <component name="ProjectDictionaryState">
   <dictionary name="dujinyang">
     <words>
+      <w>agentproxyconnbuffer</w>
       <w>anywhered</w>
       <w>conns</w>
       <w>newproxy</w>
+      <w>operationretrycount</w>
+      <w>timeoutsecforconnpool</w>
     </words>
   </dictionary>
 </component>

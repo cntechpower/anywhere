@@ -2,12 +2,13 @@ package anywhereAgent
 
 import (
 	"anywhere/model"
-	"encoding/json"
 	"fmt"
-	"net"
 )
 
 func (a *Agent) SendProxyConfig(remotePort, localIp, localPort string) error {
+	if a.AdminConn == nil {
+		return fmt.Errorf("admin conn not init")
+	}
 	p, err := model.NewProxyConfigMsg(remotePort, localIp, localPort)
 	if err != nil {
 		return err
@@ -16,12 +17,13 @@ func (a *Agent) SendProxyConfig(remotePort, localIp, localPort string) error {
 	return a.AdminConn.Send(msg)
 }
 
-func (a *Agent) SendHeartBeatPkg(c net.Conn) error {
-	p := model.NewHeartBeatMsg(c)
+func (a *Agent) SendHeartBeatPkg() error {
+	if a.AdminConn == nil {
+		return fmt.Errorf("admin conn not init")
+	}
+	p := model.NewHeartBeatMsg(a.AdminConn)
 	pkg := model.NewRequestMsg(a.version, model.PkgReqHeartBeat, a.Id, "", p)
-	pByte, _ := json.Marshal(pkg)
-	_, err := c.Write(pByte)
-	return err
+	return a.AdminConn.Send(pkg)
 }
 
 func (a *Agent) SendControlConnRegisterPkg() error {

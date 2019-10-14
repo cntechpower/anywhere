@@ -1,7 +1,6 @@
 package anywhereServer
 
 import (
-	"anywhere/conn"
 	"anywhere/log"
 	"anywhere/tls"
 	"anywhere/util"
@@ -9,7 +8,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strconv"
 	"sync"
 
 	"github.com/olekukonko/tablewriter"
@@ -28,6 +26,7 @@ type anyWhereServer struct {
 	agents        map[string]*Agent
 	agentsRwMutex sync.RWMutex
 	ExitChan      chan error
+	ErrChan       chan error
 }
 
 var serverInstance *anyWhereServer
@@ -47,6 +46,7 @@ func InitServerInstance(serverId, port string, isHttpOn, isTls bool) *anyWhereSe
 		agents:        make(map[string]*Agent, 0),
 		agentsRwMutex: sync.RWMutex{},
 		ExitChan:      make(chan error, 1),
+		ErrChan:       make(chan error, 10000),
 	}
 	return serverInstance
 }
@@ -78,8 +78,6 @@ func (s *anyWhereServer) Start() {
 	if err := s.checkServerInit(); err != nil {
 		panic(err)
 	}
-	conn.InitConnPool(10)
-	go conn.HealthyCheck(conn.HeartBeatCheckFunc)
 	ln, err := _tls.Listen("tcp", s.serverAddr.String(), s.credential)
 	if err != nil {
 		panic(err)
@@ -97,13 +95,13 @@ func (s *anyWhereServer) Start() {
 
 		}
 	}()
+
 }
 
 func (s *anyWhereServer) isAgentExist(id string) bool {
 	if _, ok := s.agents[id]; ok {
 		return true
 	}
-	//test commit
 	return false
 }
 
@@ -139,25 +137,6 @@ func (s *anyWhereServer) ListProxyConfig() {
 	table.Render()
 }
 
-func (s *anyWhereServer) ListDataConn() {
-	if s.agents == nil {
-		return
-	}
-	s.agentsRwMutex.RLock()
-	defer s.agentsRwMutex.RUnlock()
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"AgentId", "LocalAddr", "RemoteAddr", "Status", "InUsed", "LastAckSend", "LastACKRcv"})
-	for _, agent := range s.agents {
-		for _, c := range agent.DataConn {
-			table.Append([]string{agent.Id, c.LocalAddr().String(), c.RemoteAddr().String(),
-				c.GetStatus().String(), strconv.FormatBool(c.InUsed),
-				c.LastAckSendTime.Format("2006-01-02 15:04:05"), c.LastAckRcvTime.Format("2006-01-02 15:04:05")})
-		}
-	}
-	table.Render()
-}
-
 func (s *anyWhereServer) RegisterAgent(info *Agent) (isUpdate bool) {
 	s.agentsRwMutex.Lock()
 	defer s.agentsRwMutex.Unlock()
@@ -166,7 +145,7 @@ func (s *anyWhereServer) RegisterAgent(info *Agent) (isUpdate bool) {
 	return isUpdate
 }
 
-func (s *anyWhereServer) RemoveAgent(info Agent) {
+func (s *anyWhereServer) RemoveAgent(info *Agent) {
 	s.agentsRwMutex.Lock()
 	defer s.agentsRwMutex.Unlock()
 	delete(s.agents, info.RemoteAddr.String())

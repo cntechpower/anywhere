@@ -22,23 +22,21 @@ func (s *anyWhereServer) handleNewConnection(c net.Conn) {
 	switch msg.ReqType {
 	case model.PkgControlConnRegister:
 		m, _ := model.ParseControlRegisterPkg(msg.Message)
-		agent := NewAgentInfo(m.AgentId, s.serverId, c)
+		agent := NewAgentInfo(m.AgentId, c, make(chan error, 1000))
 		if isUpdate := s.RegisterAgent(agent); isUpdate {
 			log.Info("rebuild control connection for agent: %v", agent.Id)
 		}
 		go s.handleAdminConnection(agent.Id)
-	case model.PkgDataConnRegister:
-		m, _ := model.ParseDataConnRegisterPkg(msg.Message)
+	case model.PkgTunnelBegin:
+		m, _ := model.ParseTunnelBeginPkg(msg.Message)
 		if !s.isAgentExist(m.AgentId) {
 			log.Error("got data conn register pkg from unknown agent %v", m.AgentId)
 			_ = c.Close()
 		} else {
 			log.Info("add data conn for agent %v", m.AgentId)
-			//s.addDataConnToAgent(m.AgentId, c)
-			if err := conn.PutToPool(m.AgentId, c); err != nil {
-				log.Error("put to poll error %v", err)
+			if err := s.agents[m.AgentId].PutProxyConn(m.LocalAddr, conn.NewBaseConn(c)); err != nil {
+				log.Error("put proxy conn to agent error: %v", err)
 			}
-			//s.handleDataConnection(m.AgentId,c)
 		}
 	default:
 		log.Error("agent %v not register", msg.From)
@@ -63,8 +61,8 @@ func (s *anyWhereServer) handleAdminConnection(id string) {
 		case model.PkgReqNewproxy:
 			m, _ := model.ParseProxyConfig(msg.Message)
 			log.Info("got PkgReqNewproxy: %v, %v", m.RemoteAddr, m.LocalAddr)
-			s.addProxyConfig(id, m.RemoteAddr, m.LocalAddr)
-			go s.handelTunnelConnection(s.listenPort(m.RemoteAddr), m.LocalAddr, id)
+			s.agents[id].AddProxyConfig(m)
+			go s.agents[id].ProxyConfigHandleLoop()
 		case model.PkgReqHeartBeat:
 			m, _ := model.ParseHeartBeatPkg(msg.Message)
 			s.SetControlConnHealthy(id, m.SendTime)
@@ -85,64 +83,4 @@ func (s *anyWhereServer) CloseControlConnWithResp(id string, err error) {
 	m := model.NewResponseMsg(500, err.Error())
 	_ = s.agents[id].AdminConn.Send(m)
 	s.agents[id].AdminConn.Close()
-}
-
-func (s *anyWhereServer) addDataConnToAgent(id string, c net.Conn) {
-	baseConn := conn.NewBaseConn(c)
-	s.agents[id].DataConn = append(s.agents[id].DataConn,
-		&DataConn{
-			BaseConn: baseConn,
-			InUsed:   false,
-		},
-	)
-	conn.HeartBeatRcvLoop(baseConn, s.destroyDataConn)
-}
-
-//
-//func HeartBeatRcvLoop(c *conn.BaseConn, funcOnFail func(c *conn.BaseConn)) {
-//	msg := &model.RequestMsg{}
-//	go func(c *conn.BaseConn) {
-//		for {
-//			select {
-//			case <-c.StopRcvChan:
-//				return
-//			default:
-//			}
-//			if err := c.Receive(&msg); err != nil {
-//				log.Error("receive from data conn %v  error: %v, close this data conn", c.RemoteAddr(), err)
-//				_ = c.Close()
-//				funcOnFail(c)
-//				return
-//			}
-//			switch msg.ReqType {
-//			case model.PkgReqHeartBeat:
-//				m, _ := model.ParseHeartBeatPkg(msg.Message)
-//				c.LastAckSendTime = m.SendTime
-//				c.LastAckRcvTime = time.Now()
-//				c.SetHealthy()
-//			case model.PkgDataConnTunnel:
-//				log.Info("got data conn tunnel, exit handleDataConnection for %v", c.RemoteAddr())
-//				return
-//			default:
-//				log.Error("got unknown ReqType: %v from %v", msg.ReqType, c.RemoteAddr())
-//				_ = c.Close()
-//				funcOnFail(c)
-//				return
-//			}
-//		}
-//	}(c)
-//}
-
-func (s *anyWhereServer) destroyDataConn(c *conn.BaseConn) {
-	for _, agentDataConn := range s.agents {
-		for idx, c1 := range agentDataConn.DataConn {
-			if c == c1.BaseConn {
-				if idx+1 == len(agentDataConn.DataConn) {
-					agentDataConn.DataConn = make([]*DataConn, 0)
-					return
-				}
-				agentDataConn.DataConn = append(agentDataConn.DataConn[:idx], agentDataConn.DataConn[idx+1:]...)
-			}
-		}
-	}
 }

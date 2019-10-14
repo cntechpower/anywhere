@@ -33,3 +33,15 @@ func GetAddrByIpPort(ip, port string) (*net.TCPAddr, error) {
 	addrString := fmt.Sprintf("%v:%v", ip, port)
 	return net.ResolveTCPAddr("tcp", addrString)
 }
+
+func ListenTcp(addr string) (*net.TCPListener, error) {
+	rAddr, err := net.ResolveTCPAddr("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+	ln, err := net.ListenTCP("tcp", rAddr)
+	if err != nil {
+		return nil, err
+	}
+	return ln, err
+}

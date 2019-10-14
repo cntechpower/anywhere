@@ -15,6 +15,7 @@ const (
 	PkgControlConnRegister ReqType = "PkgControlConnRegister"
 	PkgDataConnRegister    ReqType = "PkgDataConnRegister"
 	PkgDataConnTunnel      ReqType = "PkgDataConnTunnel"
+	PkgTunnelBegin         ReqType = "PkgTunnelBegin"
 )
 
 type AgentRegisterMsg struct {
@@ -26,11 +27,8 @@ func NewAgentRegisterMsg(id string) *AgentRegisterMsg {
 }
 
 type DataConnRegisterMsg struct {
-	AgentId string
-}
-
-func NewDataConnRegisterMsg(id string) *DataConnRegisterMsg {
-	return &DataConnRegisterMsg{AgentId: id}
+	AgentId   string
+	ProxyAddr string
 }
 
 type ProxyConfig struct {
@@ -101,11 +99,12 @@ func NewHeartBeatMsg(c net.Conn) HeartBeatMsg {
 }
 
 type TunnelBeginMsg struct {
+	AgentId   string
 	LocalAddr string
 }
 
-func NewTunnelBeginMsg(addr string) *TunnelBeginMsg {
-	return &TunnelBeginMsg{LocalAddr: addr}
+func NewTunnelBeginMsg(id, addr string) *TunnelBeginMsg {
+	return &TunnelBeginMsg{AgentId: id, LocalAddr: addr}
 }
 
 func ParseProxyConfig(data []byte) (*ProxyConfig, error) {

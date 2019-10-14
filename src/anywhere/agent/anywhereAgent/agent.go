@@ -56,11 +56,11 @@ func (a *Agent) Start() {
 	if a.status == "RUNNING" {
 		panic("agent already started")
 	}
-	a.connectControlConn()
-	go a.ControlConnHeartBeatLoop(1)
-	a.connectDataConn(10)
-	go a.dataConnHeartBeatSendLoop(1)
-	go a.dataConnTunnelWatchLoop(1)
+	a.initControlConn(1)
+
+	heartBeatExitChan := make(chan error, 0)
+	go a.ControlConnHeartBeatSendLoop(1, heartBeatExitChan)
+	go a.handleAdminConnection()
 }
 
 func (a *Agent) Stop() {
