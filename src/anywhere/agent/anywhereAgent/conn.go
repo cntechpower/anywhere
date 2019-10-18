@@ -40,7 +40,7 @@ func (a *Agent) newProxyConn(localAddr string) {
 		_ = c.Close()
 	}
 	log.Info("called newProxyConn")
-	conn.JoinConn(dst, c)
+	conn.JoinConn(c, dst)
 }
 
 func (a *Agent) getTlsConnToServer() (*_tls.Conn, error) {

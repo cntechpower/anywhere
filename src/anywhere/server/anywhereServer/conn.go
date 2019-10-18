@@ -33,13 +33,13 @@ func (s *anyWhereServer) handleNewConnection(c net.Conn) {
 			log.Error("got data conn register pkg from unknown agent %v", m.AgentId)
 			_ = c.Close()
 		} else {
-			log.Info("add data conn for agent %v", m.AgentId)
+			log.Info("add data conn for %v from agent %v", m.LocalAddr, m.AgentId)
 			if err := s.agents[m.AgentId].PutProxyConn(m.LocalAddr, conn.NewBaseConn(c)); err != nil {
 				log.Error("put proxy conn to agent error: %v", err)
 			}
 		}
 	default:
-		log.Error("agent %v not register", msg.From)
+		log.Error("unknown msg type %v", msg.ReqType)
 		_ = c.Close()
 
 	}
@@ -82,5 +82,5 @@ func (s *anyWhereServer) SetControlConnHealthy(id string, ackSendTime time.Time)
 func (s *anyWhereServer) CloseControlConnWithResp(id string, err error) {
 	m := model.NewResponseMsg(500, err.Error())
 	_ = s.agents[id].AdminConn.Send(m)
-	s.agents[id].AdminConn.Close()
+	_ = s.agents[id].AdminConn.Close()
 }

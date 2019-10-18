@@ -20,6 +20,7 @@ var ErrProxyConnBufferFull = fmt.Errorf("proxy conn buffer is full")
 
 type Agent struct {
 	Id               string
+	version          string
 	RemoteAddr       net.Addr
 	AdminConn        *conn.BaseConn
 	ProxyConfigs     []*model.ProxyConfig
@@ -33,10 +34,11 @@ func NewAgentInfo(agentId string, c net.Conn, errChan chan error) *Agent {
 
 	a := &Agent{
 		Id:              agentId,
+		version:         "0.0.1",
 		RemoteAddr:      c.RemoteAddr(),
 		AdminConn:       conn.NewBaseConn(c),
 		ProxyConfigs:    make([]*model.ProxyConfig, 0),
-		chanProxyConns:  make(map[string]chan *conn.BaseConn, 0),
+		chanProxyConns:  make(map[string]chan *conn.BaseConn, 5),
 		proxyConfigChan: make(chan model.ProxyConfig, 5),
 		errChan:         errChan,
 	}
@@ -45,7 +47,7 @@ func NewAgentInfo(agentId string, c net.Conn, errChan chan error) *Agent {
 
 func (a *Agent) requestNewProxyConn(localAddr string) {
 	p := model.NewTunnelBeginMsg(a.Id, localAddr)
-	pkg := model.NewRequestMsg("0.0.1", model.PkgTunnelBegin, a.Id, "", p)
+	pkg := model.NewRequestMsg(a.version, model.PkgTunnelBegin, a.Id, "", p)
 	if err := a.AdminConn.Send(pkg); err != nil {
 		errMsg := fmt.Errorf("agent %v request for new proxy conn error %v", a.Id, err)
 		log.Error("%v", err)
@@ -81,23 +83,21 @@ func (a *Agent) AddProxyConfig(config *model.ProxyConfig) {
 
 func (a *Agent) GetProxyConn(proxyAddr string) (*conn.BaseConn, error) {
 
-	//request for new conn when not exist
+	if _, ok := a.chanProxyConns[proxyAddr]; !ok {
+		a.chanProxyConns[proxyAddr] = make(chan *conn.BaseConn, AGENTPROXYCONNBUFFER)
+	}
 	for i := 0; i < OPERATIONRETRYCOUNT; i++ {
-		if _, ok := a.chanProxyConns[proxyAddr]; !ok {
-			time.Sleep(TIMEOUTSECFORCONNPOOL * time.Second)
-			a.requestNewProxyConn(proxyAddr)
-			continue
-		} else {
-			select {
-			case c := <-a.chanProxyConns[proxyAddr]:
-				return c, nil
-			case <-time.After(TIMEOUTSECFORCONNPOOL * time.Second):
-			}
-		}
 
+		//request a new proxy conn
+		a.requestNewProxyConn(proxyAddr)
+		select {
+		case c := <-a.chanProxyConns[proxyAddr]:
+			return c, nil
+		case <-time.After(20 * time.Millisecond):
+			continue
+		}
 	}
 	return nil, fmt.Errorf("timeout while waiting for proxy conn for %v", proxyAddr)
-
 }
 
 func (a *Agent) PutProxyConn(proxyAddr string, c *conn.BaseConn) error {
@@ -120,12 +120,12 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string) {
 			log.Error("got conn from %v err: %v", ln.Addr(), err)
 			continue
 		}
-		go a.tunnelHandlerWithPool(c, localAddr)
+		go a.handelProxyConnection(c, localAddr)
 
 	}
 }
 
-func (a *Agent) tunnelHandlerWithPool(c net.Conn, localAddr string) {
+func (a *Agent) handelProxyConnection(c net.Conn, localAddr string) {
 
 	dst, err := a.GetProxyConn(localAddr)
 	if err != nil {
