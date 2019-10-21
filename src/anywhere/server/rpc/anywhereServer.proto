@@ -1,0 +1,3 @@
+service AnywhereServer {
+    rpc List
+}
