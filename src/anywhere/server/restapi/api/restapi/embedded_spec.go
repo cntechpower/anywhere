@@ -18,15 +18,6 @@ var (
 
 func init() {
 	SwaggerJSON = json.RawMessage([]byte(`{
-  "consumes": [
-    "application/json"
-  ],
-  "produces": [
-    "application/json"
-  ],
-  "schemes": [
-    "http"
-  ],
   "swagger": "2.0",
   "info": {
     "title": "AnywhereServer API",
@@ -53,7 +44,10 @@ func init() {
             }
           },
           "default": {
-            "$ref": "#/definitions/GenericErrors"
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
           }
         }
       }
@@ -63,18 +57,12 @@ func init() {
     "AgentListInfo": {
       "description": "Journal information",
       "type": "object",
-      "required": [
-        "agentId",
-        "agentAdminAddr",
-        "lastAck",
-        "status"
-      ],
       "properties": {
         "agentAdminAddr": {
           "type": "string"
         },
         "agentId": {
-          "type": "integer"
+          "type": "string"
         },
         "lastAck": {
           "type": "string"
@@ -91,15 +79,6 @@ func init() {
   }
 }`))
 	FlatSwaggerJSON = json.RawMessage([]byte(`{
-  "consumes": [
-    "application/json"
-  ],
-  "produces": [
-    "application/json"
-  ],
-  "schemes": [
-    "http"
-  ],
   "swagger": "2.0",
   "info": {
     "title": "AnywhereServer API",
@@ -126,7 +105,10 @@ func init() {
             }
           },
           "default": {
-            "description": "Error Template"
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
           }
         }
       }
@@ -136,18 +118,12 @@ func init() {
     "AgentListInfo": {
       "description": "Journal information",
       "type": "object",
-      "required": [
-        "agentId",
-        "agentAdminAddr",
-        "lastAck",
-        "status"
-      ],
       "properties": {
         "agentAdminAddr": {
           "type": "string"
         },
         "agentId": {
-          "type": "integer"
+          "type": "string"
         },
         "lastAck": {
           "type": "string"

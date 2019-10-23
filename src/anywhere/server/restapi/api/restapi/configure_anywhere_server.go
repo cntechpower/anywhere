@@ -3,12 +3,14 @@
 package restapi
 
 import (
+	"anywhere/server/restapi/api/models"
+	"anywhere/server/restapi/handler"
 	"crypto/tls"
 	"net/http"
 
-	errors "github.com/go-openapi/errors"
-	runtime "github.com/go-openapi/runtime"
-	middleware "github.com/go-openapi/runtime/middleware"
+	"github.com/go-openapi/errors"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/runtime/middleware"
 
 	"anywhere/server/restapi/api/restapi/operations"
 )
@@ -32,6 +34,16 @@ func configureAPI(api *operations.AnywhereServerAPI) http.Handler {
 	api.JSONConsumer = runtime.JSONConsumer()
 
 	api.JSONProducer = runtime.JSONProducer()
+
+	api.GetV1AgentListHandler = operations.GetV1AgentListHandlerFunc(func(params operations.GetV1AgentListParams) middleware.Responder {
+		res, err := handler.ListAgentV1()
+		if err != nil {
+			return operations.NewGetV1AgentListDefault(500).WithPayload(models.GenericErrors(err.Error()))
+		} else {
+			return operations.NewGetV1AgentListOK().WithPayload(res)
+		}
+
+	})
 
 	if api.GetV1AgentListHandler == nil {
 		api.GetV1AgentListHandler = operations.GetV1AgentListHandlerFunc(func(params operations.GetV1AgentListParams) middleware.Responder {

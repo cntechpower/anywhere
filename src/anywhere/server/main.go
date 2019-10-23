@@ -3,11 +3,13 @@ package main
 import (
 	"anywhere/log"
 	"anywhere/server/anywhereServer"
+	"anywhere/server/restapi/apiServer"
 	"anywhere/util"
 
 	"github.com/spf13/cobra"
 )
 
+var grpcPort int
 var port, certFile, keyFile, caFile, serverId string
 var isTlsOn, isHttpOn bool
 
@@ -23,6 +25,7 @@ func main() {
 		},
 	}
 	rootCmd.PersistentFlags().StringVarP(&port, "port", "p", "1111", "anywhered serve port")
+	rootCmd.PersistentFlags().IntVarP(&grpcPort, "grpc-port", "g", 1112, "anywhered grpc port")
 	rootCmd.PersistentFlags().StringVarP(&serverId, "server-id", "s", "anywhered-1", "anywhered server id")
 	rootCmd.PersistentFlags().BoolVar(&isTlsOn, "tls", true, "weather to use tls")
 	rootCmd.PersistentFlags().BoolVar(&isHttpOn, "http", false, "http web admin interface")
@@ -45,12 +48,16 @@ func run(_ *cobra.Command, _ []string) error {
 	}
 	s.Start()
 	serverExitChan := util.ListenKillSignal()
+	rpcExitChan := make(chan error, 0)
+	go apiServer.StartAPIServer(grpcPort, rpcExitChan)
 
 	select {
 	case <-serverExitChan:
 		log.Info("Server Existing")
 		s.ListAgentInfo()
 		s.ListProxyConfig()
+	case err := <-rpcExitChan:
+		panic(err)
 	case err := <-s.ExitChan:
 		panic(err)
 

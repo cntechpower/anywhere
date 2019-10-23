@@ -4,6 +4,7 @@
       <w>agentproxyconnbuffer</w>
       <w>anywhered</w>
       <w>conns</w>
+      <w>grpc</w>
       <w>newproxy</w>
       <w>operationretrycount</w>
       <w>timeoutsecforconnpool</w>

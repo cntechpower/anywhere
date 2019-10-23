@@ -31,6 +31,10 @@ type anyWhereServer struct {
 
 var serverInstance *anyWhereServer
 
+func GetServerInstance() *anyWhereServer {
+	return serverInstance
+}
+
 func InitServerInstance(serverId, port string, isHttpOn, isTls bool) *anyWhereServer {
 	addr, err := util.GetAddrByIpPort("0.0.0.0", port)
 	if err != nil {
@@ -118,6 +122,14 @@ func (s *anyWhereServer) ListAgentInfo() {
 		table.Append([]string{agent.Id, agent.RemoteAddr.String(), agent.AdminConn.LastAckRcvTime.Format("2006-01-02 15:04:05"), agent.AdminConn.GetStatus().String()})
 	}
 	table.Render()
+}
+
+func (s *anyWhereServer) ListAgentInfoStruct() []*Agent {
+	res := make([]*Agent, 0)
+	for _, agent := range s.agents {
+		res = append(res, agent)
+	}
+	return res
 }
 
 func (s *anyWhereServer) ListProxyConfig() {

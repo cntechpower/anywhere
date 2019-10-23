@@ -60,12 +60,17 @@ func (o *GetV1AgentListOK) WriteResponse(rw http.ResponseWriter, producer runtim
 	}
 }
 
-/*GetV1AgentListDefault Error Template
+/*GetV1AgentListDefault generic errors
 
 swagger:response getV1AgentListDefault
 */
 type GetV1AgentListDefault struct {
 	_statusCode int
+
+	/*
+	  In: Body
+	*/
+	Payload models.GenericErrors `json:"body,omitempty"`
 }
 
 // NewGetV1AgentListDefault creates GetV1AgentListDefault with default headers values
@@ -90,10 +95,23 @@ func (o *GetV1AgentListDefault) SetStatusCode(code int) {
 	o._statusCode = code
 }
 
+// WithPayload adds the payload to the get v1 agent list default response
+func (o *GetV1AgentListDefault) WithPayload(payload models.GenericErrors) *GetV1AgentListDefault {
+	o.Payload = payload
+	return o
+}
+
+// SetPayload sets the payload to the get v1 agent list default response
+func (o *GetV1AgentListDefault) SetPayload(payload models.GenericErrors) {
+	o.Payload = payload
+}
+
 // WriteResponse to the client
 func (o *GetV1AgentListDefault) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
 
-	rw.Header().Del(runtime.HeaderContentType) //Remove Content-Type on empty responses
-
 	rw.WriteHeader(o._statusCode)
+	payload := o.Payload
+	if err := producer.Produce(rw, payload); err != nil {
+		panic(err) // let the recovery middleware deal with this
+	}
 }

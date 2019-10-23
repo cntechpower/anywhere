@@ -8,9 +8,7 @@ package models
 import (
 	strfmt "github.com/go-openapi/strfmt"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 )
 
 // AgentListInfo Journal information
@@ -18,81 +16,20 @@ import (
 type AgentListInfo struct {
 
 	// agent admin addr
-	// Required: true
-	AgentAdminAddr *string `json:"agentAdminAddr"`
+	AgentAdminAddr string `json:"agentAdminAddr,omitempty"`
 
 	// agent Id
-	// Required: true
-	AgentID *int64 `json:"agentId"`
+	AgentID string `json:"agentId,omitempty"`
 
 	// last ack
-	// Required: true
-	LastAck *string `json:"lastAck"`
+	LastAck string `json:"lastAck,omitempty"`
 
 	// status
-	// Required: true
-	Status *string `json:"status"`
+	Status string `json:"status,omitempty"`
 }
 
 // Validate validates this agent list info
 func (m *AgentListInfo) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validateAgentAdminAddr(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateAgentID(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateLastAck(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateStatus(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *AgentListInfo) validateAgentAdminAddr(formats strfmt.Registry) error {
-
-	if err := validate.Required("agentAdminAddr", "body", m.AgentAdminAddr); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *AgentListInfo) validateAgentID(formats strfmt.Registry) error {
-
-	if err := validate.Required("agentId", "body", m.AgentID); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *AgentListInfo) validateLastAck(formats strfmt.Registry) error {
-
-	if err := validate.Required("lastAck", "body", m.LastAck); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *AgentListInfo) validateStatus(formats strfmt.Registry) error {
-
-	if err := validate.Required("status", "body", m.Status); err != nil {
-		return err
-	}
-
 	return nil
 }
 

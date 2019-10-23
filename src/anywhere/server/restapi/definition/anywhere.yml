@@ -7,12 +7,6 @@ info:
     url: http://www.cntechpower.com
     email: root@cntechpower.com
 basePath: /api
-schemes:
-  - http
-consumes:
-  - application/json
-produces:
-  - application/json
 
 paths:
   /v1/agent/list:
@@ -26,7 +20,9 @@ paths:
               items:
                 $ref: '#/definitions/AgentListInfo'
         default:
-          $ref: '#/definitions/GenericErrors'
+          description: 'generic errors'
+          schema:
+            $ref: '#/definitions/GenericErrors'
 
 
 definitions:
@@ -37,15 +33,10 @@ definitions:
 
   AgentListInfo:
     type: object
-    required:
-      - agentId
-      - agentAdminAddr
-      - lastAck
-      - status
     description: Journal information
     properties:
       agentId:
-        type: integer
+        type: string
       agentAdminAddr:
         type: string
       lastAck:

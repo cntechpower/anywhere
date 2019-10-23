@@ -23,7 +23,7 @@ func ListenKillSignal() chan os.Signal {
 	return quitChan
 }
 
-func GetAddrByIpPort(ip, port string) (*net.TCPAddr, error) {
+func GetAddrByIpPort(ip string, port string) (*net.TCPAddr, error) {
 	if i := net.ParseIP(ip); i == nil || i.String() != ip {
 		return nil, genErrInvalidIp(ip)
 	}
