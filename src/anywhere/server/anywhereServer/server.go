@@ -2,7 +2,6 @@ package anywhereServer
 
 import (
 	"anywhere/log"
-	"anywhere/tls"
 	"anywhere/util"
 	_tls "crypto/tls"
 	"fmt"
@@ -16,12 +15,10 @@ import (
 type anyWhereServer struct {
 	serverId      string
 	serverAddr    *net.TCPAddr
-	isTls         bool
 	credential    *_tls.Config
 	listener      net.Listener
 	proxyListener []net.Listener
 	proxyMutex    sync.Mutex
-	isHttpOn      bool
 	httpMutex     sync.Mutex
 	agents        map[string]*Agent
 	agentsRwMutex sync.RWMutex
@@ -35,7 +32,7 @@ func GetServerInstance() *anyWhereServer {
 	return serverInstance
 }
 
-func InitServerInstance(serverId, port string, isHttpOn, isTls bool) *anyWhereServer {
+func InitServerInstance(serverId string, port int) *anyWhereServer {
 	addr, err := util.GetAddrByIpPort("0.0.0.0", port)
 	if err != nil {
 		panic(err)
@@ -44,8 +41,6 @@ func InitServerInstance(serverId, port string, isHttpOn, isTls bool) *anyWhereSe
 		serverId:      serverId,
 		serverAddr:    addr,
 		proxyMutex:    sync.Mutex{},
-		isHttpOn:      isHttpOn,
-		isTls:         isTls,
 		httpMutex:     sync.Mutex{},
 		agents:        make(map[string]*Agent, 0),
 		agentsRwMutex: sync.RWMutex{},
@@ -55,18 +50,13 @@ func InitServerInstance(serverId, port string, isHttpOn, isTls bool) *anyWhereSe
 	return serverInstance
 }
 
-func (s *anyWhereServer) SetCredentials(certFile, keyFile, caFile string) error {
-	tlsConfig, err := tls.ParseTlsConfig(certFile, keyFile, caFile)
-	if err != nil {
-		return err
-	}
-	s.credential = tlsConfig
-	return nil
+func (s *anyWhereServer) SetCredentials(config *_tls.Config) {
+	s.credential = config
 }
 
 func (s *anyWhereServer) checkServerInit() error {
-	if s.isTls && s.credential == nil {
-		return fmt.Errorf("credential is empty, but server is using tls")
+	if s.credential == nil {
+		return fmt.Errorf("credential is empty")
 	}
 	if s.serverId == "" {
 		return fmt.Errorf("serverId is empty")

@@ -24,7 +24,7 @@ type Agent struct {
 
 var agentInstance *Agent
 
-func InitAnyWhereAgent(id, ip, port string) *Agent {
+func InitAnyWhereAgent(id, ip string, port int) *Agent {
 	if agentInstance != nil {
 		panic("agent already init")
 	}

@@ -4,14 +4,14 @@ import (
 	"anywhere/log"
 	"anywhere/server/anywhereServer"
 	"anywhere/server/restapi/apiServer"
+	"anywhere/tls"
 	"anywhere/util"
 
 	"github.com/spf13/cobra"
 )
 
-var grpcPort int
-var port, certFile, keyFile, caFile, serverId string
-var isTlsOn, isHttpOn bool
+var port, grpcPort int
+var certFile, keyFile, caFile, serverId string
 
 func main() {
 	var rootCmd = &cobra.Command{
@@ -24,11 +24,9 @@ func main() {
 			}
 		},
 	}
-	rootCmd.PersistentFlags().StringVarP(&port, "port", "p", "1111", "anywhered serve port")
+	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 1111, "anywhered serve port")
 	rootCmd.PersistentFlags().IntVarP(&grpcPort, "grpc-port", "g", 1112, "anywhered grpc port")
 	rootCmd.PersistentFlags().StringVarP(&serverId, "server-id", "s", "anywhered-1", "anywhered server id")
-	rootCmd.PersistentFlags().BoolVar(&isTlsOn, "tls", true, "weather to use tls")
-	rootCmd.PersistentFlags().BoolVar(&isHttpOn, "http", false, "http web admin interface")
 	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "../credential/server.crt", "cert file")
 	rootCmd.PersistentFlags().StringVar(&keyFile, "key", "../credential/server.key", "key file")
 	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "../credential/ca.crt", "ca file")
@@ -40,16 +38,18 @@ func main() {
 
 func run(_ *cobra.Command, _ []string) error {
 	log.InitStdLogger()
-	s := anywhereServer.InitServerInstance(serverId, port, isHttpOn, isTlsOn)
-	if isTlsOn {
-		if err := s.SetCredentials(certFile, keyFile, caFile); err != nil {
-			return err
-		}
+	s := anywhereServer.InitServerInstance(serverId, port)
+
+	tlsConfig, err := tls.ParseTlsConfig(certFile, keyFile, caFile)
+	if err != nil {
+		return err
 	}
+	s.SetCredentials(tlsConfig)
+
 	s.Start()
 	serverExitChan := util.ListenKillSignal()
 	rpcExitChan := make(chan error, 0)
-	go apiServer.StartAPIServer(grpcPort, rpcExitChan)
+	go apiServer.StartAPIServer(grpcPort, tlsConfig, rpcExitChan)
 
 	select {
 	case <-serverExitChan:
@@ -57,7 +57,7 @@ func run(_ *cobra.Command, _ []string) error {
 		s.ListAgentInfo()
 		s.ListProxyConfig()
 	case err := <-rpcExitChan:
-		panic(err)
+		log.Fatal("rpc exit with error: %v", err)
 	case err := <-s.ExitChan:
 		panic(err)
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func (a *Agent) SendProxyConfig(remotePort, localIp, localPort string) error {
+func (a *Agent) SendProxyConfig(remotePort int, localIp string, localPort int) error {
 	if a.AdminConn == nil {
 		return fmt.Errorf("admin conn not init")
 	}

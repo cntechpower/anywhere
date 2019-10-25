@@ -36,7 +36,7 @@ type ProxyConfig struct {
 	LocalAddr  string
 }
 
-func NewProxyConfigMsg(remotePort, localIp, localPort string) (*ProxyConfig, error) {
+func NewProxyConfigMsg(remotePort int, localIp string, localPort int) (*ProxyConfig, error) {
 	remoteAddr, err := util.GetAddrByIpPort("0.0.0.0", remotePort)
 	if err != nil {
 		return nil, err

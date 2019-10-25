@@ -23,12 +23,12 @@ func ListenKillSignal() chan os.Signal {
 	return quitChan
 }
 
-func GetAddrByIpPort(ip string, port string) (*net.TCPAddr, error) {
+func GetAddrByIpPort(ip string, port int) (*net.TCPAddr, error) {
 	if i := net.ParseIP(ip); i == nil || i.String() != ip {
 		return nil, genErrInvalidIp(ip)
 	}
-	if portInt, err := strconv.Atoi(port); err != nil || portInt > 65535 || portInt < 1 {
-		return nil, genErrInvalidPort(port)
+	if port > 65535 || port < 1 {
+		return nil, genErrInvalidPort(strconv.Itoa(port))
 	}
 	addrString := fmt.Sprintf("%v:%v", ip, port)
 	return net.ResolveTCPAddr("tcp", addrString)
