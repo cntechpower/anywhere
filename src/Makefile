@@ -12,7 +12,7 @@ regenerate_key:
 	openssl x509 -req -in credential/server.csr -CA credential/ca.crt -CAkey credential/ca.key -CAcreateserial -out credential/server.crt -days 365
 	openssl genrsa -out credential/client.key 2048
 	openssl req -new -key credential/client.key -out credential/client.csr -subj "/CN=cntechpower_anywhere"
-	openssl x509 -req -in credential/client.csr -CA ca.crt -CAkey credential/ca.key -CAcreateserial -out credential/client.crt -days 365
+	openssl x509 -req -in credential/client.csr -CA credential/ca.crt -CAkey credential/ca.key -CAcreateserial -out credential/client.crt -days 365
 build_server:
 	mkdir -p bin/
 	GOPATH=${GOPATH} go build -o bin/anywhered anywhere/server/*.go
