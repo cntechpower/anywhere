@@ -25,9 +25,9 @@ func main() {
 	rootCmd.PersistentFlags().StringVarP(&serverIp, "server-ip", "s", "127.0.0.1", "anywhered server address")
 	rootCmd.PersistentFlags().IntVarP(&serverPort, "server-port", "p", 1111, "anywhered server port")
 	rootCmd.PersistentFlags().StringVarP(&agentId, "server-id", "i", "anywhere-agent-1", "anywhere agent id")
-	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "../../credential/client.crt", "cert file")
-	rootCmd.PersistentFlags().StringVar(&keyFile, "key", "../../credential/client.key", "key file")
-	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "../../credential/ca.crt", "ca file")
+	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "credential/client.crt", "cert file")
+	rootCmd.PersistentFlags().StringVar(&keyFile, "key", "credential/client.key", "key file")
+	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "credential/ca.crt", "ca file")
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)
 	}
