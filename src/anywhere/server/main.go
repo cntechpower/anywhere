@@ -27,9 +27,9 @@ func main() {
 	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 1111, "anywhered serve port")
 	rootCmd.PersistentFlags().IntVarP(&grpcPort, "grpc-port", "g", 1112, "anywhered grpc port")
 	rootCmd.PersistentFlags().StringVarP(&serverId, "server-id", "s", "anywhered-1", "anywhered server id")
-	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "../credential/server.crt", "cert file")
-	rootCmd.PersistentFlags().StringVar(&keyFile, "key", "../credential/server.key", "key file")
-	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "../credential/ca.crt", "ca file")
+	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "../../credential/server.crt", "cert file")
+	rootCmd.PersistentFlags().StringVar(&keyFile, "key", "../../credential/server.key", "key file")
+	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "../../credential/ca.crt", "ca file")
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)
 	}

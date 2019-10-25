@@ -9,7 +9,7 @@ import (
 func main() {
 	log.InitStdLogger()
 	a := anywhereAgent.InitAnyWhereAgent("agent-id", "127.0.0.1", 1111)
-	_ = a.SetCredentials("../credential/client.crt", "../credential/client.key", "../credential/ca.crt")
+	_ = a.SetCredentials("../../credential/client.crt", "../../credential/client.key", "../../credential/ca.crt")
 	a.Start()
 	_ = a.SendProxyConfig(3333, "127.0.0.1", 3306)
 	_ = a.SendProxyConfig(3334, "10.0.0.2", 80)
