@@ -2,7 +2,7 @@ GOPATH= $(shell dirname `pwd`)
 GIT_VERSION = $(shell git rev-parse --abbrev-ref HEAD) $(shell git rev-parse HEAD)
 VERSION=$(shell git rev-parse --short HEAD)
 default: build
-regenerate_key:
+newkey:
 	mkdir -p credential/
 	rm -rf credential/*
 	openssl genrsa -out credential/ca.key 2048
