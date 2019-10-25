@@ -23,11 +23,11 @@ build_agent:
 vet:
 	GOPATH=${GOPATH} go vet ./anywhere/...
 upload: build
-	tar -czvf anywhere-$(VERSION).tar.gz bin/ anywhere/credential/
-	tar -czvf anywhere-latest.tar.gz bin/ anywhere/credential/
+	tar -czvf anywhere-$(VERSION).tar.gz bin/ credential/
+	tar -czvf anywhere-latest.tar.gz bin/ credential/
 	curl -T  anywhere-$(VERSION).tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
 	curl -T  anywhere-latest.tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
 clean:
 	rm -rf bin/
 	rm -rf *.tar.gz
-build: vet build_server build_agent
+build: vet build_server build_agent newkey
