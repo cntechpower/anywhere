@@ -4,13 +4,14 @@ import (
 	"anywhere/log"
 	"anywhere/server/anywhereServer"
 	"anywhere/server/restapi/apiServer"
+	"anywhere/server/rpc/rpcServer"
 	"anywhere/tls"
 	"anywhere/util"
 
 	"github.com/spf13/cobra"
 )
 
-var port, grpcPort int
+var port, apiPort, grpcPort int
 var certFile, keyFile, caFile, serverId string
 
 func main() {
@@ -25,11 +26,12 @@ func main() {
 		},
 	}
 	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 1111, "anywhered serve port")
-	rootCmd.PersistentFlags().IntVarP(&grpcPort, "grpc-port", "g", 1112, "anywhered grpc port")
+	rootCmd.PersistentFlags().IntVarP(&apiPort, "api-port", "a", 1112, "anywhered rest api port")
+	rootCmd.PersistentFlags().IntVarP(&grpcPort, "grpc-port", "g", 1113, "anywhered grpc port")
 	rootCmd.PersistentFlags().StringVarP(&serverId, "server-id", "s", "anywhered-1", "anywhered server id")
 	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "credential/server.crt", "cert file")
 	rootCmd.PersistentFlags().StringVar(&keyFile, "key", "credential/server.key", "key file")
-	rootCmd.PersistentFlags().StringVar(&caFile, "ca", ".credential/ca.crt", "ca file")
+	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "credential/ca.crt", "ca file")
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)
 	}
@@ -48,18 +50,21 @@ func run(_ *cobra.Command, _ []string) error {
 
 	s.Start()
 	serverExitChan := util.ListenKillSignal()
+	apiExitChan := make(chan error, 0)
+	go apiServer.StartAPIServer(apiPort, tlsConfig, apiExitChan)
 	rpcExitChan := make(chan error, 0)
-	go apiServer.StartAPIServer(grpcPort, tlsConfig, rpcExitChan)
-
+	go rpcServer.StartRpcServer(grpcPort, tlsConfig, rpcExitChan)
 	select {
 	case <-serverExitChan:
 		log.Info("Server Existing")
 		s.ListAgentInfo()
 		s.ListProxyConfig()
+	case err := <-apiExitChan:
+		log.Fatal("api server exit with error: %v", err)
 	case err := <-rpcExitChan:
-		log.Fatal("rpc exit with error: %v", err)
+		log.Fatal("rpc server exit with error: %v", err)
 	case err := <-s.ExitChan:
-		panic(err)
+		log.Fatal("anywhere server exit with error: %v", err)
 
 	}
 	return nil

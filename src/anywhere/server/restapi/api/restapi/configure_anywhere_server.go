@@ -3,8 +3,8 @@
 package restapi
 
 import (
+	"anywhere/server/handler"
 	"anywhere/server/restapi/api/models"
-	"anywhere/server/restapi/handler"
 	"crypto/tls"
 	"net/http"
 

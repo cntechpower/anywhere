@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+
+package anywhereRpc;
+
+service AnywhereServer {
+    rpc ListAgent(Empty)returns (AgentInfo){}
+}
+
+message Empty{}
+
+message AgentInfo{
+    string agentId = 1;
+}
