@@ -14,7 +14,7 @@ newkey:
 	openssl req -new -key credential/client.key -out credential/client.csr -subj "/CN=cntechpower_anywhere"
 	openssl x509 -req -in credential/client.csr -CA credential/ca.crt -CAkey credential/ca.key -CAcreateserial -out credential/client.crt -days 365
 rpc:
-	protoc --go_out=plugins=grpc:. anywhere/server/anywhereRpc/definitions/*.proto
+	protoc --go_out=plugins=grpc:. anywhere/server/rpc/definitions/*.proto
 build_server:
 	mkdir -p bin/
 	GOPATH=${GOPATH} go build -o bin/anywhered anywhere/server/*.go

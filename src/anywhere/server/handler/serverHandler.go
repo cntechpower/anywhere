@@ -5,6 +5,7 @@ import (
 	pb "anywhere/server/rpc/definitions"
 	"context"
 	"fmt"
+	"strconv"
 )
 import "anywhere/server/anywhereServer"
 
@@ -35,15 +36,40 @@ func GetRpcHandlers() *rpcHandlers {
 	return &rpcHandlers{}
 }
 
-func (h *rpcHandlers) ListAgent(ctx context.Context, empty *pb.Empty) (*pb.AgentInfo, error) {
+func (h *rpcHandlers) ListAgent(ctx context.Context, empty *pb.Empty) (*pb.Agents, error) {
 	s := anywhereServer.GetServerInstance()
 	if s == nil {
 		return nil, fmt.Errorf("anywhere server not init")
 	}
-	res := &pb.AgentInfo{}
+	res := &pb.Agents{
+		Agent: make([]*pb.Agent, 0),
+	}
 	agents := s.ListAgentInfoStruct()
 	for _, agent := range agents {
-		res.AgentId = agent.Id
+		res.Agent = append(res.Agent, &pb.Agent{
+			AgentId:         agent.Id,
+			AgentVersion:    "",
+			AgentRemoteAddr: agent.RemoteAddr.String(),
+		})
 	}
 	return res, nil
+}
+
+func (h *rpcHandlers) AddProxyConfig(ctx context.Context, input *pb.AddProxyConfigInput) (*pb.Empty, error) {
+	s := anywhereServer.GetServerInstance()
+	if s == nil {
+		return nil, fmt.Errorf("anywhere server not init")
+	}
+	remotePort, err := strconv.Atoi(input.RemotePort)
+	if err != nil {
+		return nil, err
+	}
+	localPort, err := strconv.Atoi(input.LocalPort)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.AddProxyConfigToAgent(input.AgentId, remotePort, input.LocalIp, localPort); err != nil {
+		return nil, err
+	}
+	return &pb.Empty{}, nil
 }

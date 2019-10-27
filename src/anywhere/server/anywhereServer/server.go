@@ -116,8 +116,14 @@ func (s *anyWhereServer) ListAgentInfo() {
 
 func (s *anyWhereServer) ListAgentInfoStruct() []*Agent {
 	res := make([]*Agent, 0)
+	s.agentsRwMutex.RLock()
+	defer s.agentsRwMutex.RUnlock()
 	for _, agent := range s.agents {
-		res = append(res, agent)
+		res = append(res, &Agent{
+			Id:         agent.Id,
+			version:    agent.version,
+			RemoteAddr: agent.RemoteAddr,
+		})
 	}
 	return res
 }

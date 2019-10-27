@@ -4,11 +4,25 @@ syntax = "proto3";
 package anywhereRpc;
 
 service AnywhereServer {
-    rpc ListAgent(Empty)returns (AgentInfo){}
+    rpc ListAgent(Empty)returns(Agents){}
+    rpc AddProxyConfig(AddProxyConfigInput)returns(Empty){}
 }
 
 message Empty{}
 
-message AgentInfo{
+message Agent{
     string agentId = 1;
+    string agentVersion = 2;
+    string agentRemoteAddr = 3;
+}
+
+message Agents{
+    repeated Agent agent = 1;
+}
+
+message AddProxyConfigInput{
+    string agentId = 1;
+    string remotePort = 2;
+    string localIp = 3;
+    string localPort = 4;
 }
