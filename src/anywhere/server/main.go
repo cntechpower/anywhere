@@ -21,7 +21,7 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "anywhered",
 		Short: "This is A Proxy Server ",
-		Long:  `anywhere Version 0.0.1`,
+		Long:  `anywhere server Version 0.0.1`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := run(cmd, args); err != nil {
 				panic(err)
@@ -30,9 +30,8 @@ func main() {
 	}
 	var listCmd = &cobra.Command{
 		Use:   "list",
-		Short: "list",
-		Long: `echo is for echoing anything back.
-Echo works a lot like print, except it has a child command.`,
+		Short: "list agents",
+		Long:  `list anywhere agetns.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := rpcServer.RpcListAgent(grpcPort); err != nil {
 				fmt.Printf("error query agent list: %v\n", err)

@@ -15,7 +15,7 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "anywhere --help",
 		Short: "This is A Proxy Agent ",
-		Long:  `anywhere Version 0.0.1`,
+		Long:  `anywhere agent Version 0.0.1`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := run(cmd, args); err != nil {
 				panic(err)
@@ -24,7 +24,7 @@ func main() {
 	}
 	rootCmd.PersistentFlags().StringVarP(&serverIp, "server-ip", "s", "127.0.0.1", "anywhered server address")
 	rootCmd.PersistentFlags().IntVarP(&serverPort, "server-port", "p", 1111, "anywhered server port")
-	rootCmd.PersistentFlags().StringVarP(&agentId, "server-id", "i", "anywhere-agent-1", "anywhere agent id")
+	rootCmd.PersistentFlags().StringVarP(&agentId, "agent-id", "i", "anywhere-agent-1", "anywhere agent id")
 	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "credential/client.crt", "cert file")
 	rootCmd.PersistentFlags().StringVar(&keyFile, "key", "credential/client.key", "key file")
 	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "credential/ca.crt", "ca file")
@@ -40,8 +40,6 @@ func run(_ *cobra.Command, _ []string) error {
 	a := anywhereAgent.InitAnyWhereAgent(agentId, serverIp, serverPort)
 	_ = a.SetCredentials(certFile, keyFile, caFile)
 	a.Start()
-	_ = a.SendProxyConfig(3333, "10.0.0.2", 22)
-	_ = a.SendProxyConfig(3334, "10.0.0.2", 80)
 
 	serverExitChan := util.ListenKillSignal()
 

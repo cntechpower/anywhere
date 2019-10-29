@@ -11,7 +11,7 @@ import (
 )
 
 func StartAPIServer(port int, tlsConfig *tls.Config, errChan chan error) {
-	addr, err := util.GetAddrByIpPort("0.0.0.0", port)
+	addr, err := util.GetAddrByIpPort("127.0.0.1", port)
 	if err != nil {
 		errChan <- err
 	}
