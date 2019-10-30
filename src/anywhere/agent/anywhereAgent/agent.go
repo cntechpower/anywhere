@@ -12,7 +12,6 @@ import (
 
 type Agent struct {
 	Id           string
-	ServerId     string
 	Addr         *net.TCPAddr
 	credential   *_tls.Config
 	AdminConn    *conn.BaseConn
@@ -34,7 +33,6 @@ func InitAnyWhereAgent(id, ip string, port int) *Agent {
 	}
 	agentInstance = &Agent{
 		Id:           id,
-		ServerId:     "",
 		Addr:         addr,
 		ProxyConfigs: nil,
 		version:      "0.0.1",

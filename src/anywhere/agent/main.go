@@ -38,7 +38,9 @@ func run(_ *cobra.Command, _ []string) error {
 
 	log.InitStdLogger()
 	a := anywhereAgent.InitAnyWhereAgent(agentId, serverIp, serverPort)
-	_ = a.SetCredentials(certFile, keyFile, caFile)
+	if err := a.SetCredentials(certFile, keyFile, caFile); err != nil {
+		return err
+	}
 	a.Start()
 
 	serverExitChan := util.ListenKillSignal()

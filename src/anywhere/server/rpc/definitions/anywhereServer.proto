@@ -6,14 +6,16 @@ package anywhereRpc;
 service AnywhereServer {
     rpc ListAgent(Empty)returns(Agents){}
     rpc AddProxyConfig(AddProxyConfigInput)returns(Empty){}
+    rpc ListProxyConfigs(Empty)returns(ListProxyConfigsOutput){}
 }
 
 message Empty{}
 
 message Agent{
     string agentId = 1;
-    string agentVersion = 2;
-    string agentRemoteAddr = 3;
+    string agentRemoteAddr = 2;
+    string agentLastAckRcv =3;
+    string agentStatus =4;
 }
 
 message Agents{
@@ -25,4 +27,14 @@ message AddProxyConfigInput{
     string remotePort = 2;
     string localIp = 3;
     string localPort = 4;
+}
+
+message ProxyConfig{
+    string agentId = 1;
+    string remoteAddr = 2;
+    string localAddr = 3;
+}
+
+message ListProxyConfigsOutput{
+    repeated ProxyConfig Config = 1;
 }

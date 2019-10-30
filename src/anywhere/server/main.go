@@ -3,11 +3,16 @@ package main
 import (
 	"anywhere/log"
 	"anywhere/server/anywhereServer"
-	"anywhere/server/restapi/apiServer"
-	"anywhere/server/rpc/rpcServer"
+	"anywhere/server/handler/rpcHandler"
+	"anywhere/server/restapi/api/restapi"
+	"anywhere/server/restapi/api/restapi/operations"
 	"anywhere/tls"
 	"anywhere/util"
+	tls_ "crypto/tls"
 	"fmt"
+	"net/http"
+
+	"github.com/go-openapi/loads"
 
 	"github.com/spf13/cobra"
 )
@@ -22,36 +27,63 @@ func main() {
 		Use:   "anywhered",
 		Short: "This is A Proxy Server ",
 		Long:  `anywhere server Version 0.0.1`,
+	}
+	var startCmd = &cobra.Command{
+		Use:   "start",
+		Short: "start anywhered service",
+		Long:  `anywhere server Version 0.0.1`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := run(cmd, args); err != nil {
 				panic(err)
 			}
 		},
 	}
-	var listCmd = &cobra.Command{
+	var agentCmd = &cobra.Command{
+		Use:   "agent",
+		Short: "agent admin interface",
+		Long:  `agent admin interface.`,
+	}
+	var agentListCmd = &cobra.Command{
 		Use:   "list",
 		Short: "list agents",
-		Long:  `list anywhere agetns.`,
+		Long:  `list anywhere agents.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := rpcServer.RpcListAgent(grpcPort); err != nil {
+			if err := rpcHandler.ListAgent(grpcPort); err != nil {
 				fmt.Printf("error query agent list: %v\n", err)
 			}
 		},
 	}
-	var addProxyCmd = &cobra.Command{
+	var proxyCmd = &cobra.Command{
+		Use:   "proxy",
+		Short: "proxy admin interface",
+		Long:  `proxy admin interface.`,
+	}
+	var proxyAddCmd = &cobra.Command{
 		Use:   "add",
-		Short: "add",
+		Short: "add proxy config",
 		Long:  `add a proxy config.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := rpcServer.RpcAddProxyConfig(grpcPort, addProxyAgentId, addProxyRemotePort, addProxyLocalIp, addProxyLocalPort); err != nil {
-				fmt.Printf("error query agent list: %v\n", err)
+			if err := rpcHandler.AddProxyConfig(grpcPort, addProxyAgentId, addProxyRemotePort, addProxyLocalIp, addProxyLocalPort); err != nil {
+				fmt.Printf("error adding proxy config : %v\n", err)
 			}
 		},
 	}
-	addProxyCmd.PersistentFlags().StringVar(&addProxyAgentId, "agent-id", "", "belong to which agent")
-	addProxyCmd.PersistentFlags().StringVar(&addProxyRemotePort, "remote-port", "", "remote port")
-	addProxyCmd.PersistentFlags().StringVar(&addProxyLocalIp, "local-ip", "127.0.0.1", "local ip")
-	addProxyCmd.PersistentFlags().StringVar(&addProxyLocalPort, "local-port", "", "local port")
+
+	var proxyListCmd = &cobra.Command{
+		Use:   "list",
+		Short: "list proxy configs",
+		Long:  `add a proxy config.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := rpcHandler.ListProxyConfigs(grpcPort); err != nil {
+				fmt.Printf("error query proxy config list: %v\n", err)
+			}
+		},
+	}
+
+	proxyAddCmd.PersistentFlags().StringVar(&addProxyAgentId, "agent-id", "", "belong to which agent")
+	proxyAddCmd.PersistentFlags().StringVar(&addProxyRemotePort, "remote-port", "", "remote port")
+	proxyAddCmd.PersistentFlags().StringVar(&addProxyLocalIp, "local-ip", "127.0.0.1", "local ip")
+	proxyAddCmd.PersistentFlags().StringVar(&addProxyLocalPort, "local-port", "", "local port")
 	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 1111, "anywhered serve port")
 	rootCmd.PersistentFlags().IntVarP(&apiPort, "api-port", "a", 1112, "anywhered rest api port")
 	rootCmd.PersistentFlags().IntVarP(&grpcPort, "grpc-port", "g", 1113, "anywhered grpc port")
@@ -59,8 +91,17 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "credential/server.crt", "cert file")
 	rootCmd.PersistentFlags().StringVar(&keyFile, "key", "credential/server.key", "key file")
 	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "credential/ca.crt", "ca file")
-	rootCmd.AddCommand(listCmd)
-	rootCmd.AddCommand(addProxyCmd)
+
+	//main service
+	rootCmd.AddCommand(startCmd)
+	//agent cmds
+	rootCmd.AddCommand(agentCmd)
+	agentCmd.AddCommand(agentListCmd)
+
+	//proxy cmds
+	rootCmd.AddCommand(proxyCmd)
+	proxyCmd.AddCommand(proxyListCmd)
+	proxyCmd.AddCommand(proxyAddCmd)
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)
 	}
@@ -77,17 +118,25 @@ func run(_ *cobra.Command, _ []string) error {
 	}
 	s.SetCredentials(tlsConfig)
 
+	//start main service
 	s.Start()
-	serverExitChan := util.ListenKillSignal()
+
+	// start api server
 	apiExitChan := make(chan error, 0)
-	go apiServer.StartAPIServer(apiPort, tlsConfig, apiExitChan)
+	//go apiServer.StartAPIServer(apiPort, tlsConfig, apiExitChan)
+	//restHandler.StartAPIServer(apiPort, tlsConfig, apiExitChan)
+	go startAPIServer(apiPort, tlsConfig, apiExitChan)
+
+	// start rpc server
 	rpcExitChan := make(chan error, 0)
-	go rpcServer.StartRpcServer(grpcPort, rpcExitChan)
+	//go rpcServer.StartRpcServer(grpcPort, rpcExitChan)
+	rpcHandler.StartRpcServer(grpcPort, rpcExitChan)
+
+	//wait for os kill signal. TODO: graceful shutdown
+	serverExitChan := util.ListenKillSignal()
 	select {
 	case <-serverExitChan:
 		log.Info("Server Existing")
-		s.ListAgentInfo()
-		s.ListProxyConfig()
 	case err := <-apiExitChan:
 		log.Fatal("api server exit with error: %v", err)
 	case err := <-rpcExitChan:
@@ -97,4 +146,31 @@ func run(_ *cobra.Command, _ []string) error {
 
 	}
 	return nil
+}
+
+func startAPIServer(port int, tlsConfig *tls_.Config, errChan chan error) {
+	addr, err := util.GetAddrByIpPort("127.0.0.1", port)
+	if err != nil {
+		errChan <- err
+	}
+
+	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
+	if err != nil {
+		errChan <- err
+	}
+
+	api := operations.NewAnywhereServerAPI(swaggerSpec)
+	server := restapi.NewServer(api)
+	defer server.Shutdown()
+	server.Port = port
+	server.ConfigureAPI()
+	l, err := tls_.Listen("tcp", addr.String(), tlsConfig)
+	if err != nil {
+		errChan <- err
+	}
+	handler := server.GetHandler()
+	if err := http.Serve(l, handler); err != nil {
+		errChan <- err
+	}
+
 }

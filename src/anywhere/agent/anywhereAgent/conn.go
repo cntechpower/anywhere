@@ -65,7 +65,7 @@ CONNECT:
 		time.Sleep(time.Duration(dur) * time.Second)
 		goto CONNECT
 	}
-	log.Info("init control connection to server %v, addr %v", a.ServerId, a.Addr)
+	log.Info("init control connection to server %v success", a.Addr)
 	a.status = "RUNNING"
 
 }

@@ -2,14 +2,12 @@ package anywhereServer
 
 import (
 	"anywhere/log"
+	"anywhere/model"
 	"anywhere/util"
 	_tls "crypto/tls"
 	"fmt"
 	"net"
-	"os"
 	"sync"
-
-	"github.com/olekukonko/tablewriter"
 )
 
 type anyWhereServer struct {
@@ -99,50 +97,35 @@ func (s *anyWhereServer) isAgentExist(id string) bool {
 	return false
 }
 
-func (s *anyWhereServer) ListAgentInfo() {
-	if s.agents == nil {
-		return
-	}
-	s.agentsRwMutex.RLock()
-	defer s.agentsRwMutex.RUnlock()
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"AgentId", "AgentAddr", "LastAck", "Status"})
-	for _, agent := range s.agents {
-		table.Append([]string{agent.Id, agent.RemoteAddr.String(), agent.AdminConn.LastAckRcvTime.Format("2006-01-02 15:04:05"), agent.AdminConn.GetStatus().String()})
-	}
-	table.Render()
-}
-
-func (s *anyWhereServer) ListAgentInfoStruct() []*Agent {
-	res := make([]*Agent, 0)
+func (s *anyWhereServer) ListAgentInfoStruct() []*model.AgentInfo {
+	res := make([]*model.AgentInfo, 0)
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
 	for _, agent := range s.agents {
-		res = append(res, &Agent{
+		res = append(res, &model.AgentInfo{
 			Id:         agent.Id,
-			version:    agent.version,
-			RemoteAddr: agent.RemoteAddr,
+			RemoteAddr: agent.RemoteAddr.String(),
+			LastAck:    agent.AdminConn.LastAckRcvTime.Format("2006-01-02 15:04:05"),
+			Status:     agent.AdminConn.GetStatus().String(),
 		})
 	}
 	return res
 }
 
-func (s *anyWhereServer) ListProxyConfig() {
-	if s.agents == nil {
-		return
-	}
+func (s *anyWhereServer) ListProxyConfigs() []*model.ProxyConfigInfo {
+	res := make([]*model.ProxyConfigInfo, 0)
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"AgentId", "Port", "Addr"})
 	for _, agent := range s.agents {
-		for _, proxyConfig := range agent.ProxyConfigs {
-			table.Append([]string{agent.Id, proxyConfig.RemoteAddr, proxyConfig.LocalAddr})
+		for _, config := range agent.ProxyConfigs {
+			res = append(res, &model.ProxyConfigInfo{
+				AgentId:    agent.Id,
+				RemoteAddr: config.RemoteAddr,
+				LocalAddr:  config.LocalAddr,
+			})
 		}
 	}
-	table.Render()
+	return res
 }
 
 func (s *anyWhereServer) RegisterAgent(info *Agent) (isUpdate bool) {
