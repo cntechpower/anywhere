@@ -133,9 +133,8 @@ func run(_ *cobra.Command, _ []string) error {
 	rpcHandler.StartRpcServer(grpcPort, rpcExitChan)
 
 	//wait for os kill signal. TODO: graceful shutdown
+	go util.ListenTTINSignal()
 	serverExitChan := util.ListenKillSignal()
-	ttinChan := util.ListenTTINSignal()
-WAIT:
 	select {
 	case <-serverExitChan:
 		log.Info("Server Existing")
@@ -145,11 +144,6 @@ WAIT:
 		log.Fatal("rpc server exit with error: %v", err)
 	case err := <-s.ExitChan:
 		log.Fatal("anywhere server exit with error: %v", err)
-	case <-ttinChan:
-		log.Info("called capture cpu error: %v", util.CaptureProfile("cpu", 2))
-		log.Info("called capture heap error: %v", util.CaptureProfile("heap", 2))
-		log.Info("called goroutine heap error: %v", util.CaptureProfile("goroutine", 2))
-		goto WAIT
 	}
 	return nil
 }

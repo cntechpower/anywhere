@@ -1,6 +1,7 @@
 package util
 
 import (
+	"anywhere/log"
 	"fmt"
 	"net"
 	"os"
@@ -26,10 +27,19 @@ func ListenKillSignal() chan os.Signal {
 	return quitChan
 }
 
-func ListenTTINSignal() chan os.Signal {
+func ListenTTINSignal()  {
 	quitChan := make(chan os.Signal, 1)
 	signal.Notify(quitChan, syscall.Signal(0x15))
-	return quitChan
+	for {
+		sig := <-c
+		switch sig {
+		case syscall.Signal(0x15):
+			log.Info("called capture cpu error: %v", CaptureProfile("cpu", 2))
+			log.Info("called capture heap error: %v", CaptureProfile("heap", 2))
+			log.Info("called goroutine heap error: %v", CaptureProfile("goroutine", 2))
+		default:
+		}
+	}
 }
 
 func GetAddrByIpPort(ip string, port int) (*net.TCPAddr, error) {
