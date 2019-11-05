@@ -5,8 +5,11 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"runtime"
+	"runtime/pprof"
 	"strconv"
 	"syscall"
+	"time"
 )
 
 func genErrInvalidIp(ip string) error {
@@ -20,6 +23,12 @@ func genErrInvalidPort(port string) error {
 func ListenKillSignal() chan os.Signal {
 	quitChan := make(chan os.Signal, 1)
 	signal.Notify(quitChan, os.Interrupt, os.Kill, syscall.SIGTERM, syscall.SIGUSR2 /*graceful-shutdown*/)
+	return quitChan
+}
+
+func ListenTTINSignal() chan os.Signal {
+	quitChan := make(chan os.Signal, 1)
+	signal.Notify(quitChan, syscall.Signal(0x15))
 	return quitChan
 }
 
@@ -44,4 +53,43 @@ func ListenTcp(addr string) (*net.TCPListener, error) {
 		return nil, err
 	}
 	return ln, err
+}
+
+func CaptureProfile(name string, extraInfo int) error {
+	dumpPath := fmt.Sprintf("%s_%s/", "./logs/dump", time.Now().Format("2006_01_02_15_04_05"))
+
+	if err := os.Mkdir(dumpPath, 0755); nil != err {
+		return err
+	}
+	f, err := os.OpenFile(dumpPath+name+".out", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0640)
+	if nil != err {
+		return fmt.Errorf("write dump error(%v)", err)
+	}
+	defer f.Close()
+	switch name {
+	case "cpu":
+		if extraInfo <= 0 {
+			extraInfo = 30
+		}
+		if err := pprof.StartCPUProfile(f); nil != err {
+			return err
+		}
+		time.Sleep(time.Duration(extraInfo) * time.Second)
+		pprof.StopCPUProfile()
+	case "heap":
+		return pprof.Lookup("heap").WriteTo(f, 1)
+	case "mutex":
+		runtime.SetMutexProfileFraction(extraInfo)
+		return pprof.Lookup("mutex").WriteTo(f, 1)
+	case "block":
+		runtime.SetBlockProfileRate(extraInfo)
+		return pprof.Lookup("block").WriteTo(f, 1)
+	case "goroutine":
+		return pprof.Lookup("goroutine").WriteTo(f, 1)
+	case "threadcreate":
+		return pprof.Lookup("threadcreate").WriteTo(f, 1)
+	default:
+		return fmt.Errorf("not support profile %v", name)
+	}
+	return nil
 }

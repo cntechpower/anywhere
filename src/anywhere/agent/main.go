@@ -4,8 +4,13 @@ import (
 	"anywhere/agent/anywhereAgent"
 	"anywhere/log"
 	"anywhere/util"
+	"fmt"
+	"os"
+	"runtime"
+	"time"
 
 	"github.com/spf13/cobra"
+	"runtime/pprof"
 )
 
 var serverPort int
@@ -44,10 +49,17 @@ func run(_ *cobra.Command, _ []string) error {
 	a.Start()
 
 	serverExitChan := util.ListenKillSignal()
+	ttinChan := util.ListenTTINSignal()
 
+WAIT:
 	select {
 	case <-serverExitChan:
-		log.Info("Server Existing")
+		log.Info("Agent Existing")
+	case <-ttinChan:
+		log.Info("called capture cpu error: %v", util.CaptureProfile("cpu", 2))
+		log.Info("called capture heap error: %v", util.CaptureProfile("heap", 2))
+		log.Info("called goroutine heap error: %v", util.CaptureProfile("goroutine", 2))
+		goto WAIT
 	}
 	return nil
 }

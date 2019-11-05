@@ -112,7 +112,7 @@ func (a *Agent) handleAdminConnection() {
 			log.Info("got PkgDataConnTunnel for : %v", m.LocalAddr)
 			go a.newProxyConn(m.LocalAddr)
 		default:
-			log.Error("got unknown ReqType: %v", msg.ReqType)
+			log.Error("got unknown ReqType: %v, message is: %v", msg.ReqType,string(msg.Message))
 			_ = a.AdminConn.Close()
 		}
 	}
