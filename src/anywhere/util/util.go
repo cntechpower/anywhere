@@ -27,11 +27,11 @@ func ListenKillSignal() chan os.Signal {
 	return quitChan
 }
 
-func ListenTTINSignal()  {
+func ListenTTINSignal() {
 	quitChan := make(chan os.Signal, 1)
 	signal.Notify(quitChan, syscall.Signal(0x15))
 	for {
-		sig := <-c
+		sig := <-quitChan
 		switch sig {
 		case syscall.Signal(0x15):
 			log.Info("called capture cpu error: %v", CaptureProfile("cpu", 2))
