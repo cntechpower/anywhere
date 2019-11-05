@@ -4,13 +4,8 @@ import (
 	"anywhere/agent/anywhereAgent"
 	"anywhere/log"
 	"anywhere/util"
-	"fmt"
-	"os"
-	"runtime"
-	"time"
 
 	"github.com/spf13/cobra"
-	"runtime/pprof"
 )
 
 var serverPort int
