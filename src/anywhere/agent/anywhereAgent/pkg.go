@@ -5,18 +5,6 @@ import (
 	"fmt"
 )
 
-func (a *Agent) SendProxyConfig(remotePort int, localIp string, localPort int) error {
-	if a.AdminConn == nil {
-		return fmt.Errorf("admin conn not init")
-	}
-	p, err := model.NewProxyConfigMsg(remotePort, localIp, localPort)
-	if err != nil {
-		return err
-	}
-	msg := model.NewRequestMsg(a.version, model.PkgReqNewproxy, a.Id, "", p)
-	return a.AdminConn.Send(msg)
-}
-
 func (a *Agent) SendHeartBeatPkg() error {
 	if a.AdminConn == nil {
 		return fmt.Errorf("admin conn not init")

@@ -46,7 +46,7 @@ func NewAgentInfo(agentId string, c net.Conn, errChan chan error) *Agent {
 		AdminConn:       conn.NewBaseConn(c),
 		ProxyConfigs:    make(map[string]*proxyConfig, 0),
 		chanProxyConns:  make(map[string]chan *conn.BaseConn, 5),
-		proxyConfigChan: make(chan *proxyConfig, 1),
+		proxyConfigChan: make(chan *proxyConfig, 0),
 		errChan:         errChan,
 	}
 	return a

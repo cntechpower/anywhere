@@ -39,7 +39,7 @@ func (a *Agent) newProxyConn(localAddr string) {
 		log.Error("error while send tunnel pkg : %v", err)
 		_ = c.Close()
 	}
-	log.Info("called newProxyConn")
+	log.Info("called newProxyConn for %v", localAddr)
 	conn.JoinConn(c, dst)
 }
 

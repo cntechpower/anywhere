@@ -10,11 +10,8 @@ import (
 type ReqType string
 
 const (
-	PkgReqNewproxy         ReqType = "PkgReqNewproxy"
 	PkgReqHeartBeat        ReqType = "ReqHeartBeat"
 	PkgControlConnRegister ReqType = "PkgControlConnRegister"
-	PkgDataConnRegister    ReqType = "PkgDataConnRegister"
-	PkgDataConnTunnel      ReqType = "PkgDataConnTunnel"
 	PkgTunnelBegin         ReqType = "PkgTunnelBegin"
 )
 
@@ -107,15 +104,6 @@ func NewTunnelBeginMsg(id, addr string) *TunnelBeginMsg {
 	return &TunnelBeginMsg{AgentId: id, LocalAddr: addr}
 }
 
-func ParseProxyConfig(data []byte) (*ProxyConfig, error) {
-	msg := &ProxyConfig{}
-	err := json.Unmarshal(data, msg)
-	if err != nil {
-		return &ProxyConfig{}, err
-	}
-	return msg, nil
-}
-
 func ParseHeartBeatPkg(data []byte) (*HeartBeatMsg, error) {
 	msg := &HeartBeatMsg{}
 	err := json.Unmarshal(data, msg)
@@ -131,15 +119,6 @@ func ParseControlRegisterPkg(data []byte) (*AgentRegisterMsg, error) {
 	err := json.Unmarshal(data, msg)
 	if err != nil {
 		return &AgentRegisterMsg{}, err
-	}
-	return msg, nil
-}
-
-func ParseDataConnRegisterPkg(data []byte) (*DataConnRegisterMsg, error) {
-	msg := &DataConnRegisterMsg{}
-	err := json.Unmarshal(data, msg)
-	if err != nil {
-		return &DataConnRegisterMsg{}, err
 	}
 	return msg, nil
 }
