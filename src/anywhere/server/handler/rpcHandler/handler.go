@@ -31,7 +31,7 @@ func (h *rpcHandlers) ListAgent(ctx context.Context, empty *pb.Empty) (*pb.Agent
 	res := &pb.Agents{
 		Agent: make([]*pb.Agent, 0),
 	}
-	agents := s.ListAgentInfoStruct()
+	agents := s.ListAgentInfo()
 	for _, agent := range agents {
 		res.Agent = append(res.Agent, &pb.Agent{
 			AgentId:         agent.Id,
@@ -79,6 +79,14 @@ func (h *rpcHandlers) ListProxyConfigs(ctx context.Context, input *pb.Empty) (*p
 		})
 	}
 	return res, nil
+}
+
+func (h *rpcHandlers) RemoveProxyConfig(ctx context.Context, input *pb.RemoveProxyConfigInput) (*pb.Empty, error) {
+	s := anywhereServer.GetServerInstance()
+	if s == nil {
+		return nil, fmt.Errorf("anywhere server not init")
+	}
+	return &pb.Empty{}, s.RemoveProxyConfigFromAgent(input.AgentId, input.LocalIp, input.LocalPort)
 }
 
 func NewClient() (pb.AnywhereServerClient, error) {
@@ -159,6 +167,21 @@ func ListProxyConfigs(port int) error {
 	}
 	table.Render()
 	return nil
+
+}
+
+func RemoveProxyConfig(port int, agentId, localIp, localPort string) error {
+
+	client, err := newClientWithPort(port)
+	if err != nil {
+		return err
+	}
+	_, err = client.RemoveProxyConfig(context.Background(), &pb.RemoveProxyConfigInput{
+		AgentId:   agentId,
+		LocalIp:   localIp,
+		LocalPort: localPort,
+	})
+	return err
 
 }
 

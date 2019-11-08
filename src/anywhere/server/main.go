@@ -22,6 +22,8 @@ var certFile, keyFile, caFile, serverId string
 
 var addProxyAgentId, addProxyRemotePort, addProxyLocalIp, addProxyLocalPort string
 
+var delProxyAgentId, delProxyLocalIp, delProxyLocalPort string
+
 func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "anywhered",
@@ -69,6 +71,17 @@ func main() {
 		},
 	}
 
+	var proxyDelCmd = &cobra.Command{
+		Use:   "del",
+		Short: "delete proxy config",
+		Long:  `delete a proxy config.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := rpcHandler.RemoveProxyConfig(grpcPort, delProxyAgentId, delProxyLocalIp, delProxyLocalPort); err != nil {
+				fmt.Printf("error deleting proxy config : %v\n", err)
+			}
+		},
+	}
+
 	var proxyListCmd = &cobra.Command{
 		Use:   "list",
 		Short: "list proxy configs",
@@ -84,6 +97,9 @@ func main() {
 	proxyAddCmd.PersistentFlags().StringVar(&addProxyRemotePort, "remote-port", "", "remote port")
 	proxyAddCmd.PersistentFlags().StringVar(&addProxyLocalIp, "local-ip", "127.0.0.1", "local ip")
 	proxyAddCmd.PersistentFlags().StringVar(&addProxyLocalPort, "local-port", "", "local port")
+	proxyDelCmd.PersistentFlags().StringVar(&delProxyAgentId, "agent-id", "", "del from which agent")
+	proxyDelCmd.PersistentFlags().StringVar(&delProxyLocalIp, "local-ip", "", "del from which localIp")
+	proxyDelCmd.PersistentFlags().StringVar(&delProxyLocalPort, "local-port", "", "del from which localPort")
 	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 1111, "anywhered serve port")
 	rootCmd.PersistentFlags().IntVarP(&apiPort, "api-port", "a", 1112, "anywhered rest api port")
 	rootCmd.PersistentFlags().IntVarP(&grpcPort, "grpc-port", "g", 1113, "anywhered grpc port")
@@ -102,6 +118,7 @@ func main() {
 	rootCmd.AddCommand(proxyCmd)
 	proxyCmd.AddCommand(proxyListCmd)
 	proxyCmd.AddCommand(proxyAddCmd)
+	proxyCmd.AddCommand(proxyDelCmd)
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)
 	}

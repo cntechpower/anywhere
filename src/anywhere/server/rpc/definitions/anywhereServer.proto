@@ -7,6 +7,7 @@ service AnywhereServer {
     rpc ListAgent(Empty)returns(Agents){}
     rpc AddProxyConfig(AddProxyConfigInput)returns(Empty){}
     rpc ListProxyConfigs(Empty)returns(ListProxyConfigsOutput){}
+    rpc RemoveProxyConfig(RemoveProxyConfigInput)returns(Empty){}
 }
 
 message Empty{}
@@ -37,4 +38,10 @@ message ProxyConfig{
 
 message ListProxyConfigsOutput{
     repeated ProxyConfig Config = 1;
+}
+
+message RemoveProxyConfigInput{
+    string agentId = 1;
+    string localIp = 2;
+    string localPort = 3;
 }

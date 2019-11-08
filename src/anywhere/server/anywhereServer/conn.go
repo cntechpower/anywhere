@@ -25,6 +25,8 @@ func (s *anyWhereServer) handleNewConnection(c net.Conn) {
 		agent := NewAgentInfo(m.AgentId, c, make(chan error, 1000))
 		if isUpdate := s.RegisterAgent(agent); isUpdate {
 			log.Info("rebuild control connection for agent: %v", agent.Id)
+		} else {
+			log.Info("accept control connection from agent: %v", agent.Id)
 		}
 		go s.handleAdminConnection(agent.Id)
 	case model.PkgTunnelBegin:
@@ -58,11 +60,6 @@ func (s *anyWhereServer) handleAdminConnection(id string) {
 			return
 		}
 		switch msg.ReqType {
-		case model.PkgReqNewproxy:
-			m, _ := model.ParseProxyConfig(msg.Message)
-			log.Info("got PkgReqNewproxy: %v, %v", m.RemoteAddr, m.LocalAddr)
-			s.agents[id].AddProxyConfig(m)
-			go s.agents[id].ProxyConfigHandleLoop()
 		case model.PkgReqHeartBeat:
 			m, _ := model.ParseHeartBeatPkg(msg.Message)
 			s.SetControlConnHealthy(id, m.SendTime)

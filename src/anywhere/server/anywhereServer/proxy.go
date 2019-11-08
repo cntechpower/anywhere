@@ -31,3 +31,11 @@ func (s *anyWhereServer) AddProxyConfigToAgent(agentId string, remotePort int, l
 	go s.agents[agentId].ProxyConfigHandleLoop()
 	return nil
 }
+
+func (s *anyWhereServer) RemoveProxyConfigFromAgent(agentId string, localIp, localPort string) error {
+	if !s.isAgentExist(agentId) {
+		return fmt.Errorf("agent %v not exist", agentId)
+	}
+	return s.agents[agentId].RemoveProxyConfig(fmt.Sprintf("%v:%v", localIp, localPort))
+
+}
