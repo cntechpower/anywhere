@@ -15,7 +15,10 @@ const AGENTPROXYCONNBUFFER = 10
 const TIMEOUTSECFORCONNPOOL = 1
 const OPERATIONRETRYCOUNT = 5
 
-var ErrTimeoutWaitingProxyConn = fmt.Errorf("timeout when waiting for proxy conn")
+func newErrTimeoutWaitingProxyConn(s string) error {
+	return fmt.Errorf("timeout while waiting for proxy conn for %v", s)
+}
+
 var ErrProxyConnBufferFull = fmt.Errorf("proxy conn buffer is full")
 
 type Agent struct {
@@ -23,11 +26,15 @@ type Agent struct {
 	version          string
 	RemoteAddr       net.Addr
 	AdminConn        *conn.BaseConn
-	ProxyConfigs     []*model.ProxyConfig
+	ProxyConfigs     map[string]*proxyConfig
 	proxyConfigMutex sync.Mutex
-	proxyConfigChan  chan model.ProxyConfig
+	proxyConfigChan  chan *proxyConfig
 	chanProxyConns   map[string]chan *conn.BaseConn
 	errChan          chan error
+}
+type proxyConfig struct {
+	*model.ProxyConfig
+	closeChan chan struct{}
 }
 
 func NewAgentInfo(agentId string, c net.Conn, errChan chan error) *Agent {
@@ -37,9 +44,9 @@ func NewAgentInfo(agentId string, c net.Conn, errChan chan error) *Agent {
 		version:         "0.0.1",
 		RemoteAddr:      c.RemoteAddr(),
 		AdminConn:       conn.NewBaseConn(c),
-		ProxyConfigs:    make([]*model.ProxyConfig, 0),
+		ProxyConfigs:    make(map[string]*proxyConfig, 0),
 		chanProxyConns:  make(map[string]chan *conn.BaseConn, 5),
-		proxyConfigChan: make(chan model.ProxyConfig, 5),
+		proxyConfigChan: make(chan *proxyConfig, 1),
 		errChan:         errChan,
 	}
 	return a
@@ -57,28 +64,45 @@ func (a *Agent) requestNewProxyConn(localAddr string) {
 
 func (a *Agent) ProxyConfigHandleLoop() {
 	for p := range a.proxyConfigChan {
-		log.Info("got proxyConfigChan: %v", p)
 		go a.proxyConfigHandler(p)
 	}
 }
 
-func (a *Agent) proxyConfigHandler(config model.ProxyConfig) {
+func (a *Agent) proxyConfigHandler(config *proxyConfig) {
 	ln, err := util.ListenTcp(config.RemoteAddr)
 	if err != nil {
 		errMsg := fmt.Errorf("agent %v proxyConfigHandler got error %v", a.Id, err)
 		log.Error("%v", errMsg)
 		a.errChan <- errMsg
+		return
 	}
-	go a.handelTunnelConnection(ln, config.LocalAddr)
+	go a.handelTunnelConnection(ln, config.LocalAddr, config.closeChan)
 }
 
 func (a *Agent) AddProxyConfig(config *model.ProxyConfig) {
 	a.proxyConfigMutex.Lock()
 	defer a.proxyConfigMutex.Unlock()
-	log.Info("adding %v", config)
-	a.proxyConfigChan <- *config
+	log.Info("adding proxy config: %v", config)
+	closeChan := make(chan struct{}, 0)
+	pConfig := &proxyConfig{
+		ProxyConfig: config,
+		closeChan:   closeChan,
+	}
+	a.proxyConfigChan <- pConfig
 	log.Info("add %v done", config)
-	a.ProxyConfigs = append(a.ProxyConfigs, config)
+	a.ProxyConfigs[config.LocalAddr] = pConfig
+}
+
+func (a *Agent) RemoveProxyConfig(localAddr string) error {
+	c, ok := a.ProxyConfigs[localAddr]
+	if !ok {
+		return fmt.Errorf("no such proxy config")
+	}
+	close(c.closeChan)
+	a.proxyConfigMutex.Lock()
+	defer a.proxyConfigMutex.Unlock()
+	delete(a.ProxyConfigs, localAddr)
+	return nil
 }
 
 func (a *Agent) GetProxyConn(proxyAddr string) (*conn.BaseConn, error) {
@@ -93,11 +117,11 @@ func (a *Agent) GetProxyConn(proxyAddr string) (*conn.BaseConn, error) {
 		select {
 		case c := <-a.chanProxyConns[proxyAddr]:
 			return c, nil
-		case <-time.After(20 * time.Millisecond):
+		case <-time.After(100 * time.Millisecond):
 			continue
 		}
 	}
-	return nil, fmt.Errorf("timeout while waiting for proxy conn for %v", proxyAddr)
+	return nil, newErrTimeoutWaitingProxyConn(proxyAddr)
 }
 
 func (a *Agent) PutProxyConn(proxyAddr string, c *conn.BaseConn) error {
@@ -113,12 +137,16 @@ func (a *Agent) PutProxyConn(proxyAddr string, c *conn.BaseConn) error {
 	}
 }
 
-func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string) {
+func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, closeChan chan struct{}) {
+	go func() {
+		<-closeChan
+		_ = ln.Close()
+	}()
 	for {
 		c, err := ln.AcceptTCP()
 		if err != nil {
-			log.Error("got conn from %v err: %v", ln.Addr(), err)
-			continue
+			log.Info("removed proxy config %v, %v", ln.Addr(), localAddr)
+			return
 		}
 		go a.handelProxyConnection(c, localAddr)
 

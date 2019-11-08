@@ -97,7 +97,7 @@ func (s *anyWhereServer) isAgentExist(id string) bool {
 	return false
 }
 
-func (s *anyWhereServer) ListAgentInfoStruct() []*model.AgentInfo {
+func (s *anyWhereServer) ListAgentInfo() []*model.AgentInfo {
 	res := make([]*model.AgentInfo, 0)
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
@@ -134,10 +134,4 @@ func (s *anyWhereServer) RegisterAgent(info *Agent) (isUpdate bool) {
 	isUpdate = s.isAgentExist(info.Id)
 	s.agents[info.Id] = info
 	return isUpdate
-}
-
-func (s *anyWhereServer) RemoveAgent(info *Agent) {
-	s.agentsRwMutex.Lock()
-	defer s.agentsRwMutex.Unlock()
-	delete(s.agents, info.RemoteAddr.String())
 }
