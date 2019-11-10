@@ -126,7 +126,7 @@ func main() {
 }
 
 func run(_ *cobra.Command, _ []string) error {
-	log.InitStdLogger()
+	log.InitStdLogger("")
 	s := anywhereServer.InitServerInstance(serverId, port)
 
 	tlsConfig, err := tls.ParseTlsConfig(certFile, keyFile, caFile)
@@ -154,13 +154,13 @@ func run(_ *cobra.Command, _ []string) error {
 	serverExitChan := util.ListenKillSignal()
 	select {
 	case <-serverExitChan:
-		log.Info("Server Existing")
+		log.GetDefaultLogger().Infof("Server Existing")
 	case err := <-apiExitChan:
-		log.Fatal("api server exit with error: %v", err)
+		log.GetDefaultLogger().Fatalf("api server exit with error: %v", err)
 	case err := <-rpcExitChan:
-		log.Fatal("rpc server exit with error: %v", err)
+		log.GetDefaultLogger().Fatalf("rpc server exit with error: %v", err)
 	case err := <-s.ExitChan:
-		log.Fatal("anywhere server exit with error: %v", err)
+		log.GetDefaultLogger().Fatalf("anywhere server exit with error: %v", err)
 	}
 	return nil
 }

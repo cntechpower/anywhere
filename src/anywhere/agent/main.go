@@ -36,7 +36,7 @@ func main() {
 
 func run(_ *cobra.Command, _ []string) error {
 
-	log.InitStdLogger()
+	log.InitStdLogger("")
 	a := anywhereAgent.InitAnyWhereAgent(agentId, serverIp, serverPort)
 	if err := a.SetCredentials(certFile, keyFile, caFile); err != nil {
 		return err
@@ -48,7 +48,7 @@ func run(_ *cobra.Command, _ []string) error {
 
 	select {
 	case <-serverExitChan:
-		log.Info("Agent Existing")
+		log.GetDefaultLogger().Info("Agent Existing")
 	}
 	return nil
 }

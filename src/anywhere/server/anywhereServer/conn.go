@@ -16,7 +16,7 @@ func (s *anyWhereServer) handleNewConnection(c net.Conn) {
 	d := json.NewDecoder(c)
 
 	if err := d.Decode(&msg); err != nil {
-		log.Error("unmarshal init pkg error: %v", err)
+		log.GetDefaultLogger().Errorf("unmarshal init pkg error: %v", err)
 		_ = c.Close()
 	}
 	switch msg.ReqType {
@@ -24,24 +24,24 @@ func (s *anyWhereServer) handleNewConnection(c net.Conn) {
 		m, _ := model.ParseControlRegisterPkg(msg.Message)
 		agent := NewAgentInfo(m.AgentId, c, make(chan error, 1000))
 		if isUpdate := s.RegisterAgent(agent); isUpdate {
-			log.Info("rebuild control connection for agent: %v", agent.Id)
+			log.GetDefaultLogger().Errorf("rebuild control connection for agent: %v", agent.Id)
 		} else {
-			log.Info("accept control connection from agent: %v", agent.Id)
+			log.GetDefaultLogger().Infof("accept control connection from agent: %v", agent.Id)
 		}
 		go s.handleAdminConnection(agent.Id)
 	case model.PkgTunnelBegin:
 		m, _ := model.ParseTunnelBeginPkg(msg.Message)
 		if !s.isAgentExist(m.AgentId) {
-			log.Error("got data conn register pkg from unknown agent %v", m.AgentId)
+			log.GetDefaultLogger().Errorf("got data conn register pkg from unknown agent %v", m.AgentId)
 			_ = c.Close()
 		} else {
-			log.Info("add data conn for %v from agent %v", m.LocalAddr, m.AgentId)
+			log.GetDefaultLogger().Infof("add data conn for %v from agent %v", m.LocalAddr, m.AgentId)
 			if err := s.agents[m.AgentId].PutProxyConn(m.LocalAddr, conn.NewBaseConn(c)); err != nil {
-				log.Error("put proxy conn to agent error: %v", err)
+				log.GetDefaultLogger().Errorf("put proxy conn to agent error: %v", err)
 			}
 		}
 	default:
-		log.Error("unknown msg type %v", msg.ReqType)
+		log.GetDefaultLogger().Errorf("unknown msg type %v", msg.ReqType)
 		_ = c.Close()
 
 	}
@@ -50,12 +50,13 @@ func (s *anyWhereServer) handleNewConnection(c net.Conn) {
 
 func (s *anyWhereServer) handleAdminConnection(id string) {
 	if _, ok := s.agents[id]; !ok {
-		log.Fatal("handle on nil admin connection: %v", id)
+		log.GetDefaultLogger().Errorf("handle on nil admin connection: %v", id)
+		return
 	}
 	msg := &model.RequestMsg{}
 	for {
 		if err := s.agents[id].AdminConn.Receive(&msg); err != nil {
-			log.Error("receive from %v admin conn error: %v, wait client reconnecting", id, err)
+			log.GetDefaultLogger().Errorf("receive from %v admin conn error: %v, wait client reconnecting", id, err)
 			_ = s.agents[id].AdminConn.Close()
 			return
 		}
@@ -64,7 +65,7 @@ func (s *anyWhereServer) handleAdminConnection(id string) {
 			m, _ := model.ParseHeartBeatPkg(msg.Message)
 			s.SetControlConnHealthy(id, m.SendTime)
 		default:
-			log.Error("got unknown ReqType: %v from %v", msg.ReqType, id)
+			log.GetDefaultLogger().Errorf("got unknown ReqType: %v from %v", msg.ReqType, id)
 			s.CloseControlConnWithResp(id, fmt.Errorf("got unknown ReqType: %v from %v", msg.ReqType, id))
 		}
 	}
