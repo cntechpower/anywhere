@@ -22,6 +22,6 @@ func JoinConn(remote, local net.Conn) {
 	wg.Add(2)
 	go joinWithClose(remote, local)
 	go joinWithClose(local, remote)
-	log.Info("joined conn %v and %v", remote.LocalAddr(), local.RemoteAddr())
+	log.GetDefaultLogger().Infof("joined conn %v and %v", remote.LocalAddr(), local.RemoteAddr())
 	wg.Wait()
 }

@@ -57,7 +57,7 @@ func (a *Agent) requestNewProxyConn(localAddr string) {
 	pkg := model.NewRequestMsg(a.version, model.PkgTunnelBegin, a.Id, "", p)
 	if err := a.AdminConn.Send(pkg); err != nil {
 		errMsg := fmt.Errorf("agent %v request for new proxy conn error %v", a.Id, err)
-		log.Error("%v", err)
+		log.GetDefaultLogger().Errorf("%v", err)
 		a.errChan <- errMsg
 	}
 }
@@ -72,7 +72,7 @@ func (a *Agent) proxyConfigHandler(config *proxyConfig) {
 	ln, err := util.ListenTcp(config.RemoteAddr)
 	if err != nil {
 		errMsg := fmt.Errorf("agent %v proxyConfigHandler got error %v", a.Id, err)
-		log.Error("%v", errMsg)
+		log.GetDefaultLogger().Errorf("%v", errMsg)
 		a.errChan <- errMsg
 		return
 	}
@@ -82,14 +82,14 @@ func (a *Agent) proxyConfigHandler(config *proxyConfig) {
 func (a *Agent) AddProxyConfig(config *model.ProxyConfig) {
 	a.proxyConfigMutex.Lock()
 	defer a.proxyConfigMutex.Unlock()
-	log.Info("adding proxy config: %v", config)
+	log.GetDefaultLogger().Infof("adding proxy config: %v", config)
 	closeChan := make(chan struct{}, 0)
 	pConfig := &proxyConfig{
 		ProxyConfig: config,
 		closeChan:   closeChan,
 	}
 	a.proxyConfigChan <- pConfig
-	log.Info("add %v done", config)
+	log.GetDefaultLogger().Infof("add %v done", config)
 	a.ProxyConfigs[config.LocalAddr] = pConfig
 }
 
@@ -145,7 +145,7 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, cl
 	for {
 		c, err := ln.AcceptTCP()
 		if err != nil {
-			log.Info("removed proxy config %v, %v", ln.Addr(), localAddr)
+			log.GetDefaultLogger().Infof("removed proxy config %v, %v", ln.Addr(), localAddr)
 			return
 		}
 		go a.handelProxyConnection(c, localAddr)
@@ -157,7 +157,7 @@ func (a *Agent) handelProxyConnection(c net.Conn, localAddr string) {
 
 	dst, err := a.GetProxyConn(localAddr)
 	if err != nil {
-		log.Error("get conn error: %v", err)
+		log.GetDefaultLogger().Infof("get conn error: %v", err)
 		_ = c.Close()
 		return
 	}

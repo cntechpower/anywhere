@@ -1,59 +1,45 @@
 package log
 
 import (
-	"log"
 	"os"
+
+	"github.com/sirupsen/logrus"
 )
 
-type Logger interface {
-	logInfo(msg string, args ...interface{})
-	logError(msg string, args ...interface{})
-	logFatal(msg string, args ...interface{})
-}
+var log *logrus.Logger
 
-func Info(msg string, args ...interface{}) {
-	getLogger().logInfo(msg, args...)
-}
+func InitStdLogger(fileName string) {
 
-func Error(msg string, args ...interface{}) {
-	getLogger().logError(msg, args...)
-}
-
-func Fatal(msg string, args ...interface{}) {
-	getLogger().logFatal(msg, args...)
-}
-
-var logger Logger
-
-func getLogger() Logger {
-	if logger == nil {
-		panic("logger not init")
+	if log != nil {
+		panic("logger already init")
 	}
-	return logger
-}
-
-type stdLogger struct {
-	logger *log.Logger
-}
-
-func InitStdLogger() {
-	l := log.New(os.Stdout, "[anywhere]", log.LstdFlags)
-	logger = &stdLogger{
-		logger: l,
+	log = logrus.New()
+	log.Formatter = &logrus.TextFormatter{
+		ForceColors:      false,
+		DisableColors:    false,
+		DisableTimestamp: false,
+		FullTimestamp:    true,
+		TimestampFormat:  "2006-01-02 15:04:05",
+		DisableSorting:   false,
 	}
+	if fileName != "" {
+		// You could set this to any `io.Writer` such as a file
+		file, err := os.OpenFile("logrus.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err == nil {
+			log.Out = file
+		} else {
+			log.Infof("Failed to log to file, using default stderr: %v", err)
+		}
+	} else {
+		log.Infof("log to default stderr output")
+	}
+
 }
 
-func (l *stdLogger) logInfo(msg string, args ...interface{}) {
-	l.logger.Printf(msg, args...)
-
+func GetCustomLogger(caller string) *logrus.Entry {
+	return log.WithField("caller", caller)
 }
 
-func (l *stdLogger) logError(msg string, args ...interface{}) {
-	l.logger.Printf(msg, args...)
-
-}
-
-func (l *stdLogger) logFatal(msg string, args ...interface{}) {
-	l.logger.Fatalf(msg, args...)
-
+func GetDefaultLogger() *logrus.Logger {
+	return log
 }

@@ -1,8 +1,6 @@
 package conn
 
 import (
-	"anywhere/log"
-	"context"
 	"encoding/json"
 	"net"
 	"sync"
@@ -11,15 +9,11 @@ import (
 
 type BaseConn struct {
 	net.Conn
-	status                 CStatus
-	statusMutex            sync.RWMutex
-	failReason             string
-	LastAckSendTime        time.Time
-	LastAckRcvTime         time.Time
-	CancelHeartBeatSend    context.CancelFunc
-	CancelHeartBeatReceive context.CancelFunc
-	StopSendChan           chan struct{}
-	StopRcvChan            chan struct{}
+	status          CStatus
+	statusMutex     sync.RWMutex
+	failReason      string
+	LastAckSendTime time.Time
+	LastAckRcvTime  time.Time
 }
 
 func (c *BaseConn) SetHealthy() {
@@ -74,15 +68,11 @@ func (c *BaseConn) GetRemoteAddr() string {
 
 func NewBaseConn(c net.Conn) *BaseConn {
 	return &BaseConn{
-		Conn:                   c,
-		status:                 CStatusInit,
-		statusMutex:            sync.RWMutex{},
-		LastAckSendTime:        time.Time{},
-		LastAckRcvTime:         time.Time{},
-		CancelHeartBeatReceive: func() { log.Error("InitCancelHeartBeatReceiveFunc") },
-		CancelHeartBeatSend:    func() { log.Error("InitCancelHeartBeatSendFunc") },
-		failReason:             "",
-		StopSendChan:           make(chan struct{}, 0),
-		StopRcvChan:            make(chan struct{}, 0),
+		Conn:            c,
+		status:          CStatusInit,
+		statusMutex:     sync.RWMutex{},
+		LastAckSendTime: time.Time{},
+		LastAckRcvTime:  time.Time{},
+		failReason:      "",
 	}
 }

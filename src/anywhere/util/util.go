@@ -34,9 +34,9 @@ func ListenTTINSignal() {
 		sig := <-quitChan
 		switch sig {
 		case syscall.Signal(0x15):
-			log.Info("called capture cpu error: %v", CaptureProfile("cpu", 2))
-			log.Info("called capture heap error: %v", CaptureProfile("heap", 2))
-			log.Info("called goroutine heap error: %v", CaptureProfile("goroutine", 2))
+			log.GetDefaultLogger().Infof("called capture cpu error: %v", CaptureProfile("cpu", 2))
+			log.GetDefaultLogger().Infof("called capture heap error: %v", CaptureProfile("heap", 2))
+			log.GetDefaultLogger().Infof("called goroutine heap error: %v", CaptureProfile("goroutine", 2))
 		default:
 		}
 	}
