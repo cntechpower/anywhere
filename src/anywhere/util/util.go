@@ -29,7 +29,7 @@ func ListenKillSignal() chan os.Signal {
 
 func ListenTTINSignal() {
 	l := log.GetCustomLogger("ttin_listener")
-	ttinChan := make(chan os.Signal, 1)
+	ttinChan := make(chan os.Signal, 10)
 	signal.Notify(ttinChan, syscall.Signal(0x15))
 	profileToCapture := []string{"cpu", "heap", "goroutine"}
 	l.Infof("ttin listener started")
