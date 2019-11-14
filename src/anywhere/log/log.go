@@ -8,7 +8,7 @@ import (
 
 var log *logrus.Logger
 
-func InitStdLogger(fileName string) {
+func InitLogger(fileName string) {
 
 	if log != nil {
 		panic("logger already init")

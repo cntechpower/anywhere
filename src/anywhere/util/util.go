@@ -28,16 +28,21 @@ func ListenKillSignal() chan os.Signal {
 }
 
 func ListenTTINSignal() {
-	quitChan := make(chan os.Signal, 1)
-	signal.Notify(quitChan, syscall.Signal(0x15))
+	l := log.GetCustomLogger("ttin_listener")
+	ttinChan := make(chan os.Signal, 1)
+	signal.Notify(ttinChan, syscall.Signal(0x15))
+	profileToCapture := []string{"cpu", "heap", "goroutine"}
+	l.Infof("ttin listener started")
 	for {
-		sig := <-quitChan
+		sig := <-ttinChan
 		switch sig {
 		case syscall.Signal(0x15):
-			log.GetDefaultLogger().Infof("called capture cpu error: %v", CaptureProfile("cpu", 2))
-			log.GetDefaultLogger().Infof("called capture heap error: %v", CaptureProfile("heap", 2))
-			log.GetDefaultLogger().Infof("called goroutine heap error: %v", CaptureProfile("goroutine", 2))
+			for _, name := range profileToCapture {
+				err := CaptureProfile(name, 2)
+				l.Infof("capture profile for %v, err: %v", name, err)
+			}
 		default:
+			l.Fatalf("got unexpected signal: %v ", sig.String())
 		}
 	}
 }
