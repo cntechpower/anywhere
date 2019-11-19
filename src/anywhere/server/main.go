@@ -150,7 +150,7 @@ func run(_ *cobra.Command, _ []string) error {
 	rpcHandler.StartRpcServer(grpcPort, rpcExitChan)
 
 	//wait for os kill signal. TODO: graceful shutdown
-	go util.ListenTTINSignal()
+	go util.ListenTTINSignalLoop()
 	serverExitChan := util.ListenKillSignal()
 	select {
 	case <-serverExitChan:

@@ -27,16 +27,21 @@ func ListenKillSignal() chan os.Signal {
 	return quitChan
 }
 
-func ListenTTINSignal() {
+func ListenTTINSignalLoop() {
 	quitChan := make(chan os.Signal, 1)
 	signal.Notify(quitChan, syscall.Signal(0x15))
 	for {
 		sig := <-quitChan
 		switch sig {
 		case syscall.Signal(0x15):
-			log.GetDefaultLogger().Infof("called capture cpu error: %v", CaptureProfile("cpu", 2))
-			log.GetDefaultLogger().Infof("called capture heap error: %v", CaptureProfile("heap", 2))
-			log.GetDefaultLogger().Infof("called goroutine heap error: %v", CaptureProfile("goroutine", 2))
+			l := log.GetCustomLogger("ttin_listener")
+			dumpPath := "./dump" + FormatTimestampForFileName()
+			if err := MkdirIfNotExist(dumpPath); err != nil {
+				l.Errorf("mkdir error: %v", err)
+			}
+			l.Infof("called capture cpu error: %v", CaptureProfile("cpu", dumpPath, 2))
+			l.Infof("called capture heap error: %v", CaptureProfile("heap", dumpPath, 2))
+			l.Infof("called goroutine heap error: %v", CaptureProfile("goroutine", dumpPath, 2))
 		default:
 		}
 	}
@@ -65,12 +70,25 @@ func ListenTcp(addr string) (*net.TCPListener, error) {
 	return ln, err
 }
 
-func CaptureProfile(name string, extraInfo int) error {
-	dumpPath := fmt.Sprintf("%s_%s/", "./logs/dump", time.Now().Format("2006_01_02_15_04_05"))
+func FormatTimestampForFileName() string {
+	return time.Now().Format("2006_01_02_15_04")
+}
 
-	if err := os.Mkdir(dumpPath, 0755); nil != err {
-		return err
+func MkdirIfNotExist(path string) error {
+	s, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return os.Mkdir(path, 0755)
+		}
 	}
+	if s.IsDir() {
+		return nil
+	} else {
+		return fmt.Errorf("%s exists, but is not a directory", path)
+	}
+}
+
+func CaptureProfile(name, dumpPath string, extraInfo int) error {
 	f, err := os.OpenFile(dumpPath+name+".out", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0640)
 	if nil != err {
 		return fmt.Errorf("write dump error(%v)", err)

@@ -43,7 +43,7 @@ func run(_ *cobra.Command, _ []string) error {
 	}
 	a.Start()
 
-	go util.ListenTTINSignal()
+	go util.ListenTTINSignalLoop()
 	serverExitChan := util.ListenKillSignal()
 
 	select {
