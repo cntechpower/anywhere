@@ -126,7 +126,7 @@ func main() {
 }
 
 func run(_ *cobra.Command, _ []string) error {
-	log.InitStdLogger("")
+	log.InitLogger("")
 	s := anywhereServer.InitServerInstance(serverId, port)
 
 	tlsConfig, err := tls.ParseTlsConfig(certFile, keyFile, caFile)
