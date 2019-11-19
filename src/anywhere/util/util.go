@@ -39,7 +39,7 @@ func ListenTTINSignalLoop() {
 		sig := <-ttinChan
 		switch sig {
 		case syscall.Signal(0x15):
-			dumpPath := "./dump" + FormatTimestampForFileName()
+			dumpPath := "./dump_" + FormatTimestampForFileName()
 			if err := MkdirIfNotExist(dumpPath); err != nil {
 				l.Errorf("mkdir error: %v", err)
 			}
@@ -95,7 +95,7 @@ func MkdirIfNotExist(path string) error {
 }
 
 func CaptureProfile(name, dumpPath string, extraInfo int) error {
-	f, err := os.OpenFile(dumpPath+name+".out", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0640)
+	f, err := os.OpenFile(dumpPath+"_"+name+".out", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0640)
 	if nil != err {
 		return fmt.Errorf("write dump error(%v)", err)
 	}
