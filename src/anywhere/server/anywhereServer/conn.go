@@ -17,6 +17,7 @@ func (s *anyWhereServer) handleNewConnection(c net.Conn) {
 	if err := d.Decode(&msg); err != nil {
 		l.Errorf("unmarshal init pkg error: %v", err)
 		_ = c.Close()
+		return
 	}
 	switch msg.ReqType {
 	case model.PkgControlConnRegister:
@@ -27,6 +28,7 @@ func (s *anyWhereServer) handleNewConnection(c net.Conn) {
 		} else {
 			l.Infof("accept control connection from agent: %v", agent.Id)
 		}
+		l.Infof("got conn from : %v", c.RemoteAddr())
 		//go s.handleAdminConnection(agent.Id)
 		go agent.handleAdminConnection()
 	case model.PkgTunnelBegin:

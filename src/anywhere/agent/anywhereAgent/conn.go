@@ -94,7 +94,9 @@ func (a *Agent) handleAdminConnection() {
 		if err := a.AdminConn.Receive(&msg); err != nil {
 			log.GetDefaultLogger().Errorf("receive from admin conn error: %v, call reconnecting", err)
 			_ = a.AdminConn.Close()
+			a.AdminConn = nil
 			a.initControlConn(1)
+			continue
 		}
 		switch msg.ReqType {
 		case model.PkgTunnelBegin:

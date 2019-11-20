@@ -80,7 +80,7 @@ func (s *anyWhereServer) Start() {
 		for {
 			c, err := s.listener.Accept()
 			if err != nil {
-				log.GetDefaultLogger().Infof("accept c error: %v", err)
+				log.GetDefaultLogger().Infof("accept conn error: %v", err)
 				continue
 			}
 			go s.handleNewConnection(c)
