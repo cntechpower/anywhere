@@ -103,10 +103,10 @@ func (s *anyWhereServer) ListAgentInfo() []*model.AgentInfo {
 	defer s.agentsRwMutex.RUnlock()
 	for _, agent := range s.agents {
 		res = append(res, &model.AgentInfo{
-			Id:         agent.Id,
-			RemoteAddr: agent.RemoteAddr.String(),
-			LastAck:    agent.AdminConn.LastAckRcvTime.Format("2006-01-02 15:04:05"),
-			Status:     agent.AdminConn.GetStatus().String(),
+			Id:          agent.Id,
+			RemoteAddr:  agent.RemoteAddr.String(),
+			LastAckRcv:  agent.AdminConn.LastAckRcvTime.Format("2006-01-02 15:04:05"),
+			LastAckSend: agent.AdminConn.LastAckSendTime.Format("2006-01-02 15:04:05"),
 		})
 	}
 	return res

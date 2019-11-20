@@ -154,13 +154,39 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, cl
 }
 
 func (a *Agent) handelProxyConnection(c net.Conn, localAddr string) {
-
+	l := log.GetCustomLogger("[%v]proxy: %v->%v", util.RandId(), c.RemoteAddr().String(), localAddr)
 	dst, err := a.GetProxyConn(localAddr)
 	if err != nil {
-		log.GetDefaultLogger().Infof("get conn error: %v", err)
+		l.Infof("get conn error: %v", err)
 		_ = c.Close()
 		return
 	}
 	conn.JoinConn(dst.Conn, c)
+	l.Infof("proxy conn closed")
 
+}
+
+func (a *Agent) handleAdminConnection() {
+	l := log.GetCustomLogger("%v_adminConnHandler", a.Id)
+	if a.AdminConn == nil {
+		l.Errorf("handle on nil admin connection: %v", a.Id)
+		return
+	}
+	msg := &model.RequestMsg{}
+	for {
+		if err := a.AdminConn.Receive(&msg); err != nil {
+			l.Errorf("receive from admin conn error: %v, wait client reconnecting", err)
+			_ = a.AdminConn.Close()
+			return
+		}
+		switch msg.ReqType {
+		case model.PkgReqHeartBeat:
+			m, _ := model.ParseHeartBeatPkg(msg.Message)
+			a.AdminConn.SetAck(m.SendTime, time.Now())
+		default:
+			log.GetDefaultLogger().Errorf("got unknown ReqType: %v ,body: %v, will close admin conn", msg.ReqType, msg.Message)
+			_ = a.AdminConn.Close()
+			return
+		}
+	}
 }

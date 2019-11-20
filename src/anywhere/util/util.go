@@ -3,6 +3,7 @@ package util
 import (
 	"anywhere/log"
 	"fmt"
+	"math/rand"
 	"net"
 	"os"
 	"os/signal"
@@ -126,4 +127,15 @@ func CaptureProfile(name, dumpPath string, extraInfo int) error {
 		return fmt.Errorf("not support profile %v", name)
 	}
 	return nil
+}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func RandId() string {
+	rand.Seed(time.Now().UnixNano())
+	b := make([]rune, 3)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
 }

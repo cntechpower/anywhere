@@ -6,7 +6,6 @@ import (
 	"anywhere/model"
 	"anywhere/tls"
 	_tls "crypto/tls"
-	"fmt"
 	"net"
 	"time"
 )
@@ -73,21 +72,11 @@ CONNECT:
 func (a *Agent) ControlConnHeartBeatSendLoop(dur int, errChan chan error) {
 	go func() {
 		for {
-			//check conn status first
-			if a.AdminConn.GetStatus() == conn.CStatusBad {
-				errMsg := fmt.Errorf("control connection not healthy, status: %v, failReason: %v", a.AdminConn.GetStatus(), a.AdminConn.GetFailReason())
-				log.GetDefaultLogger().Errorf("admin status :%v", errMsg)
-				_ = a.AdminConn.Close()
-				errChan <- errMsg
-				a.initControlConn(dur)
-				return
-			}
-
-			//if conn status is ok ,generate pkg and send
 			if err := a.SendHeartBeatPkg(); err != nil {
-				a.AdminConn.SetBad(err.Error())
+				_ = a.AdminConn.Close()
+				return
 			} else {
-				a.AdminConn.SetHealthy()
+				a.AdminConn.SetAck(time.Now(), time.Now())
 			}
 			time.Sleep(time.Duration(dur) * time.Second)
 		}

@@ -1,10 +1,10 @@
 package model
 
 type AgentInfo struct {
-	Id         string
-	RemoteAddr string
-	LastAck    string
-	Status     string
+	Id          string
+	RemoteAddr  string
+	LastAckSend string
+	LastAckRcv  string
 }
 
 type ProxyConfigInfo struct {

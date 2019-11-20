@@ -1,13 +1,16 @@
 <component name="ProjectDictionaryState">
   <dictionary name="dujinyang">
     <words>
+      <w>abcdefghijklmnopqrstuvwxyz</w>
       <w>agentproxyconnbuffer</w>
       <w>anywhered</w>
       <w>conns</w>
       <w>grpc</w>
       <w>newproxy</w>
       <w>operationretrycount</w>
+      <w>threadcreate</w>
       <w>timeoutsecforconnpool</w>
+      <w>ttin</w>
     </words>
   </dictionary>
 </component>
