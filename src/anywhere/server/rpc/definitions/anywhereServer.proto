@@ -16,7 +16,8 @@ message Agent{
     string agentId = 1;
     string agentRemoteAddr = 2;
     string agentLastAckRcv =3;
-    string agentStatus =4;
+    string agentLastAckSend =4;
+    string agentStatus =5;
 }
 
 message Agents{

@@ -1,6 +1,7 @@
 package log
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -36,8 +37,9 @@ func InitLogger(fileName string) {
 
 }
 
-func GetCustomLogger(caller string) *logrus.Entry {
-	return log.WithField("caller", caller)
+func GetCustomLogger(format string, a ...interface{}) *logrus.Entry {
+	s := fmt.Sprintf(format, a...)
+	return log.WithField("caller", s)
 }
 
 func GetDefaultLogger() *logrus.Logger {

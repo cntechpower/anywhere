@@ -34,10 +34,10 @@ func (h *rpcHandlers) ListAgent(ctx context.Context, empty *pb.Empty) (*pb.Agent
 	agents := s.ListAgentInfo()
 	for _, agent := range agents {
 		res.Agent = append(res.Agent, &pb.Agent{
-			AgentId:         agent.Id,
-			AgentRemoteAddr: agent.RemoteAddr,
-			AgentLastAckRcv: agent.LastAck,
-			AgentStatus:     agent.Status,
+			AgentId:          agent.Id,
+			AgentRemoteAddr:  agent.RemoteAddr,
+			AgentLastAckRcv:  agent.LastAckRcv,
+			AgentLastAckSend: agent.LastAckSend,
 		})
 	}
 	return res, nil
