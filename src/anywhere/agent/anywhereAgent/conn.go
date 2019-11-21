@@ -93,6 +93,7 @@ func (a *Agent) handleAdminConnection() {
 		if err := a.AdminConn.Receive(&msg); err != nil {
 			log.GetDefaultLogger().Errorf("receive from admin conn error: %v, call reconnecting", err)
 			_ = a.AdminConn.Close()
+			time.Sleep(time.Second)
 			a.initControlConn(1)
 			continue
 		}

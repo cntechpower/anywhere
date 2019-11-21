@@ -24,6 +24,8 @@ var addProxyAgentId, addProxyRemotePort, addProxyLocalIp, addProxyLocalPort stri
 
 var delProxyAgentId, delProxyLocalIp, delProxyLocalPort string
 
+var ipWhiteList string
+
 func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "anywhered",
@@ -107,6 +109,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "credential/server.crt", "cert file")
 	rootCmd.PersistentFlags().StringVar(&keyFile, "key", "credential/server.key", "key file")
 	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "credential/ca.crt", "ca file")
+	startCmd.PersistentFlags().StringVar(&ipWhiteList, "wl", "", "ip white list")
 
 	//main service
 	rootCmd.AddCommand(startCmd)
@@ -129,6 +132,9 @@ func run(_ *cobra.Command, _ []string) error {
 	log.InitLogger("")
 	s := anywhereServer.InitServerInstance(serverId, port)
 
+	if err := util.InitIpWhiteList(ipWhiteList); err != nil {
+		return err
+	}
 	tlsConfig, err := tls.ParseTlsConfig(certFile, keyFile, caFile)
 	if err != nil {
 		return err

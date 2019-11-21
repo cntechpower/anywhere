@@ -75,12 +75,18 @@ func (s *anyWhereServer) Start() {
 		panic(err)
 	}
 	s.listener = ln
+	l := log.GetCustomLogger("anyWhereServerMainLoop")
 
 	go func() {
 		for {
 			c, err := s.listener.Accept()
 			if err != nil {
-				log.GetDefaultLogger().Infof("accept conn error: %v", err)
+				l.Infof("accept conn error: %v", err)
+				continue
+			}
+			if !util.AddrInWhiteList(c.RemoteAddr().String()) {
+				l.Infof("refused %v connection because it is not in white list", c.RemoteAddr())
+				_ = c.Close()
 				continue
 			}
 			go s.handleNewConnection(c)
