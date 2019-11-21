@@ -10,13 +10,6 @@ func (s CStatus) String() string {
 	return string(s)
 }
 
-const (
-	CStatusHealthy CStatus = "Healthy"
-	CStatusBad     CStatus = "Bad"
-	CStatusInit    CStatus = "Init"
-	CStatusClosed  CStatus = "Closed"
-)
-
 type Conn interface {
 	SetHealthy()
 	SetBad(string)
