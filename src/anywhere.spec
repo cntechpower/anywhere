@@ -25,9 +25,9 @@ make
 %install
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/usr/local/anywhere/bin
-ls -l %{_builddir}/%{buildsubdir}/bin
-cp %{_builddir}/%{buildsubdir}/bin/anywhere $RPM_BUILD_ROOT/usr/local/anywhere/bin/anywhere
-cp %{_builddir}/%{buildsubdir}/bin/anywhered $RPM_BUILD_ROOT/usr/local/anywhere/bin/anywhered
+ls -l %{_builddir}/%{buildsubdir}/src/bin
+cp %{_builddir}/%{buildsubdir}/src/bin/anywhere $RPM_BUILD_ROOT/usr/local/anywhere/bin/anywhere
+cp %{_builddir}/%{buildsubdir}/src/bin/anywhered $RPM_BUILD_ROOT/usr/local/anywhere/bin/anywhered
 
 touch $RPM_BUILD_ROOT/usr/local/anywhere/flags
 
