@@ -66,9 +66,9 @@ definitions:
         type: string
       agentAdminAddr:
         type: string
-      lastAck:
+      lastAckSend:
         type: string
-      status:
+      lastAckRcv:
         type: string
 
   ProxyConfigInfo:

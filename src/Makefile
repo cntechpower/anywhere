@@ -15,6 +15,8 @@ newkey:
 	openssl x509 -req -in credential/client.csr -CA credential/ca.crt -CAkey credential/ca.key -CAcreateserial -out credential/client.crt -days 365
 rpc:
 	protoc --go_out=plugins=grpc:. anywhere/server/rpc/definitions/*.proto
+api:
+	 swagger generate server -t anywhere/server/restapi/api --exclude-main -f anywhere/server/restapi/definition/anywhere.yml
 build_server:
 	mkdir -p bin/
 	GOPATH=${GOPATH} go build -o bin/anywhered anywhere/server/*.go

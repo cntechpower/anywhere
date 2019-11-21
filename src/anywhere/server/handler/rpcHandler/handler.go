@@ -120,9 +120,9 @@ func ListAgent(port int) error {
 	}
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"AgentId", "AgentAddr", "LastAck", "Status"})
+	table.SetHeader([]string{"AgentId", "AgentAddr", "LastAckSend", "LastAckRcv"})
 	for _, agent := range res.Agent {
-		table.Append([]string{agent.AgentId, agent.AgentRemoteAddr, agent.AgentLastAckRcv, agent.AgentStatus})
+		table.Append([]string{agent.AgentId, agent.AgentRemoteAddr, agent.AgentLastAckSend, agent.AgentLastAckRcv})
 	}
 	table.Render()
 

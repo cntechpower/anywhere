@@ -51,6 +51,47 @@ func init() {
           }
         }
       }
+    },
+    "/v1/proxy/add": {
+      "post": {
+        "parameters": [
+          {
+            "type": "string",
+            "description": "agent id",
+            "name": "agent_id",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "anywhered server listen addr",
+            "name": "remote_addr",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "localAddress",
+            "name": "local_addr",
+            "in": "formData",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A JSON array of user names",
+            "schema": {
+              "$ref": "#/definitions/ProxyConfigInfo"
+            }
+          },
+          "default": {
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -64,10 +105,10 @@ func init() {
         "agentId": {
           "type": "string"
         },
-        "lastAck": {
+        "lastAckRcv": {
           "type": "string"
         },
-        "status": {
+        "lastAckSend": {
           "type": "string"
         }
       }
@@ -75,6 +116,24 @@ func init() {
     "GenericErrors": {
       "description": "Error Template",
       "type": "string"
+    },
+    "ProxyConfigInfo": {
+      "description": "proxy config information",
+      "type": "object",
+      "properties": {
+        "agent_id": {
+          "description": "agent id",
+          "type": "string"
+        },
+        "local_addr": {
+          "description": "localAddress",
+          "type": "string"
+        },
+        "remote_addr": {
+          "description": "anywhered server listen addr",
+          "type": "string"
+        }
+      }
     }
   }
 }`))
@@ -112,6 +171,47 @@ func init() {
           }
         }
       }
+    },
+    "/v1/proxy/add": {
+      "post": {
+        "parameters": [
+          {
+            "type": "string",
+            "description": "agent id",
+            "name": "agent_id",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "anywhered server listen addr",
+            "name": "remote_addr",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "localAddress",
+            "name": "local_addr",
+            "in": "formData",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A JSON array of user names",
+            "schema": {
+              "$ref": "#/definitions/ProxyConfigInfo"
+            }
+          },
+          "default": {
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -125,10 +225,10 @@ func init() {
         "agentId": {
           "type": "string"
         },
-        "lastAck": {
+        "lastAckRcv": {
           "type": "string"
         },
-        "status": {
+        "lastAckSend": {
           "type": "string"
         }
       }
@@ -136,6 +236,24 @@ func init() {
     "GenericErrors": {
       "description": "Error Template",
       "type": "string"
+    },
+    "ProxyConfigInfo": {
+      "description": "proxy config information",
+      "type": "object",
+      "properties": {
+        "agent_id": {
+          "description": "agent id",
+          "type": "string"
+        },
+        "local_addr": {
+          "description": "localAddress",
+          "type": "string"
+        },
+        "remote_addr": {
+          "description": "anywhered server listen addr",
+          "type": "string"
+        }
+      }
     }
   }
 }`))

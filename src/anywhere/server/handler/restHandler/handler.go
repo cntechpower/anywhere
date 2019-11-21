@@ -18,8 +18,8 @@ func ListAgentV1() ([]*models.AgentListInfo, error) {
 		a := &models.AgentListInfo{
 			AgentAdminAddr: agent.AgentRemoteAddr,
 			AgentID:        agent.AgentId,
-			LastAck:        agent.AgentLastAckRcv,
-			Status:         agent.AgentStatus,
+			LastAckSend:    agent.AgentLastAckSend,
+			LastAckRcv:     agent.AgentLastAckRcv,
 		}
 		res = append(res, a)
 	}
