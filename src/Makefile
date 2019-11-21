@@ -42,4 +42,4 @@ docker_rpm:
 	$(DOCKER) run -v $(shell pwd)/../:/universe --rm $(DOCKER_IMAGE) -c "(mkdir -p /root/rpmbuild/SOURCES >/dev/null 2>&1); cd /root/rpmbuild/SOURCES; (tar zcf ${PROJECT_NAME}.tar.gz /universe --exclude=/universe/pkg --exclude=/universe/bin --transform 's/universe/${PROJECT_NAME}-${RPM_VERSION}/' >/tmp/build.log 2>&1) && (rpmbuild -bb --with qa /universe/src/${PROJECT_NAME}.spec >>/tmp/build.log 2>&1) && (cat /root/rpmbuild/RPMS/x86_64/${PROJECT_NAME}-${RPM_VERSION}-qa.x86_64.rpm) || (cat /tmp/build.log && exit 1)" > ${PROJECT_NAME}-${RPM_VERSION}.x86_64.rpm
 
 upload_rpm:
-	curl -T  ${PROJECT_NAME}-${RPM_VERSION}.x86_64.rpm -u ftp:ftp ftp://10.0.0.2/ci/anywhere/rpm
+	curl -T  ${PROJECT_NAME}-${RPM_VERSION}.x86_64.rpm -u ftp:ftp ftp://10.0.0.2/ci/anywhere/rpm/
