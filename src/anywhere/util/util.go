@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -20,6 +21,45 @@ func genErrInvalidIp(ip string) error {
 
 func genErrInvalidPort(port string) error {
 	return fmt.Errorf("PORT FORMAT INVALID: %v", port)
+}
+
+var ipWhiteList map[string]bool
+
+func isPrivateIp(s string) bool {
+	if strings.HasPrefix(s, "172.16") ||
+		strings.HasPrefix(s, "10.0") ||
+		strings.HasPrefix(s, "192.168") ||
+		strings.HasPrefix(s, "127.0.0.1") {
+		return true
+	}
+	return false
+}
+
+func InitIpWhiteList(ips string) error {
+	if ips == "" {
+		return nil
+	}
+	ipList := strings.Split(ips, ",")
+	for _, ip := range ipList {
+		ipWhiteList[ip] = true
+	}
+	return nil
+}
+
+func IpInWhiteList(ip string) bool {
+	if isPrivateIp(ip) {
+		return true
+	}
+	val, ok := ipWhiteList[ip]
+	if ok == true && val == true {
+		return true
+	}
+	return false
+}
+
+func AddrInWhiteList(addr string) bool {
+	ip := strings.Split(addr, ":")[0]
+	return IpInWhiteList(ip)
 }
 
 func ListenKillSignal() chan os.Signal {

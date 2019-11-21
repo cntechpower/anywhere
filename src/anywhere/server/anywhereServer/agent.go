@@ -138,6 +138,7 @@ func (a *Agent) PutProxyConn(proxyAddr string, c *conn.BaseConn) error {
 }
 
 func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, closeChan chan struct{}) {
+	l := log.GetCustomLogger("tunnel_%v_handler", localAddr)
 	go func() {
 		<-closeChan
 		_ = ln.Close()
@@ -145,8 +146,13 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, cl
 	for {
 		c, err := ln.AcceptTCP()
 		if err != nil {
-			log.GetDefaultLogger().Infof("removed proxy config %v, %v", ln.Addr(), localAddr)
-			return
+			l.Infof("accept new conn error: %v", err)
+			continue
+		}
+		if !util.AddrInWhiteList(c.RemoteAddr().String()) {
+			_ = c.Close()
+			l.Infof("refused %v connection because it is not in white list", c.RemoteAddr())
+			continue
 		}
 		go a.handelProxyConnection(c, localAddr)
 
