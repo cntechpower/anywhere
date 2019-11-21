@@ -21,11 +21,11 @@ type AgentListInfo struct {
 	// agent Id
 	AgentID string `json:"agentId,omitempty"`
 
-	// last ack
-	LastAck string `json:"lastAck,omitempty"`
+	// last ack rcv
+	LastAckRcv string `json:"lastAckRcv,omitempty"`
 
-	// status
-	Status string `json:"status,omitempty"`
+	// last ack send
+	LastAckSend string `json:"lastAckSend,omitempty"`
 }
 
 // Validate validates this agent list info

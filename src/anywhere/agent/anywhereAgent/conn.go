@@ -60,7 +60,6 @@ CONNECT:
 	if err := a.SendControlConnRegisterPkg(); err != nil {
 		log.GetDefaultLogger().Errorf("can not send register pkg to server %v, error: %v", a.Addr, err)
 		_ = c.Close()
-		a.AdminConn = nil
 		time.Sleep(time.Duration(dur) * time.Second)
 		goto CONNECT
 	}
@@ -94,7 +93,6 @@ func (a *Agent) handleAdminConnection() {
 		if err := a.AdminConn.Receive(&msg); err != nil {
 			log.GetDefaultLogger().Errorf("receive from admin conn error: %v, call reconnecting", err)
 			_ = a.AdminConn.Close()
-			a.AdminConn = nil
 			a.initControlConn(1)
 			continue
 		}
