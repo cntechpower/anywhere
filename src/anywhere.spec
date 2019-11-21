@@ -25,6 +25,7 @@ make
 %install
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/usr/local/anywhere/bin
+tree %{_builddir}/%{buildsubdir}
 cp %{_builddir}/%{buildsubdir}/bin/anywhere $RPM_BUILD_ROOT/usr/local/anywhere/bin/anywhere
 cp %{_builddir}/%{buildsubdir}/bin/anywhered $RPM_BUILD_ROOT/usr/local/anywhere/bin/anywhered
 
