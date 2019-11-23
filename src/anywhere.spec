@@ -1,6 +1,6 @@
 Summary: Anywhere By cntechpower
 Name: anywhere
-Version: 0.0.2
+Version: master
 Release: qa
 Source0: %{name}.tar.gz
 License: Commercial
