@@ -36,6 +36,7 @@ func isPrivateIp(s string) bool {
 }
 
 func InitIpWhiteList(ips string) error {
+	ipWhiteList = make(map[string]bool, 0)
 	if ips == "" {
 		return nil
 	}
