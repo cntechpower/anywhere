@@ -16,7 +16,7 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "anywhere --help",
 		Short: "This is A Proxy Agent ",
-		Long:  "anywhere agent Version 0.0.1 -"+version,
+		Long:  "anywhere agent - "+version,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := run(cmd, args); err != nil {
 				panic(err)

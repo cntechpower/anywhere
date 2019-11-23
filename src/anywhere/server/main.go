@@ -31,7 +31,7 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "anywhered",
 		Short: "This is A Proxy Server ",
-		Long:  "anywhere server Version 0.0.1 -"+version,
+		Long:  "anywhere server - "+version,
 	}
 	var startCmd = &cobra.Command{
 		Use:   "start",
