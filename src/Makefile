@@ -4,6 +4,7 @@ VERSION=$(shell git rev-parse --short HEAD)
 RPM_VERSION=0.0.2
 PROJECT_NAME  = anywhere
 DOCKER        = $(shell which docker)
+LDFLAGS       = -ldflags "-X 'main.version=\"${RPM_VERSION}-${GIT_VERSION}\"'"
 DOCKER_IMAGE  = 10.0.0.2:5000/actiontech/universe-compiler-go1.11-centos6:v2
 default: build
 newkey:

@@ -17,6 +17,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var version string
 var port, apiPort, grpcPort int
 var certFile, keyFile, caFile, serverId string
 
@@ -30,12 +31,12 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "anywhered",
 		Short: "This is A Proxy Server ",
-		Long:  `anywhere server Version 0.0.1`,
+		Long:  "anywhere server Version 0.0.1 -"+version,
 	}
 	var startCmd = &cobra.Command{
 		Use:   "start",
 		Short: "start anywhered service",
-		Long:  `anywhere server Version 0.0.1`,
+		Long:  "anywhere server Version 0.0.1 -"+version,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := run(cmd, args); err != nil {
 				panic(err)
