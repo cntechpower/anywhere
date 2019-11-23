@@ -74,7 +74,7 @@ func (a *Agent) ControlConnHeartBeatSendLoop(dur int, errChan chan error) {
 		for {
 			if err := a.SendHeartBeatPkg(); err != nil {
 				_ = a.AdminConn.Close()
-				l.Error("send heartbeat error: %v, sleep %v s and try again", err, dur)
+				l.Errorf("send heartbeat error: %v, sleep %v s and try again", err, dur)
 
 			} else {
 				a.AdminConn.SetAck(time.Now(), time.Now())
