@@ -4,6 +4,7 @@ VERSION=$(shell git rev-parse --short HEAD)
 RPM_VERSION=0.0.2
 PROJECT_NAME  = anywhere
 DOCKER        = $(shell which docker)
+LDFLAGS       = -ldflags "-X 'main.version=\"${RPM_VERSION}-${GIT_VERSION}\"'"
 DOCKER_IMAGE  = 10.0.0.2:5000/actiontech/universe-compiler-go1.11-centos6:v2
 default: build
 newkey:
@@ -23,11 +24,11 @@ api:
 	 swagger generate server -t anywhere/server/restapi/api --exclude-main -f anywhere/server/restapi/definition/anywhere.yml
 build_server:
 	mkdir -p bin/
-	GOPATH=${GOPATH} go build -o bin/anywhered anywhere/server/*.go
+	GOPATH=${GOPATH} go build ${LDFLAGS} -o bin/anywhered anywhere/server/*.go
 
 build_agent:
 	mkdir -p bin/
-	GOPATH=${GOPATH} go build -o bin/anywhere anywhere/agent/*.go
+	GOPATH=${GOPATH} go build ${LDFLAGS} -o bin/anywhere anywhere/agent/*.go
 vet:
 	GOPATH=${GOPATH} go vet ./anywhere/...
 upload: build

@@ -10,12 +10,13 @@ import (
 
 var serverPort int
 var serverIp, agentId, certFile, keyFile, caFile string
+var version string
 
 func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "anywhere --help",
 		Short: "This is A Proxy Agent ",
-		Long:  `anywhere agent Version 0.0.1`,
+		Long:  "anywhere agent - "+version,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := run(cmd, args); err != nil {
 				panic(err)
