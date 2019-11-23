@@ -117,10 +117,12 @@ func (a *Agent) GetProxyConn(proxyAddr string) (*conn.BaseConn, error) {
 		select {
 		case c := <-a.chanProxyConns[proxyAddr]:
 			return c, nil
-		case <-time.After(100 * time.Millisecond):
+		case <-time.After(200 * time.Millisecond):
 			continue
 		}
 	}
+	//http://10.0.0.8/self-code/anywhere/issues/15
+	_ = a.AdminConn.Close()
 	return nil, newErrTimeoutWaitingProxyConn(proxyAddr)
 }
 
@@ -129,10 +131,11 @@ func (a *Agent) PutProxyConn(proxyAddr string, c *conn.BaseConn) error {
 		a.chanProxyConns[proxyAddr] = make(chan *conn.BaseConn, AGENTPROXYCONNBUFFER)
 	}
 	select {
-	case a.chanProxyConns[proxyAddr] <- c:
+	case a.chanProxyConns[proxyAddr]<- c:
 		return nil
 	case <-time.After(TIMEOUTSECFORCONNPOOL * time.Second):
 		a.errChan <- ErrProxyConnBufferFull
+		_ = c.Close()
 		return ErrProxyConnBufferFull
 	}
 }
