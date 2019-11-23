@@ -1,7 +1,7 @@
 GOPATH= $(shell dirname `pwd`)
 GIT_VERSION = $(shell git rev-parse --abbrev-ref HEAD) $(shell git rev-parse HEAD)
 VERSION=$(shell git rev-parse --short HEAD)
-RPM_VERSION=0.0.2
+RPM_VERSION=master
 PROJECT_NAME  = anywhere
 DOCKER        = $(shell which docker)
 LDFLAGS       = -ldflags "-X 'main.version=\"${RPM_VERSION}-${GIT_VERSION}\"'"
