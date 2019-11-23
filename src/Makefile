@@ -24,11 +24,11 @@ api:
 	 swagger generate server -t anywhere/server/restapi/api --exclude-main -f anywhere/server/restapi/definition/anywhere.yml
 build_server:
 	mkdir -p bin/
-	GOPATH=${GOPATH} go build -o bin/anywhered anywhere/server/*.go
+	GOPATH=${GOPATH} go build ${LDFLAGS} -o bin/anywhered anywhere/server/*.go
 
 build_agent:
 	mkdir -p bin/
-	GOPATH=${GOPATH} go build -o bin/anywhere anywhere/agent/*.go
+	GOPATH=${GOPATH} go build ${LDFLAGS} -o bin/anywhere anywhere/agent/*.go
 vet:
 	GOPATH=${GOPATH} go vet ./anywhere/...
 upload: build
