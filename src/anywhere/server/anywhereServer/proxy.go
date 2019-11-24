@@ -28,7 +28,6 @@ func (s *anyWhereServer) AddProxyConfigToAgent(agentId string, remotePort int, l
 		return err
 	}
 	s.agents[agentId].AddProxyConfig(pkg)
-	go s.agents[agentId].ProxyConfigHandleLoop()
 	return nil
 }
 

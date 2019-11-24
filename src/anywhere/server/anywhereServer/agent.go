@@ -31,6 +31,7 @@ type Agent struct {
 	proxyConfigChan  chan *proxyConfig
 	chanProxyConns   map[string]chan *conn.BaseConn
 	errChan          chan error
+	CloseChan        chan struct{}
 }
 type proxyConfig struct {
 	*model.ProxyConfig
@@ -48,6 +49,7 @@ func NewAgentInfo(agentId string, c net.Conn, errChan chan error) *Agent {
 		chanProxyConns:  make(map[string]chan *conn.BaseConn, 5),
 		proxyConfigChan: make(chan *proxyConfig, 0),
 		errChan:         errChan,
+		CloseChan:       make(chan struct{}, 0),
 	}
 	return a
 }
@@ -63,6 +65,13 @@ func (a *Agent) requestNewProxyConn(localAddr string) {
 }
 
 func (a *Agent) ProxyConfigHandleLoop() {
+	l := log.GetCustomLogger("proxy_handle_%v", a.Id)
+	l.Infof("started loop for %v", a.AdminConn.RemoteAddr())
+	go func() {
+		<-a.CloseChan
+		close(a.proxyConfigChan)
+	}()
+	defer l.Infof("stopped loop for %v", a.AdminConn.RemoteAddr())
 	for p := range a.proxyConfigChan {
 		go a.proxyConfigHandler(p)
 	}
@@ -106,6 +115,7 @@ func (a *Agent) RemoveProxyConfig(localAddr string) error {
 }
 
 func (a *Agent) GetProxyConn(proxyAddr string) (*conn.BaseConn, error) {
+	l := log.GetCustomLogger("get_proxy_conn_%v_%v", a.Id, proxyAddr)
 
 	if _, ok := a.chanProxyConns[proxyAddr]; !ok {
 		a.chanProxyConns[proxyAddr] = make(chan *conn.BaseConn, AGENTPROXYCONNBUFFER)
@@ -122,7 +132,9 @@ func (a *Agent) GetProxyConn(proxyAddr string) (*conn.BaseConn, error) {
 		}
 	}
 	//http://10.0.0.8/self-code/anywhere/issues/15
-	_ = a.AdminConn.Close()
+	err := a.AdminConn.Close()
+	l.Infof("get conn failed, close admin conn, err: %v", err)
+
 	return nil, newErrTimeoutWaitingProxyConn(proxyAddr)
 }
 
@@ -131,7 +143,7 @@ func (a *Agent) PutProxyConn(proxyAddr string, c *conn.BaseConn) error {
 		a.chanProxyConns[proxyAddr] = make(chan *conn.BaseConn, AGENTPROXYCONNBUFFER)
 	}
 	select {
-	case a.chanProxyConns[proxyAddr]<- c:
+	case a.chanProxyConns[proxyAddr] <- c:
 		return nil
 	case <-time.After(TIMEOUTSECFORCONNPOOL * time.Second):
 		a.errChan <- ErrProxyConnBufferFull
