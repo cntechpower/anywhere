@@ -138,7 +138,13 @@ func (s *anyWhereServer) RegisterAgent(info *Agent) (isUpdate bool) {
 	s.agentsRwMutex.Lock()
 	defer s.agentsRwMutex.Unlock()
 	isUpdate = s.isAgentExist(info.Id)
-	s.agents[info.Id] = info
-	go s.agents[info.Id].ProxyConfigHandleLoop()
+	if isUpdate {
+		//close(s.agents[info.Id].CloseChan)
+		s.agents[info.Id].AdminConn = info.AdminConn
+	} else {
+		s.agents[info.Id] = info
+		go s.agents[info.Id].ProxyConfigHandleLoop()
+	}
+
 	return isUpdate
 }

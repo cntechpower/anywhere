@@ -31,12 +31,12 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "anywhered",
 		Short: "This is A Proxy Server ",
-		Long:  "anywhere server - "+version,
+		Long:  "anywhere server - " + version,
 	}
 	var startCmd = &cobra.Command{
 		Use:   "start",
 		Short: "start anywhered service",
-		Long:  "anywhere server Version 0.0.1 -"+version,
+		Long:  "anywhere server Version 0.0.1 -" + version,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := run(cmd, args); err != nil {
 				panic(err)
@@ -154,7 +154,7 @@ func run(_ *cobra.Command, _ []string) error {
 	// start rpc server
 	rpcExitChan := make(chan error, 0)
 	//go rpcServer.StartRpcServer(grpcPort, rpcExitChan)
-	rpcHandler.StartRpcServer(grpcPort, rpcExitChan)
+	go rpcHandler.StartRpcServer(grpcPort, rpcExitChan)
 
 	//wait for os kill signal. TODO: graceful shutdown
 	go util.ListenTTINSignalLoop()
