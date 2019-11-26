@@ -164,6 +164,7 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, cl
 		c, err := ln.AcceptTCP()
 		if err != nil {
 			if closeFlag {
+				l.Infof("handler closed")
 				return
 			}
 			l.Infof("accept new conn error: %v", err)
