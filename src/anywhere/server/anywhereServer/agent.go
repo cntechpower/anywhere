@@ -154,13 +154,18 @@ func (a *Agent) PutProxyConn(proxyAddr string, c *conn.BaseConn) error {
 
 func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, closeChan chan struct{}) {
 	l := log.GetCustomLogger("tunnel_%v_handler", localAddr)
+	closeFlag := false
 	go func() {
 		<-closeChan
 		_ = ln.Close()
+		closeFlag = true
 	}()
 	for {
 		c, err := ln.AcceptTCP()
 		if err != nil {
+			if closeFlag {
+				return
+			}
 			l.Infof("accept new conn error: %v", err)
 			continue
 		}
