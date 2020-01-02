@@ -2,3 +2,4 @@ pkg/*
 /bin/gocode.exe
 /bin/*
 /.idea/*
+.idea/*
