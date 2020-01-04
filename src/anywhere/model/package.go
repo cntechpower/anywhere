@@ -1,7 +1,6 @@
 package model
 
 import (
-	"anywhere/util"
 	"encoding/json"
 	"net"
 	"time"
@@ -28,26 +27,6 @@ type DataConnRegisterMsg struct {
 	ProxyAddr string
 }
 
-type ProxyConfig struct {
-	RemoteAddr string
-	LocalAddr  string
-}
-
-func NewProxyConfigMsg(remotePort int, localIp string, localPort int) (*ProxyConfig, error) {
-	remoteAddr, err := util.GetAddrByIpPort("0.0.0.0", remotePort)
-	if err != nil {
-		return nil, err
-	}
-	localAddr, err := util.GetAddrByIpPort(localIp, localPort)
-	if err != nil {
-		return nil, err
-	}
-	return &ProxyConfig{
-		RemoteAddr: remoteAddr.String(),
-		LocalAddr:  localAddr.String(),
-	}, nil
-
-}
 
 type RequestMsg struct {
 	Version string

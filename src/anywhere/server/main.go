@@ -21,11 +21,12 @@ var version string
 var port, apiPort, grpcPort int
 var certFile, keyFile, caFile, serverId string
 
-var addProxyAgentId, addProxyRemotePort, addProxyLocalIp, addProxyLocalPort string
+//args for add proxy config command
+var addProxyAgentId, addProxyRemotePort, addProxyLocalAddr, addProxyWhiteListIps string
+var addProxyIsWhiteListOn bool
 
-var delProxyAgentId, delProxyLocalIp, delProxyLocalPort string
-
-var ipWhiteList string
+//args for del proxy config command
+var delProxyAgentId, delProxyLocalAddr string
 
 func main() {
 	var rootCmd = &cobra.Command{
@@ -68,7 +69,7 @@ func main() {
 		Short: "add proxy config",
 		Long:  `add a proxy config.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := rpcHandler.AddProxyConfig(grpcPort, addProxyAgentId, addProxyRemotePort, addProxyLocalIp, addProxyLocalPort); err != nil {
+			if err := rpcHandler.AddProxyConfig(grpcPort, addProxyAgentId, addProxyRemotePort, addProxyLocalAddr, addProxyIsWhiteListOn, addProxyWhiteListIps); err != nil {
 				fmt.Printf("error adding proxy config : %v\n", err)
 			}
 		},
@@ -79,7 +80,7 @@ func main() {
 		Short: "delete proxy config",
 		Long:  `delete a proxy config.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := rpcHandler.RemoveProxyConfig(grpcPort, delProxyAgentId, delProxyLocalIp, delProxyLocalPort); err != nil {
+			if err := rpcHandler.RemoveProxyConfig(grpcPort, delProxyAgentId, delProxyLocalAddr); err != nil {
 				fmt.Printf("error deleting proxy config : %v\n", err)
 			}
 		},
@@ -98,11 +99,13 @@ func main() {
 
 	proxyAddCmd.PersistentFlags().StringVar(&addProxyAgentId, "agent-id", "", "belong to which agent")
 	proxyAddCmd.PersistentFlags().StringVar(&addProxyRemotePort, "remote-port", "", "remote port")
-	proxyAddCmd.PersistentFlags().StringVar(&addProxyLocalIp, "local-ip", "127.0.0.1", "local ip")
-	proxyAddCmd.PersistentFlags().StringVar(&addProxyLocalPort, "local-port", "", "local port")
+	proxyAddCmd.PersistentFlags().StringVar(&addProxyLocalAddr, "local-addr", "127.0.0.1:80", "local addr")
+	proxyAddCmd.PersistentFlags().StringVar(&addProxyWhiteListIps, "white-list", "", "local port")
+	proxyAddCmd.PersistentFlags().BoolVarP(&addProxyIsWhiteListOn, "enable-wl", "", true, "enable white list or not")
+
 	proxyDelCmd.PersistentFlags().StringVar(&delProxyAgentId, "agent-id", "", "del from which agent")
-	proxyDelCmd.PersistentFlags().StringVar(&delProxyLocalIp, "local-ip", "", "del from which localIp")
-	proxyDelCmd.PersistentFlags().StringVar(&delProxyLocalPort, "local-port", "", "del from which localPort")
+	proxyDelCmd.PersistentFlags().StringVar(&delProxyLocalAddr, "local-addr", "", "del from which localAddr")
+
 	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 1111, "anywhered serve port")
 	rootCmd.PersistentFlags().IntVarP(&apiPort, "api-port", "a", 1112, "anywhered rest api port")
 	rootCmd.PersistentFlags().IntVarP(&grpcPort, "grpc-port", "g", 1113, "anywhered grpc port")
@@ -110,7 +113,6 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "credential/server.crt", "cert file")
 	rootCmd.PersistentFlags().StringVar(&keyFile, "key", "credential/server.key", "key file")
 	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "credential/ca.crt", "ca file")
-	startCmd.PersistentFlags().StringVar(&ipWhiteList, "wl", "", "ip white list")
 
 	//main service
 	rootCmd.AddCommand(startCmd)
@@ -133,9 +135,6 @@ func run(_ *cobra.Command, _ []string) error {
 	log.InitLogger("")
 	s := anywhereServer.InitServerInstance(serverId, port)
 
-	if err := util.InitIpWhiteList(ipWhiteList); err != nil {
-		return err
-	}
 	tlsConfig, err := tls.ParseTlsConfig(certFile, keyFile, caFile)
 	if err != nil {
 		return err

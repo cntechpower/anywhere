@@ -85,7 +85,7 @@ func (a *Agent) proxyConfigHandler(config *proxyConfig) {
 		a.errChan <- errMsg
 		return
 	}
-	go a.handelTunnelConnection(ln, config.LocalAddr, config.closeChan)
+	go a.handelTunnelConnection(ln, config.LocalAddr, config.closeChan, config.ProxyConfig.IsWhiteListOn, config.ProxyConfig.WhiteListIps)
 }
 
 func (a *Agent) AddProxyConfig(config *model.ProxyConfig) {
@@ -152,7 +152,7 @@ func (a *Agent) PutProxyConn(proxyAddr string, c *conn.BaseConn) error {
 	}
 }
 
-func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, closeChan chan struct{}) {
+func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, closeChan chan struct{}, isWhiteListOn bool, whiteListIps string) {
 	l := log.GetCustomLogger("tunnel_%v_handler", localAddr)
 	closeFlag := false
 	go func() {
@@ -160,6 +160,9 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, cl
 		_ = ln.Close()
 		closeFlag = true
 	}()
+
+	//always try to get a whitelist
+	whiteList := util.NewWhiteList(whiteListIps)
 	for {
 		c, err := ln.AcceptTCP()
 		if err != nil {
@@ -170,7 +173,7 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, cl
 			l.Infof("accept new conn error: %v", err)
 			continue
 		}
-		if !util.AddrInWhiteList(c.RemoteAddr().String()) {
+		if isWhiteListOn && !whiteList.AddrInWhiteList(c.RemoteAddr().String()) {
 			_ = c.Close()
 			l.Infof("refused %v connection because it is not in white list", c.RemoteAddr())
 			continue

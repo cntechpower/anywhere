@@ -44,19 +44,22 @@ func (h *rpcHandlers) ListAgent(ctx context.Context, empty *pb.Empty) (*pb.Agent
 }
 
 func (h *rpcHandlers) AddProxyConfig(ctx context.Context, input *pb.AddProxyConfigInput) (*pb.Empty, error) {
+	if input.Config == nil {
+		return nil, fmt.Errorf("config not vaild: nil")
+	}
 	s := anywhereServer.GetServerInstance()
 	if s == nil {
 		return nil, fmt.Errorf("anywhere server not init")
 	}
-	remotePort, err := strconv.Atoi(input.RemotePort)
+	config := input.Config
+	remotePort, err := strconv.Atoi(config.RemotePort)
 	if err != nil {
 		return nil, err
 	}
-	localPort, err := strconv.Atoi(input.LocalPort)
-	if err != nil {
-		return nil, err
+	if err := util.CheckAddrValid(config.LocalAddr); err != nil {
+		return nil, fmt.Errorf("invalid localAddr %v in config, error: %v", config.LocalAddr, err)
 	}
-	if err := s.AddProxyConfigToAgent(input.AgentId, remotePort, input.LocalIp, localPort); err != nil {
+	if err := s.AddProxyConfigToAgent(config.AgentId, remotePort, config.LocalAddr, config.IsWhiteListOn, config.WhiteListIps); err != nil {
 		return nil, err
 	}
 	return &pb.Empty{}, nil
@@ -73,9 +76,11 @@ func (h *rpcHandlers) ListProxyConfigs(ctx context.Context, input *pb.Empty) (*p
 	configs := s.ListProxyConfigs()
 	for _, config := range configs {
 		res.Config = append(res.Config, &pb.ProxyConfig{
-			AgentId:    config.AgentId,
-			RemoteAddr: config.RemoteAddr,
-			LocalAddr:  config.LocalAddr,
+			AgentId:       config.AgentId,
+			RemotePort:    config.RemoteAddr,
+			LocalAddr:     config.LocalAddr,
+			IsWhiteListOn: config.IsWhiteListOn,
+			WhiteListIps:  config.WhiteListIps,
 		})
 	}
 	return res, nil
@@ -86,7 +91,7 @@ func (h *rpcHandlers) RemoveProxyConfig(ctx context.Context, input *pb.RemovePro
 	if s == nil {
 		return nil, fmt.Errorf("anywhere server not init")
 	}
-	return &pb.Empty{}, s.RemoveProxyConfigFromAgent(input.AgentId, input.LocalIp, input.LocalPort)
+	return &pb.Empty{}, s.RemoveProxyConfigFromAgent(input.AgentId, input.LocalAddr)
 }
 
 func NewClient() (pb.AnywhereServerClient, error) {
@@ -129,18 +134,19 @@ func ListAgent(port int) error {
 	return nil
 }
 
-func AddProxyConfig(port int, agentId, remotePort, localIp, localPort string) error {
+func AddProxyConfig(port int, agentId, remotePort, localAddr string, isWhiteListOn bool, whiteListIps string) error {
 
 	client, err := newClientWithPort(port)
 	if err != nil {
 		return err
 	}
-	input := &pb.AddProxyConfigInput{
-		AgentId:    agentId,
-		RemotePort: remotePort,
-		LocalIp:    localIp,
-		LocalPort:  localPort,
-	}
+	input := &pb.AddProxyConfigInput{Config: &pb.ProxyConfig{
+		AgentId:       agentId,
+		RemotePort:    remotePort,
+		LocalAddr:     localAddr,
+		IsWhiteListOn: isWhiteListOn,
+		WhiteListIps:  whiteListIps,
+	}}
 	_, err = client.AddProxyConfig(context.Background(), input)
 	if err != nil {
 		return fmt.Errorf("add proxy config error: %v", err)
@@ -151,6 +157,12 @@ func AddProxyConfig(port int, agentId, remotePort, localIp, localPort string) er
 
 func ListProxyConfigs(port int) error {
 
+	boolToString := func(b bool) string {
+		if b {
+			return "ON"
+		}
+		return "OFF"
+	}
 	client, err := newClientWithPort(port)
 	if err != nil {
 		return err
@@ -161,16 +173,16 @@ func ListProxyConfigs(port int) error {
 	}
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"AgentId", "RemoteAddr", "LocalAddr"})
+	table.SetHeader([]string{"AgentId", "RemoteAddr", "LocalAddr", "IsWhiteListOn", "IpWhiteList"})
 	for _, config := range configs.Config {
-		table.Append([]string{config.AgentId, config.RemoteAddr, config.LocalAddr})
+		table.Append([]string{config.AgentId, config.RemotePort, config.LocalAddr, boolToString(config.IsWhiteListOn), config.WhiteListIps})
 	}
 	table.Render()
 	return nil
 
 }
 
-func RemoveProxyConfig(port int, agentId, localIp, localPort string) error {
+func RemoveProxyConfig(port int, agentId, localAddr string) error {
 
 	client, err := newClientWithPort(port)
 	if err != nil {
@@ -178,8 +190,7 @@ func RemoveProxyConfig(port int, agentId, localIp, localPort string) error {
 	}
 	_, err = client.RemoveProxyConfig(context.Background(), &pb.RemoveProxyConfigInput{
 		AgentId:   agentId,
-		LocalIp:   localIp,
-		LocalPort: localPort,
+		LocalAddr: localAddr,
 	})
 	return err
 
