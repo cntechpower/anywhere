@@ -3,6 +3,7 @@ package anywhereServer
 import (
 	"anywhere/log"
 	"anywhere/model"
+	"anywhere/util"
 	"fmt"
 	"net"
 )
@@ -31,10 +32,13 @@ func (s *anyWhereServer) AddProxyConfigToAgent(agentId string, remotePort int, l
 	return nil
 }
 
-func (s *anyWhereServer) RemoveProxyConfigFromAgent(agentId string, localIp, localPort string) error {
+func (s *anyWhereServer) RemoveProxyConfigFromAgent(agentId, localAddr string) error {
 	if !s.isAgentExist(agentId) {
 		return fmt.Errorf("agent %v not exist", agentId)
 	}
-	return s.agents[agentId].RemoveProxyConfig(fmt.Sprintf("%v:%v", localIp, localPort))
+	if err := util.CheckAddrValid(localAddr); err != nil {
+		return fmt.Errorf("invalid localAddr %v, error: %v", localAddr, err)
+	}
+	return s.agents[agentId].RemoveProxyConfig(localAddr)
 
 }

@@ -36,7 +36,7 @@ func NewWhiteList(ips string) *whiteList {
 	for _, ip := range ipList {
 		l.list[ip] = true
 	}
-	return nil
+	return l
 }
 
 func (l *whiteList) IpInWhiteList(ip string) bool {

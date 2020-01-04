@@ -89,7 +89,7 @@ func (h *rpcHandlers) RemoveProxyConfig(ctx context.Context, input *pb.RemovePro
 	if s == nil {
 		return nil, fmt.Errorf("anywhere server not init")
 	}
-	return &pb.Empty{}, s.RemoveProxyConfigFromAgent(input.AgentId, input.LocalIp, input.LocalPort)
+	return &pb.Empty{}, s.RemoveProxyConfigFromAgent(input.AgentId, input.LocalAddr)
 }
 
 func NewClient() (pb.AnywhereServerClient, error) {
@@ -180,7 +180,7 @@ func ListProxyConfigs(port int) error {
 
 }
 
-func RemoveProxyConfig(port int, agentId, localIp, localPort string) error {
+func RemoveProxyConfig(port int, agentId, localAddr string) error {
 
 	client, err := newClientWithPort(port)
 	if err != nil {
@@ -188,8 +188,7 @@ func RemoveProxyConfig(port int, agentId, localIp, localPort string) error {
 	}
 	_, err = client.RemoveProxyConfig(context.Background(), &pb.RemoveProxyConfigInput{
 		AgentId:   agentId,
-		LocalIp:   localIp,
-		LocalPort: localPort,
+		LocalAddr: localAddr,
 	})
 	return err
 

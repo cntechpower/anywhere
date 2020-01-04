@@ -42,6 +42,5 @@ message ListProxyConfigsOutput{
 
 message RemoveProxyConfigInput{
     string agentId = 1;
-    string localIp = 2;
-    string localPort = 3;
+    string localAddr = 2;
 }
