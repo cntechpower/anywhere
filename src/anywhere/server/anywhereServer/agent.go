@@ -173,7 +173,7 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, cl
 			l.Infof("accept new conn error: %v", err)
 			continue
 		}
-		if isWhiteListOn && whiteList.AddrInWhiteList(c.RemoteAddr().String()) {
+		if isWhiteListOn && !whiteList.AddrInWhiteList(c.RemoteAddr().String()) {
 			_ = c.Close()
 			l.Infof("refused %v connection because it is not in white list", c.RemoteAddr())
 			continue

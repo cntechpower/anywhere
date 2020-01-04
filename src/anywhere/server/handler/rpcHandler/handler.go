@@ -76,9 +76,11 @@ func (h *rpcHandlers) ListProxyConfigs(ctx context.Context, input *pb.Empty) (*p
 	configs := s.ListProxyConfigs()
 	for _, config := range configs {
 		res.Config = append(res.Config, &pb.ProxyConfig{
-			AgentId:    config.AgentId,
-			RemotePort: config.RemoteAddr,
-			LocalAddr:  config.LocalAddr,
+			AgentId:       config.AgentId,
+			RemotePort:    config.RemoteAddr,
+			LocalAddr:     config.LocalAddr,
+			IsWhiteListOn: config.IsWhiteListOn,
+			WhiteListIps:  config.WhiteListIps,
 		})
 	}
 	return res, nil
@@ -173,7 +175,7 @@ func ListProxyConfigs(port int) error {
 	table.SetAutoFormatHeaders(false)
 	table.SetHeader([]string{"AgentId", "RemoteAddr", "LocalAddr", "IsWhiteListOn", "IpWhiteList"})
 	for _, config := range configs.Config {
-		table.Append([]string{config.AgentId, "0.0.0.0:" + config.RemotePort, config.LocalAddr, boolToString(config.IsWhiteListOn), config.WhiteListIps})
+		table.Append([]string{config.AgentId, config.RemotePort, config.LocalAddr, boolToString(config.IsWhiteListOn), config.WhiteListIps})
 	}
 	table.Render()
 	return nil
