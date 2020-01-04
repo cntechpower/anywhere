@@ -104,7 +104,7 @@ func main() {
 	proxyAddCmd.PersistentFlags().BoolVarP(&addProxyIsWhiteListOn, "enable-wl", "", true, "enable white list or not")
 
 	proxyDelCmd.PersistentFlags().StringVar(&delProxyAgentId, "agent-id", "", "del from which agent")
-	proxyDelCmd.PersistentFlags().StringVar(&delProxyLocalAddr, "local-ip", "", "del from which localIp")
+	proxyDelCmd.PersistentFlags().StringVar(&delProxyLocalAddr, "local-addr", "", "del from which localAddr")
 
 	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 1111, "anywhered serve port")
 	rootCmd.PersistentFlags().IntVarP(&apiPort, "api-port", "a", 1112, "anywhered rest api port")

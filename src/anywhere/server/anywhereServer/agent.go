@@ -165,17 +165,17 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, cl
 	whiteList := util.NewWhiteList(whiteListIps)
 	for {
 		c, err := ln.AcceptTCP()
-		if isWhiteListOn && whiteList.AddrInWhiteList(c.RemoteAddr().String()) {
-			_ = c.Close()
-			l.Infof("refused %v connection because it is not in white list", c.RemoteAddr())
-			continue
-		}
 		if err != nil {
 			if closeFlag {
 				l.Infof("handler closed")
 				return
 			}
 			l.Infof("accept new conn error: %v", err)
+			continue
+		}
+		if isWhiteListOn && whiteList.AddrInWhiteList(c.RemoteAddr().String()) {
+			_ = c.Close()
+			l.Infof("refused %v connection because it is not in white list", c.RemoteAddr())
 			continue
 		}
 		go a.handelProxyConnection(c, localAddr)
