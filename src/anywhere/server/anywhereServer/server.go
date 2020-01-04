@@ -113,16 +113,18 @@ func (s *anyWhereServer) ListAgentInfo() []*model.AgentInfo {
 	return res
 }
 
-func (s *anyWhereServer) ListProxyConfigs() []*model.ProxyConfigInfo {
-	res := make([]*model.ProxyConfigInfo, 0)
+func (s *anyWhereServer) ListProxyConfigs() []*model.ProxyConfig {
+	res := make([]*model.ProxyConfig, 0)
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
 	for _, agent := range s.agents {
 		for _, config := range agent.ProxyConfigs {
-			res = append(res, &model.ProxyConfigInfo{
-				AgentId:    agent.Id,
-				RemoteAddr: config.RemoteAddr,
-				LocalAddr:  config.LocalAddr,
+			res = append(res, &model.ProxyConfig{
+				AgentId:       agent.Id,
+				RemoteAddr:    config.RemoteAddr,
+				LocalAddr:     config.LocalAddr,
+				IsWhiteListOn: config.IsWhiteListOn,
+				WhiteListIps:  config.WhiteListIps,
 			})
 		}
 	}

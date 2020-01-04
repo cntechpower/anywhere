@@ -23,18 +23,18 @@ message Agents{
     repeated Agent agent = 1;
 }
 
-message AddProxyConfigInput{
-    string agentId = 1;
-    string remotePort = 2;
-    string localIp = 3;
-    string localPort = 4;
-}
-
 message ProxyConfig{
     string agentId = 1;
-    string remoteAddr = 2;
+    string remotePort = 2;
     string localAddr = 3;
+    bool isWhiteListOn = 4;
+    string whiteListIps = 5;
 }
+
+message AddProxyConfigInput{
+    ProxyConfig Config = 1;
+}
+
 
 message ListProxyConfigsOutput{
     repeated ProxyConfig Config = 1;

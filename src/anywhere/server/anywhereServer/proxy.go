@@ -19,11 +19,11 @@ func (s *anyWhereServer) listenPort(addr string) *net.TCPListener {
 	return ln
 }
 
-func (s *anyWhereServer) AddProxyConfigToAgent(agentId string, remotePort int, localIp string, localPort int) error {
+func (s *anyWhereServer) AddProxyConfigToAgent(agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteList string) error {
 	if !s.isAgentExist(agentId) {
 		return fmt.Errorf("agent %v not exist", agentId)
 	}
-	pkg, err := model.NewProxyConfigMsg(remotePort, localIp, localPort)
+	pkg, err := model.NewProxyConfig(remotePort, localAddr, isWhiteListOn, whiteList)
 	if err != nil {
 		return err
 	}
