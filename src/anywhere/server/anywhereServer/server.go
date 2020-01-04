@@ -84,11 +84,6 @@ func (s *anyWhereServer) Start() {
 				l.Infof("accept conn error: %v", err)
 				continue
 			}
-			if !util.AddrInWhiteList(c.RemoteAddr().String()) {
-				l.Infof("refused %v connection because it is not in white list", c.RemoteAddr())
-				_ = c.Close()
-				continue
-			}
 			go s.handleNewConnection(c)
 
 		}
