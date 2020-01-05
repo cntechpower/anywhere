@@ -12,12 +12,6 @@ type AgentInfo struct {
 	LastAckRcv  string
 }
 
-type ProxyConfigInfo struct {
-	AgentId    string
-	RemoteAddr string
-	LocalAddr  string
-}
-
 type ProxyConfig struct {
 	AgentId       string
 	RemoteAddr    string
@@ -26,16 +20,21 @@ type ProxyConfig struct {
 	WhiteListIps  string
 }
 
-func NewProxyConfig(remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) (*ProxyConfig, error) {
-	remoteAddr, err := util.GetAddrByIpPort("0.0.0.0", remotePort)
-	if err != nil {
-		return nil, err
+type GlobalConfig struct {
+	ProxyConfigs []ProxyConfig
+}
+
+func NewProxyConfig(agentId, remoteAddr string, localAddr string, isWhiteListOn bool, whiteListIps string) (*ProxyConfig, error) {
+
+	if err := util.CheckAddrValid(remoteAddr); err != nil {
+		return nil, fmt.Errorf("invalid remoteAddr %v in config, error: %v", localAddr, err)
 	}
 	if err := util.CheckAddrValid(localAddr); err != nil {
 		return nil, fmt.Errorf("invalid localAddr %v in config, error: %v", localAddr, err)
 	}
 	return &ProxyConfig{
-		RemoteAddr:    remoteAddr.String(),
+		AgentId:       agentId,
+		RemoteAddr:    remoteAddr,
 		LocalAddr:     localAddr,
 		IsWhiteListOn: isWhiteListOn,
 		WhiteListIps:  whiteListIps,
