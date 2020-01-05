@@ -22,7 +22,7 @@ var port, apiPort, grpcPort int
 var certFile, keyFile, caFile, serverId string
 
 //args for add proxy config command
-var addProxyAgentId, addProxyRemotePort, addProxyLocalAddr, addProxyWhiteListIps string
+var addProxyAgentId, addProxyRemoteAddr, addProxyLocalAddr, addProxyWhiteListIps string
 var addProxyIsWhiteListOn bool
 
 //args for del proxy config command
@@ -69,7 +69,7 @@ func main() {
 		Short: "add proxy config",
 		Long:  `add a proxy config.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := rpcHandler.AddProxyConfig(grpcPort, addProxyAgentId, addProxyRemotePort, addProxyLocalAddr, addProxyIsWhiteListOn, addProxyWhiteListIps); err != nil {
+			if err := rpcHandler.AddProxyConfig(grpcPort, addProxyAgentId, addProxyRemoteAddr, addProxyLocalAddr, addProxyIsWhiteListOn, addProxyWhiteListIps); err != nil {
 				fmt.Printf("error adding proxy config : %v\n", err)
 			}
 		},
@@ -97,8 +97,30 @@ func main() {
 		},
 	}
 
+	var proxyLoadCmd = &cobra.Command{
+		Use:   "load",
+		Short: "load proxy configs",
+		Long:  `load proxy configs from config file.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := rpcHandler.LoadProxyConfigFile(grpcPort); err != nil {
+				fmt.Printf("error load proxy config: %v\n", err)
+			}
+		},
+	}
+
+	var proxySaveCmd = &cobra.Command{
+		Use:   "save",
+		Short: "save proxy configs",
+		Long:  `save proxy configs to config file.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := rpcHandler.SaveProxyConfigToFile(grpcPort); err != nil {
+				fmt.Printf("error save proxy config: %v\n", err)
+			}
+		},
+	}
+
 	proxyAddCmd.PersistentFlags().StringVar(&addProxyAgentId, "agent-id", "", "belong to which agent")
-	proxyAddCmd.PersistentFlags().StringVar(&addProxyRemotePort, "remote-port", "", "remote port")
+	proxyAddCmd.PersistentFlags().StringVar(&addProxyRemoteAddr, "remote-addr", "", "remote port")
 	proxyAddCmd.PersistentFlags().StringVar(&addProxyLocalAddr, "local-addr", "127.0.0.1:80", "local addr")
 	proxyAddCmd.PersistentFlags().StringVar(&addProxyWhiteListIps, "white-list", "", "local port")
 	proxyAddCmd.PersistentFlags().BoolVarP(&addProxyIsWhiteListOn, "enable-wl", "", true, "enable white list or not")
@@ -125,6 +147,8 @@ func main() {
 	proxyCmd.AddCommand(proxyListCmd)
 	proxyCmd.AddCommand(proxyAddCmd)
 	proxyCmd.AddCommand(proxyDelCmd)
+	proxyCmd.AddCommand(proxyLoadCmd)
+	proxyCmd.AddCommand(proxySaveCmd)
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)
 	}

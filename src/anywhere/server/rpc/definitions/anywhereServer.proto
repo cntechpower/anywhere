@@ -8,6 +8,8 @@ service AnywhereServer {
     rpc AddProxyConfig(AddProxyConfigInput)returns(Empty){}
     rpc ListProxyConfigs(Empty)returns(ListProxyConfigsOutput){}
     rpc RemoveProxyConfig(RemoveProxyConfigInput)returns(Empty){}
+    rpc LoadProxyConfigFile(Empty)returns(Empty){}
+    rpc SaveProxyConfigToFile(Empty)returns(Empty){}
 }
 
 message Empty{}
@@ -25,7 +27,7 @@ message Agents{
 
 message ProxyConfig{
     string agentId = 1;
-    string remotePort = 2;
+    string remoteAddr = 2;
     string localAddr = 3;
     bool isWhiteListOn = 4;
     string whiteListIps = 5;
