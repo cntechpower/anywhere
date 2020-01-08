@@ -40,6 +40,9 @@ func NewAnywhereServerAPI(spec *loads.Document) *AnywhereServerAPI {
 		GetV1AgentListHandler: GetV1AgentListHandlerFunc(func(params GetV1AgentListParams) middleware.Responder {
 			return middleware.NotImplemented("operation GetV1AgentList has not yet been implemented")
 		}),
+		GetV1ProxyListHandler: GetV1ProxyListHandlerFunc(func(params GetV1ProxyListParams) middleware.Responder {
+			return middleware.NotImplemented("operation GetV1ProxyList has not yet been implemented")
+		}),
 		PostV1ProxyAddHandler: PostV1ProxyAddHandlerFunc(func(params PostV1ProxyAddParams) middleware.Responder {
 			return middleware.NotImplemented("operation PostV1ProxyAdd has not yet been implemented")
 		}),
@@ -76,6 +79,8 @@ type AnywhereServerAPI struct {
 
 	// GetV1AgentListHandler sets the operation handler for the get v1 agent list operation
 	GetV1AgentListHandler GetV1AgentListHandler
+	// GetV1ProxyListHandler sets the operation handler for the get v1 proxy list operation
+	GetV1ProxyListHandler GetV1ProxyListHandler
 	// PostV1ProxyAddHandler sets the operation handler for the post v1 proxy add operation
 	PostV1ProxyAddHandler PostV1ProxyAddHandler
 
@@ -143,6 +148,10 @@ func (o *AnywhereServerAPI) Validate() error {
 
 	if o.GetV1AgentListHandler == nil {
 		unregistered = append(unregistered, "GetV1AgentListHandler")
+	}
+
+	if o.GetV1ProxyListHandler == nil {
+		unregistered = append(unregistered, "GetV1ProxyListHandler")
 	}
 
 	if o.PostV1ProxyAddHandler == nil {
@@ -251,6 +260,11 @@ func (o *AnywhereServerAPI) initHandlerCache() {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/v1/agent/list"] = NewGetV1AgentList(o.context, o.GetV1AgentListHandler)
+
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/v1/proxy/list"] = NewGetV1ProxyList(o.context, o.GetV1ProxyListHandler)
 
 	if o.handlers["POST"] == nil {
 		o.handlers["POST"] = make(map[string]http.Handler)

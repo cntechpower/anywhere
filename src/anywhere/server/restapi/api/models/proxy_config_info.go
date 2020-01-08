@@ -18,11 +18,17 @@ type ProxyConfigInfo struct {
 	// agent id
 	AgentID string `json:"agent_id,omitempty"`
 
+	// is whitelist on
+	IsWhitelistOn bool `json:"is_whitelist_on,omitempty"`
+
 	// localAddress
 	LocalAddr string `json:"local_addr,omitempty"`
 
 	// anywhered server listen addr
 	RemoteAddr string `json:"remote_addr,omitempty"`
+
+	// whitelist ips
+	WhitelistIps string `json:"whitelist_ips,omitempty"`
 }
 
 // Validate validates this proxy config info

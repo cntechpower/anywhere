@@ -1,6 +1,7 @@
 package main
 
 import (
+	"anywhere/frontEnd"
 	"anywhere/log"
 	"anywhere/server/anywhereServer"
 	"anywhere/server/handler/rpcHandler"
@@ -10,6 +11,7 @@ import (
 	"anywhere/util"
 	tls_ "crypto/tls"
 	"fmt"
+	"net"
 	"net/http"
 
 	"github.com/go-openapi/loads"
@@ -17,9 +19,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+//server global config
 var version string
-var port, apiPort, grpcPort int
+var port, grpcPort int
 var certFile, keyFile, caFile, serverId string
+
+//web interface config
+var isWebEnable bool
+var webAddress, restAddress string
 
 //args for add proxy config command
 var addProxyAgentId, addProxyRemoteAddr, addProxyLocalAddr, addProxyWhiteListIps string
@@ -129,12 +136,14 @@ func main() {
 	proxyDelCmd.PersistentFlags().StringVar(&delProxyLocalAddr, "local-addr", "", "del from which localAddr")
 
 	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 1111, "anywhered serve port")
-	rootCmd.PersistentFlags().IntVarP(&apiPort, "api-port", "a", 1112, "anywhered rest api port")
+	rootCmd.PersistentFlags().StringVarP(&restAddress, "rest-address", "a", "127.0.0.1:1112", "anywhered rest api address")
 	rootCmd.PersistentFlags().IntVarP(&grpcPort, "grpc-port", "g", 1113, "anywhered grpc port")
 	rootCmd.PersistentFlags().StringVarP(&serverId, "server-id", "s", "anywhered-1", "anywhered server id")
 	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "credential/server.crt", "cert file")
 	rootCmd.PersistentFlags().StringVar(&keyFile, "key", "credential/server.key", "key file")
 	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "credential/ca.crt", "ca file")
+	rootCmd.PersistentFlags().BoolVar(&isWebEnable, "web", false, "enable web interface")
+	rootCmd.PersistentFlags().StringVar(&webAddress, "web-address", "0.0.0.0:1114", "web interface port")
 
 	//main service
 	rootCmd.AddCommand(startCmd)
@@ -168,16 +177,20 @@ func run(_ *cobra.Command, _ []string) error {
 	//start main service
 	s.Start()
 
-	// start api server
-	apiExitChan := make(chan error, 0)
-	//go apiServer.StartAPIServer(apiPort, tlsConfig, apiExitChan)
-	//restHandler.StartAPIServer(apiPort, tlsConfig, apiExitChan)
-	go startAPIServer(apiPort, tlsConfig, apiExitChan)
-
 	// start rpc server
 	rpcExitChan := make(chan error, 0)
 	//go rpcServer.StartRpcServer(grpcPort, rpcExitChan)
 	go rpcHandler.StartRpcServer(grpcPort, rpcExitChan)
+	apiExitChan := make(chan error, 0)
+	webExitChan := make(chan struct{}, 0)
+	if isWebEnable {
+		// start api server
+		//go startAPIServer(apiPort, tlsConfig, apiExitChan)
+		go startAPIServer(restAddress, nil, apiExitChan) //TODO: swagger with tls
+		//start web interface
+
+		go frontEnd.Start(webAddress, webExitChan)
+	}
 
 	//wait for os kill signal. TODO: graceful shutdown
 	go util.ListenTTINSignalLoop()
@@ -195,9 +208,8 @@ func run(_ *cobra.Command, _ []string) error {
 	return nil
 }
 
-func startAPIServer(port int, tlsConfig *tls_.Config, errChan chan error) {
-	addr, err := util.GetAddrByIpPort("127.0.0.1", port)
-	if err != nil {
+func startAPIServer(addr string, tlsConfig *tls_.Config, errChan chan error) {
+	if err := util.CheckAddrValid(addr); err != nil {
 		errChan <- err
 	}
 
@@ -211,7 +223,12 @@ func startAPIServer(port int, tlsConfig *tls_.Config, errChan chan error) {
 	defer server.Shutdown()
 	server.Port = port
 	server.ConfigureAPI()
-	l, err := tls_.Listen("tcp", addr.String(), tlsConfig)
+	var l net.Listener
+	if tlsConfig != nil {
+		l, err = tls_.Listen("tcp", addr, tlsConfig)
+	} else {
+		l, err = net.Listen("tcp", addr)
+	}
 	if err != nil {
 		errChan <- err
 	}
