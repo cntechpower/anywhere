@@ -13,6 +13,8 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 
 	"anywhere/server/restapi/api/restapi/operations"
+
+	"github.com/rs/cors"
 )
 
 //go:generate swagger generate server --target ../../api --name AnywhereServer --spec ../../definition/anywhere.yml --exclude-main
@@ -44,6 +46,14 @@ func configureAPI(api *operations.AnywhereServerAPI) http.Handler {
 		}
 
 	})
+	api.GetV1ProxyListHandler = operations.GetV1ProxyListHandlerFunc(func(params operations.GetV1ProxyListParams) middleware.Responder {
+		res, err := handler.ListProxyV1()
+		if err != nil {
+			return operations.NewGetV1ProxyListDefault(500).WithPayload(models.GenericErrors(err.Error()))
+		} else {
+			return operations.NewGetV1ProxyListOK().WithPayload(res)
+		}
+	})
 
 	if api.GetV1AgentListHandler == nil {
 		api.GetV1AgentListHandler = operations.GetV1AgentListHandlerFunc(func(params operations.GetV1AgentListParams) middleware.Responder {
@@ -71,7 +81,7 @@ func configureServer(s *http.Server, scheme, addr string) {
 // The middleware configuration is for the handler executors. These do not apply to the swagger.json document.
 // The middleware executes after routing but before authentication, binding and validation
 func setupMiddlewares(handler http.Handler) http.Handler {
-	return handler
+	return cors.Default().Handler(handler)
 }
 
 // The middleware configuration happens before anything, this middleware also applies to serving the swagger.json document.

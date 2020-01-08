@@ -92,6 +92,28 @@ func init() {
           }
         }
       }
+    },
+    "/v1/proxy/list": {
+      "get": {
+        "summary": "Returns a list of all proxy config.",
+        "responses": {
+          "200": {
+            "description": "A JSON array of user names",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ProxyConfigInfo"
+              }
+            }
+          },
+          "default": {
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -125,12 +147,20 @@ func init() {
           "description": "agent id",
           "type": "string"
         },
+        "is_whitelist_on": {
+          "description": "is whitelist on",
+          "type": "boolean"
+        },
         "local_addr": {
           "description": "localAddress",
           "type": "string"
         },
         "remote_addr": {
           "description": "anywhered server listen addr",
+          "type": "string"
+        },
+        "whitelist_ips": {
+          "description": "whitelist ips",
           "type": "string"
         }
       }
@@ -212,6 +242,28 @@ func init() {
           }
         }
       }
+    },
+    "/v1/proxy/list": {
+      "get": {
+        "summary": "Returns a list of all proxy config.",
+        "responses": {
+          "200": {
+            "description": "A JSON array of user names",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ProxyConfigInfo"
+              }
+            }
+          },
+          "default": {
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -245,12 +297,20 @@ func init() {
           "description": "agent id",
           "type": "string"
         },
+        "is_whitelist_on": {
+          "description": "is whitelist on",
+          "type": "boolean"
+        },
         "local_addr": {
           "description": "localAddress",
           "type": "string"
         },
         "remote_addr": {
           "description": "anywhered server listen addr",
+          "type": "string"
+        },
+        "whitelist_ips": {
+          "description": "whitelist ips",
           "type": "string"
         }
       }

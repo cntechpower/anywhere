@@ -200,6 +200,14 @@
   version = "v0.0.1"
 
 [[projects]]
+  digest = "1:c5dfe46811af7e2eff7c11fc84b6c841520338613c056f659f262d5a4fb42fa8"
+  name = "github.com/rs/cors"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "db0fe48135e83b5812a5a31be0eea66984b1b521"
+  version = "v1.7.0"
+
+[[projects]]
   digest = "1:36a75ab002c1cfb43bcc5d2ec10fbdc2a1136e9246a65e535f1d827435f28f17"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
@@ -359,9 +367,11 @@
     "github.com/go-openapi/spec",
     "github.com/go-openapi/strfmt",
     "github.com/go-openapi/swag",
+    "github.com/go-openapi/validate",
     "github.com/golang/protobuf/proto",
     "github.com/jessevdk/go-flags",
     "github.com/olekukonko/tablewriter",
+    "github.com/rs/cors",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
     "golang.org/x/net/netutil",

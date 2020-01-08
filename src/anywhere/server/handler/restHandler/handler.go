@@ -14,6 +14,9 @@ func ListAgentV1() ([]*models.AgentListInfo, error) {
 	}
 	res := make([]*models.AgentListInfo, 0)
 	agents, err := c.ListAgent(context.Background(), &pb.Empty{})
+	if err != nil {
+		return nil, err
+	}
 	for _, agent := range agents.Agent {
 		a := &models.AgentListInfo{
 			AgentAdminAddr: agent.AgentRemoteAddr,
@@ -25,4 +28,26 @@ func ListAgentV1() ([]*models.AgentListInfo, error) {
 	}
 	return res, nil
 
+}
+
+func ListProxyV1() ([]*models.ProxyConfigInfo, error) {
+	c, err := rpcHandler.NewClient()
+	if err != nil {
+		return nil, err
+	}
+	res := make([]*models.ProxyConfigInfo, 0)
+	configs, err := c.ListProxyConfigs(context.Background(), &pb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+	for _, config := range configs.Config {
+		res = append(res, &models.ProxyConfigInfo{
+			AgentID:       config.AgentId,
+			LocalAddr:     config.LocalAddr,
+			RemoteAddr:    config.RemoteAddr,
+			IsWhitelistOn: config.IsWhiteListOn,
+			WhitelistIps:  config.WhiteListIps,
+		})
+	}
+	return res, nil
 }
