@@ -21,7 +21,7 @@ type ProxyConfig struct {
 }
 
 type GlobalConfig struct {
-	ProxyConfigs []ProxyConfig
+	ProxyConfigs []*ProxyConfig
 }
 
 func NewProxyConfig(agentId, remoteAddr string, localAddr string, isWhiteListOn bool, whiteListIps string) (*ProxyConfig, error) {

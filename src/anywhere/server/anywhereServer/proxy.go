@@ -34,8 +34,7 @@ func (s *anyWhereServer) AddProxyConfigToAgentByModel(config *model.ProxyConfig)
 	if !s.isAgentExist(config.AgentId) {
 		return fmt.Errorf("agent %v not exist", config.AgentId)
 	}
-	s.agents[config.AgentId].AddProxyConfig(config)
-	return nil
+	return s.agents[config.AgentId].AddProxyConfig(config)
 }
 
 func (s *anyWhereServer) RemoveProxyConfigFromAgent(agentId, localAddr string) error {

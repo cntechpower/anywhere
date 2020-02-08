@@ -88,7 +88,10 @@ func (a *Agent) proxyConfigHandler(config *proxyConfig) {
 	go a.handelTunnelConnection(ln, config.LocalAddr, config.closeChan, config.ProxyConfig.IsWhiteListOn, config.ProxyConfig.WhiteListIps)
 }
 
-func (a *Agent) AddProxyConfig(config *model.ProxyConfig) {
+func (a *Agent) AddProxyConfig(config *model.ProxyConfig) error {
+	if _, exist := a.ProxyConfigs[config.LocalAddr]; exist {
+		return fmt.Errorf("proxy config %v is already exist in %v", config.LocalAddr, a.Id)
+	}
 	a.proxyConfigMutex.Lock()
 	defer a.proxyConfigMutex.Unlock()
 	log.GetDefaultLogger().Infof("adding proxy config: %v", config)
@@ -100,6 +103,7 @@ func (a *Agent) AddProxyConfig(config *model.ProxyConfig) {
 	a.proxyConfigChan <- pConfig
 	log.GetDefaultLogger().Infof("add %v done", config)
 	a.ProxyConfigs[config.LocalAddr] = pConfig
+	return nil
 }
 
 func (a *Agent) RemoveProxyConfig(localAddr string) error {
