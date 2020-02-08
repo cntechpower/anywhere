@@ -164,6 +164,14 @@
   version = "v1.4.0"
 
 [[projects]]
+  digest = "1:31e761d97c76151dde79e9d28964a812c46efc5baee4085b86f68f0c654450de"
+  name = "github.com/konsorten/go-windows-terminal-sequences"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
+  version = "v1.0.2"
+
+[[projects]]
   digest = "1:927762c6729b4e72957ba3310e485ed09cf8451c5a637a52fd016a9fe09e7936"
   name = "github.com/mailru/easyjson"
   packages = [
@@ -208,12 +216,12 @@
   version = "v1.7.0"
 
 [[projects]]
-  digest = "1:36a75ab002c1cfb43bcc5d2ec10fbdc2a1136e9246a65e535f1d827435f28f17"
+  digest = "1:04457f9f6f3ffc5fea48e71d62f2ca256637dee0a04d710288e27e05c8b41976"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
   pruneopts = "UT"
-  revision = "418b41d23a1bf978c06faea5313ba194650ac088"
-  version = "v0.8.7"
+  revision = "839c75faf7f98a33d445d181f3018b5c3409a45e"
+  version = "v1.4.2"
 
 [[projects]]
   digest = "1:e096613fb7cf34743d49af87d197663cfccd61876e2219853005a57baedfa562"
