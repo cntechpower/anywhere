@@ -3,6 +3,9 @@ package log
 import (
 	"fmt"
 	"os"
+	"path"
+	"runtime"
+	"strconv"
 
 	"github.com/sirupsen/logrus"
 )
@@ -22,7 +25,12 @@ func InitLogger(fileName string) {
 		FullTimestamp:    true,
 		TimestampFormat:  "2006-01-02 15:04:05",
 		DisableSorting:   false,
+		CallerPrettyfier: func(frame *runtime.Frame) (function string, file string) {
+			return path.Base(frame.Function) + "()", path.Base(frame.File) + ":" + strconv.Itoa(frame.Line)
+
+		},
 	}
+	log.SetReportCaller(true)
 	if fileName != "" {
 		// You could set this to any `io.Writer` such as a file
 		file, err := os.OpenFile("logrus.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
