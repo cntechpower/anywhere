@@ -22,7 +22,7 @@ func (s *anyWhereServer) LoadProxyConfigFile() error {
 		return err
 	}
 	for _, config := range configs.ProxyConfigs {
-		if err := s.AddProxyConfigToAgentByModel(&config); err != nil {
+		if err := s.AddProxyConfigToAgentByModel(config); err != nil {
 			return err
 		}
 	}
@@ -55,11 +55,10 @@ func writeConfigFile(configs []*model.ProxyConfig) error {
 	if err != nil {
 		return err
 	}
-	globalConfig := &model.GlobalConfig{ProxyConfigs: make([]model.ProxyConfig, 0)}
+	globalConfig := &model.GlobalConfig{ProxyConfigs: make([]*model.ProxyConfig, 0)}
 	for _, config := range configs {
-		globalConfig.ProxyConfigs = append(globalConfig.ProxyConfigs, *config)
+		globalConfig.ProxyConfigs = append(globalConfig.ProxyConfigs, config)
 	}
-	//bs, err := json.Marshal(globalConfig)
 	bs, err := json.MarshalIndent(globalConfig, "", "    ")
 	if err != nil {
 		return err
