@@ -121,7 +121,7 @@ func (s *anyWhereServer) ListProxyConfigs() []*model.ProxyConfig {
 		for _, config := range agent.ProxyConfigs {
 			res = append(res, &model.ProxyConfig{
 				AgentId:       agent.Id,
-				RemoteAddr:    config.RemoteAddr,
+				RemotePort:    config.RemotePort,
 				LocalAddr:     config.LocalAddr,
 				IsWhiteListOn: config.IsWhiteListOn,
 				WhiteListIps:  config.WhiteListIps,

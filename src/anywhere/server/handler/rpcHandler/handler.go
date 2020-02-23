@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 
 	"github.com/olekukonko/tablewriter"
 	"google.golang.org/grpc"
@@ -55,13 +56,13 @@ func (h *rpcHandlers) AddProxyConfig(ctx context.Context, input *pb.AddProxyConf
 	}
 	config := input.Config
 
-	if err := util.CheckAddrValid(config.RemoteAddr); err != nil {
-		return nil, fmt.Errorf("invalid remoteAddr %v in config, error: %v", config.RemoteAddr, err)
+	if err := util.CheckPortValid(int(config.RemotePort)); err != nil {
+		return nil, fmt.Errorf("invalid remoteAddr %v in config, error: %v", config.RemotePort, err)
 	}
 	if err := util.CheckAddrValid(config.LocalAddr); err != nil {
 		return nil, fmt.Errorf("invalid localAddr %v in config, error: %v", config.LocalAddr, err)
 	}
-	if err := s.AddProxyConfigToAgent(config.AgentId, config.RemoteAddr, config.LocalAddr, config.IsWhiteListOn, config.WhiteListIps); err != nil {
+	if err := s.AddProxyConfigToAgent(config.AgentId, int(config.RemotePort), config.LocalAddr, config.IsWhiteListOn, config.WhiteListIps); err != nil {
 		return nil, err
 	}
 	return &pb.Empty{}, nil
@@ -79,7 +80,7 @@ func (h *rpcHandlers) ListProxyConfigs(ctx context.Context, input *pb.Empty) (*p
 	for _, config := range configs {
 		res.Config = append(res.Config, &pb.ProxyConfig{
 			AgentId:       config.AgentId,
-			RemoteAddr:    config.RemoteAddr,
+			RemotePort:    int64(config.RemotePort),
 			LocalAddr:     config.LocalAddr,
 			IsWhiteListOn: config.IsWhiteListOn,
 			WhiteListIps:  config.WhiteListIps,
@@ -155,7 +156,7 @@ func ListAgent(port int) error {
 	return nil
 }
 
-func AddProxyConfig(port int, agentId, remoteAddr, localAddr string, isWhiteListOn bool, whiteListIps string) error {
+func AddProxyConfig(port int, agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) error {
 
 	client, err := newClientWithPort(port)
 	if err != nil {
@@ -163,7 +164,7 @@ func AddProxyConfig(port int, agentId, remoteAddr, localAddr string, isWhiteList
 	}
 	input := &pb.AddProxyConfigInput{Config: &pb.ProxyConfig{
 		AgentId:       agentId,
-		RemoteAddr:    remoteAddr,
+		RemotePort:    int64(remotePort),
 		LocalAddr:     localAddr,
 		IsWhiteListOn: isWhiteListOn,
 		WhiteListIps:  whiteListIps,
@@ -196,7 +197,7 @@ func ListProxyConfigs(port int) error {
 	table.SetAutoFormatHeaders(false)
 	table.SetHeader([]string{"AgentId", "RemoteAddr", "LocalAddr", "IsWhiteListOn", "IpWhiteList"})
 	for _, config := range configs.Config {
-		table.Append([]string{config.AgentId, config.RemoteAddr, config.LocalAddr, boolToString(config.IsWhiteListOn), config.WhiteListIps})
+		table.Append([]string{config.AgentId, strconv.Itoa(int(config.RemotePort)), config.LocalAddr, boolToString(config.IsWhiteListOn), config.WhiteListIps})
 	}
 	table.Render()
 	return nil

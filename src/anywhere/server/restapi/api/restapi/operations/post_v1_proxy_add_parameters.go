@@ -11,6 +11,7 @@ import (
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
+	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 
 	strfmt "github.com/go-openapi/strfmt"
@@ -42,11 +43,21 @@ type PostV1ProxyAddParams struct {
 	  In: formData
 	*/
 	LocalAddr string
-	/*anywhered server listen addr
+	/*anywhered server listen port
 	  Required: true
 	  In: formData
 	*/
-	RemoteAddr string
+	RemotePort int64
+	/*white_list_enable
+	  Required: true
+	  In: formData
+	*/
+	WhiteListEnable bool
+	/*white_list_ips
+	  Required: true
+	  In: formData
+	*/
+	WhiteListIps string
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
@@ -77,8 +88,18 @@ func (o *PostV1ProxyAddParams) BindRequest(r *http.Request, route *middleware.Ma
 		res = append(res, err)
 	}
 
-	fdRemoteAddr, fdhkRemoteAddr, _ := fds.GetOK("remote_addr")
-	if err := o.bindRemoteAddr(fdRemoteAddr, fdhkRemoteAddr, route.Formats); err != nil {
+	fdRemotePort, fdhkRemotePort, _ := fds.GetOK("remote_port")
+	if err := o.bindRemotePort(fdRemotePort, fdhkRemotePort, route.Formats); err != nil {
+		res = append(res, err)
+	}
+
+	fdWhiteListEnable, fdhkWhiteListEnable, _ := fds.GetOK("white_list_enable")
+	if err := o.bindWhiteListEnable(fdWhiteListEnable, fdhkWhiteListEnable, route.Formats); err != nil {
+		res = append(res, err)
+	}
+
+	fdWhiteListIps, fdhkWhiteListIps, _ := fds.GetOK("white_list_ips")
+	if err := o.bindWhiteListIps(fdWhiteListIps, fdhkWhiteListIps, route.Formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -130,10 +151,10 @@ func (o *PostV1ProxyAddParams) bindLocalAddr(rawData []string, hasKey bool, form
 	return nil
 }
 
-// bindRemoteAddr binds and validates parameter RemoteAddr from formData.
-func (o *PostV1ProxyAddParams) bindRemoteAddr(rawData []string, hasKey bool, formats strfmt.Registry) error {
+// bindRemotePort binds and validates parameter RemotePort from formData.
+func (o *PostV1ProxyAddParams) bindRemotePort(rawData []string, hasKey bool, formats strfmt.Registry) error {
 	if !hasKey {
-		return errors.Required("remote_addr", "formData")
+		return errors.Required("remote_port", "formData")
 	}
 	var raw string
 	if len(rawData) > 0 {
@@ -142,11 +163,61 @@ func (o *PostV1ProxyAddParams) bindRemoteAddr(rawData []string, hasKey bool, for
 
 	// Required: true
 
-	if err := validate.RequiredString("remote_addr", "formData", raw); err != nil {
+	if err := validate.RequiredString("remote_port", "formData", raw); err != nil {
 		return err
 	}
 
-	o.RemoteAddr = raw
+	value, err := swag.ConvertInt64(raw)
+	if err != nil {
+		return errors.InvalidType("remote_port", "formData", "int64", raw)
+	}
+	o.RemotePort = value
+
+	return nil
+}
+
+// bindWhiteListEnable binds and validates parameter WhiteListEnable from formData.
+func (o *PostV1ProxyAddParams) bindWhiteListEnable(rawData []string, hasKey bool, formats strfmt.Registry) error {
+	if !hasKey {
+		return errors.Required("white_list_enable", "formData")
+	}
+	var raw string
+	if len(rawData) > 0 {
+		raw = rawData[len(rawData)-1]
+	}
+
+	// Required: true
+
+	if err := validate.RequiredString("white_list_enable", "formData", raw); err != nil {
+		return err
+	}
+
+	value, err := swag.ConvertBool(raw)
+	if err != nil {
+		return errors.InvalidType("white_list_enable", "formData", "bool", raw)
+	}
+	o.WhiteListEnable = value
+
+	return nil
+}
+
+// bindWhiteListIps binds and validates parameter WhiteListIps from formData.
+func (o *PostV1ProxyAddParams) bindWhiteListIps(rawData []string, hasKey bool, formats strfmt.Registry) error {
+	if !hasKey {
+		return errors.Required("white_list_ips", "formData")
+	}
+	var raw string
+	if len(rawData) > 0 {
+		raw = rawData[len(rawData)-1]
+	}
+
+	// Required: true
+
+	if err := validate.RequiredString("white_list_ips", "formData", raw); err != nil {
+		return err
+	}
+
+	o.WhiteListIps = raw
 
 	return nil
 }

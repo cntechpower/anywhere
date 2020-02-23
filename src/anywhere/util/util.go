@@ -27,8 +27,12 @@ func CheckAddrValid(addr string) error {
 	if err != nil {
 		return err
 	}
-	if tcpAddr.Port <= 0 || tcpAddr.Port > 65535 {
-		return fmt.Errorf("invalid port %v", tcpAddr.Port)
+	return CheckPortValid(tcpAddr.Port)
+}
+
+func CheckPortValid(port int) error {
+	if port <= 0 || port > 65535 {
+		return fmt.Errorf("invalid port %v", port)
 	}
 	return nil
 }

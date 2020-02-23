@@ -25,7 +25,7 @@ type ProxyConfigInfo struct {
 	LocalAddr string `json:"local_addr,omitempty"`
 
 	// anywhered server listen addr
-	RemoteAddr string `json:"remote_addr,omitempty"`
+	RemotePort int64 `json:"remote_port,omitempty"`
 
 	// whitelist ips
 	WhitelistIps string `json:"whitelist_ips,omitempty"`

@@ -29,7 +29,8 @@ var isWebEnable bool
 var webAddress, restAddress string
 
 //args for add proxy config command
-var addProxyAgentId, addProxyRemoteAddr, addProxyLocalAddr, addProxyWhiteListIps string
+var addProxyAgentId, addProxyLocalAddr, addProxyWhiteListIps string
+var addProxyRemoteAddr int
 var addProxyIsWhiteListOn bool
 
 //args for del proxy config command
@@ -127,7 +128,7 @@ func main() {
 	}
 
 	proxyAddCmd.PersistentFlags().StringVar(&addProxyAgentId, "agent-id", "", "belong to which agent")
-	proxyAddCmd.PersistentFlags().StringVar(&addProxyRemoteAddr, "remote-addr", "", "remote port")
+	proxyAddCmd.PersistentFlags().IntVar(&addProxyRemoteAddr, "remote-addr", 0, "remote port")
 	proxyAddCmd.PersistentFlags().StringVar(&addProxyLocalAddr, "local-addr", "127.0.0.1:80", "local addr")
 	proxyAddCmd.PersistentFlags().StringVar(&addProxyWhiteListIps, "white-list", "", "local port")
 	proxyAddCmd.PersistentFlags().BoolVarP(&addProxyIsWhiteListOn, "enable-wl", "", true, "enable white list or not")

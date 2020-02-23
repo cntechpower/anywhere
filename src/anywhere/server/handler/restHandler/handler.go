@@ -3,7 +3,9 @@ package restHandler
 import (
 	"anywhere/server/handler/rpcHandler"
 	"anywhere/server/restapi/api/models"
+	v1 "anywhere/server/restapi/api/restapi/operations"
 	pb "anywhere/server/rpc/definitions"
+
 	"context"
 )
 
@@ -44,10 +46,36 @@ func ListProxyV1() ([]*models.ProxyConfigInfo, error) {
 		res = append(res, &models.ProxyConfigInfo{
 			AgentID:       config.AgentId,
 			LocalAddr:     config.LocalAddr,
-			RemoteAddr:    config.RemoteAddr,
+			RemotePort:    config.RemotePort,
 			IsWhitelistOn: config.IsWhiteListOn,
 			WhitelistIps:  config.WhiteListIps,
 		})
 	}
 	return res, nil
+}
+
+func AddProxyConfigV1(params v1.PostV1ProxyAddParams) (*models.ProxyConfigInfo, error) {
+	c, err := rpcHandler.NewClient()
+	if err != nil {
+		return nil, err
+	}
+	if _, err := c.AddProxyConfig(context.Background(), &pb.AddProxyConfigInput{
+		Config: &pb.ProxyConfig{
+			AgentId:       params.AgentID,
+			RemotePort:    params.RemotePort,
+			LocalAddr:     params.LocalAddr,
+			IsWhiteListOn: params.WhiteListEnable,
+			WhiteListIps:  params.WhiteListIps,
+		},
+	}); err != nil {
+		return nil, err
+	}
+	return &models.ProxyConfigInfo{
+		AgentID:       params.AgentID,
+		IsWhitelistOn: params.WhiteListEnable,
+		LocalAddr:     params.LocalAddr,
+		RemotePort:    params.RemotePort,
+		WhitelistIps:  params.WhiteListIps,
+	}, nil
+
 }

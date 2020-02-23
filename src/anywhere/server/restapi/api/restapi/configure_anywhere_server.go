@@ -33,7 +33,7 @@ func configureAPI(api *operations.AnywhereServerAPI) http.Handler {
 	// Example:
 	// api.Logger = log.Printf
 
-	api.JSONConsumer = runtime.JSONConsumer()
+	//api.JSONConsumer = runtime.JSONConsumer()
 
 	api.JSONProducer = runtime.JSONProducer()
 
@@ -54,12 +54,14 @@ func configureAPI(api *operations.AnywhereServerAPI) http.Handler {
 			return operations.NewGetV1ProxyListOK().WithPayload(res)
 		}
 	})
-
-	if api.GetV1AgentListHandler == nil {
-		api.GetV1AgentListHandler = operations.GetV1AgentListHandlerFunc(func(params operations.GetV1AgentListParams) middleware.Responder {
-			return middleware.NotImplemented("operation .GetV1AgentList has not yet been implemented")
-		})
-	}
+	api.PostV1ProxyAddHandler = operations.PostV1ProxyAddHandlerFunc(func(params operations.PostV1ProxyAddParams) middleware.Responder {
+		res, err := handler.AddProxyConfigV1(params)
+		if err != nil {
+			return operations.NewPostV1ProxyAddDefault(500).WithPayload(models.GenericErrors(err.Error()))
+		} else {
+			return operations.NewPostV1ProxyAddOK().WithPayload(res)
+		}
+	})
 
 	api.ServerShutdown = func() {}
 
