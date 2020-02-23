@@ -11,7 +11,7 @@ Package restapi AnywhereServer API
     Contact: dujinyang<root@cntechpower.com> http://www.cntechpower.com
 
     Consumes:
-    - application/json
+    - application/x-www-form-urlencoded
 
     Produces:
     - application/json

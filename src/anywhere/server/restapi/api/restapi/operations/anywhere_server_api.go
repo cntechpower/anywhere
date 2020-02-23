@@ -35,7 +35,7 @@ func NewAnywhereServerAPI(spec *loads.Document) *AnywhereServerAPI {
 		BasicAuthenticator:  security.BasicAuth,
 		APIKeyAuthenticator: security.APIKeyAuth,
 		BearerAuthenticator: security.BearerAuth,
-		JSONConsumer:        runtime.JSONConsumer(),
+		UrlformConsumer:     runtime.DiscardConsumer,
 		JSONProducer:        runtime.JSONProducer(),
 		GetV1AgentListHandler: GetV1AgentListHandlerFunc(func(params GetV1AgentListParams) middleware.Responder {
 			return middleware.NotImplemented("operation GetV1AgentList has not yet been implemented")
@@ -71,8 +71,8 @@ type AnywhereServerAPI struct {
 	// It has a default implementation in the security package, however you can replace it for your particular usage.
 	BearerAuthenticator func(string, security.ScopedTokenAuthentication) runtime.Authenticator
 
-	// JSONConsumer registers a consumer for a "application/json" mime type
-	JSONConsumer runtime.Consumer
+	// UrlformConsumer registers a consumer for a "application/x-www-form-urlencoded" mime type
+	UrlformConsumer runtime.Consumer
 
 	// JSONProducer registers a producer for a "application/json" mime type
 	JSONProducer runtime.Producer
@@ -138,8 +138,8 @@ func (o *AnywhereServerAPI) RegisterFormat(name string, format strfmt.Format, va
 func (o *AnywhereServerAPI) Validate() error {
 	var unregistered []string
 
-	if o.JSONConsumer == nil {
-		unregistered = append(unregistered, "JSONConsumer")
+	if o.UrlformConsumer == nil {
+		unregistered = append(unregistered, "UrlformConsumer")
 	}
 
 	if o.JSONProducer == nil {
@@ -191,8 +191,8 @@ func (o *AnywhereServerAPI) ConsumersFor(mediaTypes []string) map[string]runtime
 	for _, mt := range mediaTypes {
 		switch mt {
 
-		case "application/json":
-			result["application/json"] = o.JSONConsumer
+		case "application/x-www-form-urlencoded":
+			result["application/x-www-form-urlencoded"] = o.UrlformConsumer
 
 		}
 

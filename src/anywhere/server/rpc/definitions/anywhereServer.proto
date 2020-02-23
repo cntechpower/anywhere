@@ -27,7 +27,7 @@ message Agents{
 
 message ProxyConfig{
     string agentId = 1;
-    string remoteAddr = 2;
+    int64 remotePort = 2;
     string localAddr = 3;
     bool isWhiteListOn = 4;
     string whiteListIps = 5;

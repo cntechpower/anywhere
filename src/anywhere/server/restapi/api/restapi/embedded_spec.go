@@ -18,6 +18,12 @@ var (
 
 func init() {
 	SwaggerJSON = json.RawMessage([]byte(`{
+  "consumes": [
+    "application/x-www-form-urlencoded"
+  ],
+  "produces": [
+    "application/json"
+  ],
   "swagger": "2.0",
   "info": {
     "title": "AnywhereServer API",
@@ -63,9 +69,9 @@ func init() {
             "required": true
           },
           {
-            "type": "string",
-            "description": "anywhered server listen addr",
-            "name": "remote_addr",
+            "type": "integer",
+            "description": "anywhered server listen port",
+            "name": "remote_port",
             "in": "formData",
             "required": true
           },
@@ -73,6 +79,20 @@ func init() {
             "type": "string",
             "description": "localAddress",
             "name": "local_addr",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "boolean",
+            "description": "white_list_enable",
+            "name": "white_list_enable",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "white_list_ips",
+            "name": "white_list_ips",
             "in": "formData",
             "required": true
           }
@@ -155,9 +175,9 @@ func init() {
           "description": "localAddress",
           "type": "string"
         },
-        "remote_addr": {
+        "remote_port": {
           "description": "anywhered server listen addr",
-          "type": "string"
+          "type": "integer"
         },
         "whitelist_ips": {
           "description": "whitelist ips",
@@ -168,6 +188,12 @@ func init() {
   }
 }`))
 	FlatSwaggerJSON = json.RawMessage([]byte(`{
+  "consumes": [
+    "application/x-www-form-urlencoded"
+  ],
+  "produces": [
+    "application/json"
+  ],
   "swagger": "2.0",
   "info": {
     "title": "AnywhereServer API",
@@ -213,9 +239,9 @@ func init() {
             "required": true
           },
           {
-            "type": "string",
-            "description": "anywhered server listen addr",
-            "name": "remote_addr",
+            "type": "integer",
+            "description": "anywhered server listen port",
+            "name": "remote_port",
             "in": "formData",
             "required": true
           },
@@ -223,6 +249,20 @@ func init() {
             "type": "string",
             "description": "localAddress",
             "name": "local_addr",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "boolean",
+            "description": "white_list_enable",
+            "name": "white_list_enable",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "white_list_ips",
+            "name": "white_list_ips",
             "in": "formData",
             "required": true
           }
@@ -305,9 +345,9 @@ func init() {
           "description": "localAddress",
           "type": "string"
         },
-        "remote_addr": {
+        "remote_port": {
           "description": "anywhered server listen addr",
-          "type": "string"
+          "type": "integer"
         },
         "whitelist_ips": {
           "description": "whitelist ips",

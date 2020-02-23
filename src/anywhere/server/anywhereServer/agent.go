@@ -7,6 +7,7 @@ import (
 	"anywhere/util"
 	"fmt"
 	"net"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -78,7 +79,7 @@ func (a *Agent) ProxyConfigHandleLoop() {
 }
 
 func (a *Agent) proxyConfigHandler(config *proxyConfig) {
-	ln, err := util.ListenTcp(config.RemoteAddr)
+	ln, err := util.ListenTcp("0.0.0.0:" + strconv.Itoa(config.RemotePort))
 	if err != nil {
 		errMsg := fmt.Errorf("agent %v proxyConfigHandler got error %v", a.Id, err)
 		log.GetDefaultLogger().Errorf("%v", errMsg)
