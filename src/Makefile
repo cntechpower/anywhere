@@ -31,9 +31,9 @@ build_agent:
 	GOPATH=${GOPATH} go build ${LDFLAGS} -o bin/anywhere anywhere/agent/*.go
 vet:
 	GOPATH=${GOPATH} go vet ./anywhere/...
-upload: build
-	tar -czvf anywhere-$(VERSION).tar.gz bin/ credential/
-	tar -czvf anywhere-latest.tar.gz bin/ credential/
+upload: build ui
+	tar -czvf anywhere-$(VERSION).tar.gz bin/ credential/ static/
+	tar -czvf anywhere-latest.tar.gz bin/ credential/ static/
 	curl -T  anywhere-$(VERSION).tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
 	curl -T  anywhere-latest.tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
 clean:
@@ -46,3 +46,10 @@ docker_rpm:
 
 upload_rpm:
 	curl -T  ${PROJECT_NAME}-${RPM_VERSION}.x86_64.rpm -u ftp:ftp ftp://10.0.0.2/ci/anywhere/rpm/
+
+
+ui:
+	rm -rf static
+	wget ftp://ftp:ftp@10.0.0.2/ci/react/react-latest.tar.gz
+	tar -xf react-latest.tar.gz
+	mv build static
