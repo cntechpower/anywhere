@@ -199,6 +199,7 @@ func run(_ *cobra.Command, _ []string) error {
 	select {
 	case <-serverExitChan:
 		log.GetDefaultLogger().Infof("Server Existing")
+		close(webExitChan)
 	case err := <-apiExitChan:
 		log.GetDefaultLogger().Fatalf("api server exit with error: %v", err)
 	case err := <-rpcExitChan:

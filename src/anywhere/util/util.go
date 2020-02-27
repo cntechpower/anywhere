@@ -96,6 +96,16 @@ func FormatTimestampForFileName() string {
 	return time.Now().Format("2006_01_02_15_04")
 }
 
+func CheckPathExist(path string) bool {
+	_, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
+	return true
+}
+
 func MkdirIfNotExist(path string) error {
 	s, err := os.Stat(path)
 	if err != nil {

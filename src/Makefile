@@ -53,3 +53,4 @@ ui:
 	wget ftp://ftp:ftp@10.0.0.2/ci/react/react-latest.tar.gz
 	tar -xf react-latest.tar.gz
 	mv build static
+	rm -rf react-latest.tar.gz
