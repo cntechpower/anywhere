@@ -31,6 +31,12 @@ build_agent:
 	GOPATH=${GOPATH} go build ${LDFLAGS} -o bin/anywhere anywhere/agent/*.go
 vet:
 	GOPATH=${GOPATH} go vet ./anywhere/...
+sonar:
+	sonar-scanner \
+		  -Dsonar.projectKey=anywhere \
+		    -Dsonar.sources=. \
+		      -Dsonar.host.url=http://10.0.0.2:9001 \
+		        -Dsonar.login=a460f47352f57960e3606b827090f32fdb207b7e
 upload: build ui
 	tar -czvf anywhere-$(VERSION).tar.gz bin/ credential/ static/
 	tar -czvf anywhere-latest.tar.gz bin/ credential/ static/
