@@ -1,7 +1,6 @@
 package main
 
 import (
-	"anywhere/frontEnd"
 	"anywhere/log"
 	"anywhere/server/anywhereServer"
 	"anywhere/server/handler/rpcHandler"
@@ -180,17 +179,11 @@ func run(_ *cobra.Command, _ []string) error {
 
 	// start rpc server
 	rpcExitChan := make(chan error, 0)
-	//go rpcServer.StartRpcServer(grpcPort, rpcExitChan)
 	go rpcHandler.StartRpcServer(grpcPort, rpcExitChan)
-	apiExitChan := make(chan error, 0)
-	webExitChan := make(chan struct{}, 0)
+	webExitChan := make(chan error, 0)
 	if isWebEnable {
-		// start api server
-		//go startAPIServer(apiPort, tlsConfig, apiExitChan)
-		go startAPIServer(restAddress, nil, apiExitChan) //TODO: swagger with tls
-		//start web interface
+		go startUIAndAPIService(webAddress, certFile, keyFile, webExitChan)
 
-		go frontEnd.Start(webAddress, webExitChan)
 	}
 
 	//wait for os kill signal. TODO: graceful shutdown
@@ -199,8 +192,7 @@ func run(_ *cobra.Command, _ []string) error {
 	select {
 	case <-serverExitChan:
 		log.GetDefaultLogger().Infof("Server Existing")
-		close(webExitChan)
-	case err := <-apiExitChan:
+	case err := <-webExitChan:
 		log.GetDefaultLogger().Fatalf("api server exit with error: %v", err)
 	case err := <-rpcExitChan:
 		log.GetDefaultLogger().Fatalf("rpc server exit with error: %v", err)
