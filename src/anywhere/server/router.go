@@ -20,7 +20,7 @@ func addUIRouter(router *gin.Engine) error {
 	if !util.CheckPathExist("./static") {
 		return fmt.Errorf("static dir not found")
 	}
-	authorized := router.Group("/react/", gin.BasicAuth(gin.Accounts{"dujinyang": "suya9495"}))
+	react := router.Group("/react/")
 
 	router.LoadHTMLFiles("./static/index.html")
 	renderIndex := func(c *gin.Context) {
@@ -35,12 +35,12 @@ func addUIRouter(router *gin.Engine) error {
 		}
 
 	}
-	authorized.Any("/", renderIndex)
-	authorized.Any("/proxy/*any", renderIndex)
-	authorized.Any("/note/*any", renderIndex)
-	router.StaticFS("/react/static/", http.Dir("./static/static"))
-	router.StaticFile("/react/manifest.json", "./static/manifest.json")
-	router.StaticFile("/react/logo192.png", "./static/logo192.png")
+	react.Any("/", renderIndex)
+	react.Any("/proxy/*any", renderIndex)
+	react.Any("/note/*any", renderIndex)
+	react.StaticFS("/static/", http.Dir("./static/static"))
+	react.StaticFile("/manifest.json", "./static/manifest.json")
+	react.StaticFile("/logo192.png", "./static/logo192.png")
 	return nil
 }
 
@@ -55,9 +55,9 @@ func addAPIRouter(router *gin.Engine) error {
 	defer server.Shutdown()
 	server.Port = port
 	server.ConfigureAPI()
-	//router := gin.New()
+	apiRouter := router.Group("/api")
 	handler := server.GetHandler()
-	router.Any("/api/*any", gin.WrapH(handler))
+	apiRouter.Any("/*any", gin.WrapH(handler))
 	return nil
 }
 
@@ -66,6 +66,9 @@ func startUIAndAPIService(addr, certFile, keyFile string, errChan chan error) {
 		errChan <- err
 	}
 	router := gin.New()
+	//store := cookie.NewStore([]byte("secret"))
+	router.Use(gin.BasicAuth(gin.Accounts{"dujinyang": "suya9495"}))
+	//router.Use(sessions.Sessions("mysession", store))
 	if err := addUIRouter(router); err != nil {
 		errChan <- err
 	}
