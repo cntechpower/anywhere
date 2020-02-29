@@ -4,6 +4,8 @@ import (
 	"anywhere/log"
 	"anywhere/util"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 func Start(addr string, closeChan chan struct{}) {
@@ -13,12 +15,19 @@ func Start(addr string, closeChan chan struct{}) {
 	if !util.CheckPathExist("./static") {
 		panic("static dir not found")
 	}
-	//http.Handle("/", http.FileServer(http.Dir("static")))
-	http.Handle("/react/", http.StripPrefix("/react/", http.FileServer(http.Dir("./static"))))
+	router := gin.Default()
+	router.StaticFS("/react/", http.Dir("./static"))
+
+	//try to render template to support front end router
+	//router.StaticFS("/react/static/", http.Dir("./static/static"))
+	//router.LoadHTMLFiles("./static/index.html")
+	//router.Any("/react/", func(c *gin.Context) {
+	//	c.HTML(http.StatusOK, "index.html", nil)
+	//})
 	l := log.GetCustomLogger("web_interface")
 	l.Infof("start as %s", addr)
 	go func() {
-		if err := http.ListenAndServe(addr, nil); err != nil {
+		if err := router.Run(addr); err != nil {
 			l.Errorf("%s", err)
 		}
 	}()
