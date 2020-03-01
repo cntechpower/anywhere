@@ -56,3 +56,7 @@
 [[constraint]]
   name = "github.com/gin-contrib/sessions"
   version = "0.0.3"
+
+[[constraint]]
+  name = "github.com/dgrijalva/jwt-go"
+  version = "3.2.0"
