@@ -7,6 +7,7 @@ import (
 	"anywhere/util"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -58,6 +59,7 @@ func addUIRouter(router *gin.Engine) error {
 	react.Any("/", renderIndex)
 	react.Any("/proxy/*any", renderIndex)
 	react.Any("/note/*any", renderIndex)
+	react.Any("/user/*any", renderIndex)
 	react.StaticFS("/static/", http.Dir("./static/static"))
 	react.StaticFile("/manifest.json", "./static/manifest.json")
 	react.StaticFile("/logo192.png", "./static/logo192.png")
@@ -81,29 +83,20 @@ func addAPIRouter(router *gin.Engine) error {
 	return nil
 }
 
-func authFilter(c *gin.Context) {
-	l := log.GetCustomLogger("gin")
-	l.Infof("request path: %v", c.Request.URL.Path)
-	if c.Request.URL.Path == "/login" || c.Request.URL.Path == "/user_login" {
-		return
-	}
-	authorization := c.GetHeader("authorization")
-
-	if authorization == "" {
-		c.Redirect(http.StatusTemporaryRedirect, "/login")
-		c.Abort()
-	}
-}
-
 func redirectToLogin(c *gin.Context) {
-	c.Redirect(http.StatusTemporaryRedirect, "/login")
+	c.Redirect(http.StatusTemporaryRedirect, "/react/user/login")
 	c.Abort()
 }
 
 func sessionFilter(c *gin.Context) {
 	l := log.GetCustomLogger("sessionFilter")
 	l.Infof("request path: %v", c.Request.URL.Path)
-	if c.Request.URL.Path == "/login" || c.Request.URL.Path == "/user_login" {
+	if strings.HasPrefix(c.Request.URL.Path, "/react/static/") {
+		c.Next()
+		return
+	}
+	if c.Request.URL.Path == "/react/user/login" || c.Request.URL.Path == "/user_login" {
+		c.Next()
 		return
 	}
 
@@ -116,26 +109,31 @@ func sessionFilter(c *gin.Context) {
 func userLogin(c *gin.Context) {
 	session := sessions.Default(c)
 	userName, ok := c.GetPostForm("username")
+	log.GetDefaultLogger().Infof("called userLogin")
 	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "username is required"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "username is required"})
 		return
 	}
 	password, ok := c.GetPostForm("password")
 	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "password is required"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "password is required"})
 		return
 	}
 	if userName != "admin" || password != "admin" {
 		c.AbortWithStatusJSON(http.StatusNotAcceptable, gin.H{"message": "username/password wrong"})
+		return
 	}
 	log.GetDefaultLogger().Infof("called userLogin")
 	token, err := getJwt(userName)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 	session.Set("auth", token)
 	log.GetDefaultLogger().Info(session.Save())
-	c.Redirect(http.StatusTemporaryRedirect, "/react/")
+	c.Header("Access-Control-Allow-Origin", "*")
+	c.JSON(http.StatusOK, gin.H{"message": "login success"})
+	//c.Redirect(http.StatusTemporaryRedirect, "/react/")
 }
 
 func startUIAndAPIService(addr, certFile, keyFile string, errChan chan error) {
@@ -149,10 +147,11 @@ func startUIAndAPIService(addr, certFile, keyFile string, errChan chan error) {
 	router.Use(sessions.Sessions("anywhere", store))
 	router.Use(sessionFilter)
 
-	router.LoadHTMLFiles("./static/login.html", "./static/index.html")
-	router.Any("/login", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "login.html", nil)
-	})
+	//router.LoadHTMLFiles("./static/login.html", "./static/index.html")
+	router.LoadHTMLFiles("./static/index.html")
+	//router.Any("/login", func(c *gin.Context) {
+	//	c.HTML(http.StatusOK, "login.html", nil)
+	//})
 	router.POST("/user_login", userLogin)
 
 	//header auth
