@@ -7,6 +7,9 @@ import (
 	"anywhere/util"
 	"fmt"
 	"net/http"
+	"time"
+
+	"github.com/dgrijalva/jwt-go"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -16,8 +19,31 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var secrets = gin.H{
-	"dujinyang": gin.H{"email": "dujinyang@cntechpower.com", "phone": "13681611995"},
+var jwtKey = []byte("anywhereToken")
+
+func getJwt(user string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user": user,
+		"nbf":  time.Now(),
+		"exp":  time.Now().Add(8 * time.Hour),
+	})
+	return token.SignedString(jwtKey)
+}
+
+func checkJwt(c *gin.Context) error {
+	session := sessions.Default(c)
+	auth := session.Get("auth")
+	tokenString, ok := auth.(string)
+	if !ok {
+		redirectToLogin(c)
+	}
+	_, err := jwt.Parse(tokenString, func(token *jwt.Token) (i interface{}, e error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return jwtKey, nil
+	})
+	return err
 }
 
 func addUIRouter(router *gin.Engine) error {
@@ -69,19 +95,21 @@ func authFilter(c *gin.Context) {
 	}
 }
 
+func redirectToLogin(c *gin.Context) {
+	c.Redirect(http.StatusTemporaryRedirect, "/login")
+	c.Abort()
+}
+
 func sessionFilter(c *gin.Context) {
 	l := log.GetCustomLogger("sessionFilter")
 	l.Infof("request path: %v", c.Request.URL.Path)
 	if c.Request.URL.Path == "/login" || c.Request.URL.Path == "/user_login" {
 		return
 	}
-	session := sessions.Default(c)
 
-	auth := session.Get("auth")
-	l.Infof("auth: %v", auth)
-	if auth == nil || auth.(string) == "" {
-		c.Redirect(http.StatusTemporaryRedirect, "/login")
-		c.Abort()
+	if err := checkJwt(c); err != nil {
+		l.Infof("check jwt error: %v", err)
+		redirectToLogin(c)
 	}
 }
 
@@ -101,7 +129,11 @@ func userLogin(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusNotAcceptable, gin.H{"message": "username/password wrong"})
 	}
 	log.GetDefaultLogger().Infof("called userLogin")
-	session.Set("auth", userName+password)
+	token, err := getJwt(userName)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}
+	session.Set("auth", token)
 	log.GetDefaultLogger().Info(session.Save())
 	c.Redirect(http.StatusTemporaryRedirect, "/react/")
 }
