@@ -21,6 +21,8 @@ import (
 )
 
 var jwtKey = []byte("anywhereToken")
+var initUser = "aROnOCXRQZBx5vNT"
+var initPass = "P8xw8RCxBCm7Holh"
 
 func getJwt(user string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -119,7 +121,7 @@ func userLogin(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "password is required"})
 		return
 	}
-	if userName != "admin" || password != "admin" {
+	if userName != initUser || password != initPass {
 		c.AbortWithStatusJSON(http.StatusNotAcceptable, gin.H{"message": "username/password wrong"})
 		return
 	}
@@ -136,12 +138,13 @@ func userLogin(c *gin.Context) {
 	//c.Redirect(http.StatusTemporaryRedirect, "/react/")
 }
 
-func startUIAndAPIService(addr, certFile, keyFile string, errChan chan error) {
+func startUIAndAPIService(addr, user, pass string, errChan chan error) {
 	if err := util.CheckAddrValid(addr); err != nil {
 		errChan <- err
 	}
 	router := gin.New()
-
+	initUser = user
+	initPass = pass
 	//session auth
 	store := cookie.NewStore([]byte("secret"))
 	router.Use(sessions.Sessions("anywhere", store))
