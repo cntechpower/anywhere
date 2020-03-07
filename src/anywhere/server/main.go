@@ -2,6 +2,7 @@ package main
 
 import (
 	"anywhere/log"
+	"anywhere/model"
 	"anywhere/server/anywhereServer"
 	"anywhere/server/handler/rpcHandler"
 	"anywhere/server/restapi/api/restapi"
@@ -22,6 +23,7 @@ import (
 var version string
 var port, grpcPort int
 var certFile, keyFile, caFile, serverId string
+var adminUser, adminPass string
 
 //web interface config
 var isWebEnable bool
@@ -144,6 +146,8 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "credential/ca.crt", "ca file")
 	rootCmd.PersistentFlags().BoolVar(&isWebEnable, "web", false, "enable web interface")
 	rootCmd.PersistentFlags().StringVar(&webAddress, "web-address", "0.0.0.0:1114", "web interface port")
+	rootCmd.PersistentFlags().StringVar(&adminUser, "admin-user", "admin", "admin username")
+	rootCmd.PersistentFlags().StringVar(&adminPass, "admin-pass", "admin", "admin password")
 
 	//main service
 	rootCmd.AddCommand(startCmd)
@@ -182,8 +186,13 @@ func run(_ *cobra.Command, _ []string) error {
 	go rpcHandler.StartRpcServer(grpcPort, rpcExitChan)
 	webExitChan := make(chan error, 0)
 	if isWebEnable {
-		go startUIAndAPIService(webAddress, certFile, keyFile, webExitChan)
+		go startUIAndAPIService(webAddress, adminUser, adminPass, webExitChan)
 
+	}
+
+	if err := anywhereServer.WriteSystemConfigFile(model.NewSystemConfig(port, restAddress, grpcPort, serverId,
+		certFile, keyFile, caFile, isWebEnable, webAddress, adminUser, adminPass)); err != nil {
+		return err
 	}
 
 	//wait for os kill signal. TODO: graceful shutdown
