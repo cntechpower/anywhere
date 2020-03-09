@@ -9,10 +9,15 @@ import (
 	"os"
 	"strconv"
 
+	"anywhere/server/anywhereServer"
+
 	"github.com/olekukonko/tablewriter"
 	"google.golang.org/grpc"
 )
-import "anywhere/server/anywhereServer"
+
+var (
+	ErrServerNotInit = fmt.Errorf("anywhere server not init")
+)
 
 var grpcAddress *net.TCPAddr
 
@@ -29,7 +34,7 @@ func GetRpcHandlers(grpcPort int) *rpcHandlers {
 func (h *rpcHandlers) ListAgent(ctx context.Context, empty *pb.Empty) (*pb.Agents, error) {
 	s := anywhereServer.GetServerInstance()
 	if s == nil {
-		return &pb.Agents{}, fmt.Errorf("anywhere server not init")
+		return &pb.Agents{}, ErrServerNotInit
 	}
 	res := &pb.Agents{
 		Agent: make([]*pb.Agent, 0),
@@ -52,7 +57,7 @@ func (h *rpcHandlers) AddProxyConfig(ctx context.Context, input *pb.AddProxyConf
 	}
 	s := anywhereServer.GetServerInstance()
 	if s == nil {
-		return nil, fmt.Errorf("anywhere server not init")
+		return nil, ErrServerNotInit
 	}
 	config := input.Config
 
@@ -71,7 +76,7 @@ func (h *rpcHandlers) AddProxyConfig(ctx context.Context, input *pb.AddProxyConf
 func (h *rpcHandlers) ListProxyConfigs(ctx context.Context, input *pb.Empty) (*pb.ListProxyConfigsOutput, error) {
 	s := anywhereServer.GetServerInstance()
 	if s == nil {
-		return nil, fmt.Errorf("anywhere server not init")
+		return nil, ErrServerNotInit
 	}
 	res := &pb.ListProxyConfigsOutput{
 		Config: make([]*pb.ProxyConfig, 0),
@@ -92,7 +97,7 @@ func (h *rpcHandlers) ListProxyConfigs(ctx context.Context, input *pb.Empty) (*p
 func (h *rpcHandlers) RemoveProxyConfig(ctx context.Context, input *pb.RemoveProxyConfigInput) (*pb.Empty, error) {
 	s := anywhereServer.GetServerInstance()
 	if s == nil {
-		return &pb.Empty{}, fmt.Errorf("anywhere server not init")
+		return &pb.Empty{}, ErrServerNotInit
 	}
 	return &pb.Empty{}, s.RemoveProxyConfigFromAgent(input.AgentId, input.LocalAddr)
 }
@@ -101,7 +106,7 @@ func (h *rpcHandlers) LoadProxyConfigFile(ctx context.Context, input *pb.Empty) 
 
 	s := anywhereServer.GetServerInstance()
 	if s == nil {
-		return &pb.Empty{}, fmt.Errorf("anywhere server not init")
+		return &pb.Empty{}, ErrServerNotInit
 	}
 	return &pb.Empty{}, s.LoadProxyConfigFile()
 }
@@ -109,7 +114,7 @@ func (h *rpcHandlers) LoadProxyConfigFile(ctx context.Context, input *pb.Empty) 
 func (h *rpcHandlers) SaveProxyConfigToFile(ctx context.Context, input *pb.Empty) (*pb.Empty, error) {
 	s := anywhereServer.GetServerInstance()
 	if s == nil {
-		return &pb.Empty{}, fmt.Errorf("anywhere server not init")
+		return &pb.Empty{}, ErrServerNotInit
 	}
 	return &pb.Empty{}, s.SaveConfigToFile()
 }

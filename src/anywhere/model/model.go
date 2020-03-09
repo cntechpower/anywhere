@@ -24,34 +24,30 @@ type GlobalConfig struct {
 	ProxyConfigs []*ProxyConfig
 }
 
-type SystemConfig struct {
-	Port             int
-	RestAddress      string
-	GrpcPort         int
-	ServerId         string
-	CertFile         string
-	KeyFile          string
-	CaFile           string
-	IsWebEnable      bool
-	WebListenAddress string
-	AdminUser        string
-	AdminPass        string
+type NetworkConfig struct {
+	MainPort    int    `json:"port"`
+	GrpcPort    int    `json:"grpc_port"`
+	IsWebEnable bool   `json:"is_web_enable"`
+	RestAddr    string `json:"rest_api_listen_addr"`
+	WebAddr     string `json:"web_ui_listen_addr"`
 }
 
-func NewSystemConfig(port int, restAddr string, grpcPort int, serverId string, certFile, keyFile, caFile string, isWebEnable bool, webAddr, adminUser, adminPass string) *SystemConfig {
-	return &SystemConfig{
-		Port:             port,
-		RestAddress:      restAddr,
-		GrpcPort:         grpcPort,
-		ServerId:         serverId,
-		CertFile:         certFile,
-		KeyFile:          keyFile,
-		CaFile:           caFile,
-		IsWebEnable:      isWebEnable,
-		WebListenAddress: webAddr,
-		AdminUser:        adminUser,
-		AdminPass:        adminPass,
-	}
+type SslConfig struct {
+	CertFile string `json:"cert_file_path"`
+	KeyFile  string `json:"key_file_path"`
+	CaFile   string `json:"ca_file_path"`
+}
+
+type UserConfig struct {
+	AdminUser string `json:"admin_user_name"`
+	AdminPass string `json:"admin_password"`
+}
+
+type SystemConfig struct {
+	ServerId string         `json:"server_id"`
+	Ssl      *SslConfig     `json:"ssl_config"`
+	Net      *NetworkConfig `json:"net_config"`
+	User     *UserConfig    `json:"user_config"`
 }
 
 func NewProxyConfig(agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) (*ProxyConfig, error) {

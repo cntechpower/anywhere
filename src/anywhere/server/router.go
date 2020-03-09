@@ -24,6 +24,11 @@ var jwtKey = []byte("anywhereToken")
 var initUser = "aROnOCXRQZBx5vNT"
 var initPass = "P8xw8RCxBCm7Holh"
 
+var (
+	ErrUserPassIsRequired = gin.H{"message": "username is required"}
+	ErrUserPassWrong      = gin.H{"message": "username/password wrong"}
+)
+
 func getJwt(user string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user": user,
@@ -113,16 +118,16 @@ func userLogin(c *gin.Context) {
 	userName, ok := c.GetPostForm("username")
 	log.GetDefaultLogger().Infof("called userLogin")
 	if !ok {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "username is required"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, ErrUserPassIsRequired)
 		return
 	}
 	password, ok := c.GetPostForm("password")
 	if !ok {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "password is required"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, ErrUserPassIsRequired)
 		return
 	}
 	if userName != initUser || password != initPass {
-		c.AbortWithStatusJSON(http.StatusNotAcceptable, gin.H{"message": "username/password wrong"})
+		c.AbortWithStatusJSON(http.StatusNotAcceptable, ErrUserPassWrong)
 		return
 	}
 	log.GetDefaultLogger().Infof("called userLogin")
@@ -166,7 +171,8 @@ func startUIAndAPIService(addr, user, pass string, errChan chan error) {
 	if err := addAPIRouter(router); err != nil {
 		errChan <- err
 	}
-	//TODO: tls
+	//not support tls
+	//http://10.0.0.8/self-code/anywhere/issues/29
 	//if certFile != "" && keyFile != "" {
 	//	errChan <- router.RunTLS(addr, certFile, keyFile)
 	//}
