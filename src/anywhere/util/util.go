@@ -97,8 +97,7 @@ func FormatTimestampForFileName() string {
 }
 
 func CheckPathExist(path string) bool {
-	_, err := os.Stat(path)
-	if err != nil {
+	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			return false
 		}
@@ -107,13 +106,12 @@ func CheckPathExist(path string) bool {
 }
 
 func MkdirIfNotExist(path string) error {
-	s, err := os.Stat(path)
-	if err != nil {
+	if s, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			return os.Mkdir(path, 0755)
 		}
-	}
-	if s.IsDir() {
+		return err
+	} else if s.IsDir() {
 		return nil
 	} else {
 		return fmt.Errorf("%s exists, but is not a directory", path)

@@ -44,7 +44,7 @@ func (l *whiteList) IpInWhiteList(ip string) bool {
 		return true
 	}
 	val, ok := l.list[ip]
-	if ok == true && val == true {
+	if ok == val == true {
 		return true
 	}
 	return false

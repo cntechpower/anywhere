@@ -190,8 +190,25 @@ func run(_ *cobra.Command, _ []string) error {
 
 	}
 
-	if err := anywhereServer.WriteSystemConfigFile(model.NewSystemConfig(port, restAddress, grpcPort, serverId,
-		certFile, keyFile, caFile, isWebEnable, webAddress, adminUser, adminPass)); err != nil {
+	if err := anywhereServer.WriteSystemConfigFile(&model.SystemConfig{
+		ServerId: serverId,
+		Ssl: &model.SslConfig{
+			CertFile: certFile,
+			KeyFile:  keyFile,
+			CaFile:   caFile,
+		},
+		Net: &model.NetworkConfig{
+			MainPort:    port,
+			GrpcPort:    grpcPort,
+			IsWebEnable: isWebEnable,
+			RestAddr:    restAddress,
+			WebAddr:     webAddress,
+		},
+		User: &model.UserConfig{
+			AdminUser: adminUser,
+			AdminPass: adminPass,
+		},
+	}); err != nil {
 		return err
 	}
 
