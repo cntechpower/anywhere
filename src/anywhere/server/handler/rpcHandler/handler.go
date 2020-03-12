@@ -21,6 +21,12 @@ var (
 
 var grpcAddress *net.TCPAddr
 
+var grpcPort int
+
+func init() {
+	grpcPort, _ = anywhereServer.GetGrpcPort()
+}
+
 type rpcHandlers struct {
 	grpcPort int
 }
@@ -129,8 +135,8 @@ func NewClient() (pb.AnywhereServerClient, error) {
 	return pb.NewAnywhereServerClient(cc), nil
 }
 
-func newClientWithPort(port int) (pb.AnywhereServerClient, error) {
-	addr, err := util.GetAddrByIpPort("127.0.0.1", port)
+func newClientWithPort() (pb.AnywhereServerClient, error) {
+	addr, err := util.GetAddrByIpPort("127.0.0.1", grpcPort)
 	if err != nil {
 		return nil, err
 	}
@@ -141,8 +147,8 @@ func newClientWithPort(port int) (pb.AnywhereServerClient, error) {
 	return pb.NewAnywhereServerClient(cc), nil
 }
 
-func ListAgent(port int) error {
-	client, err := newClientWithPort(port)
+func ListAgent() error {
+	client, err := newClientWithPort()
 	if err != nil {
 		return err
 	}
@@ -161,9 +167,9 @@ func ListAgent(port int) error {
 	return nil
 }
 
-func AddProxyConfig(port int, agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) error {
+func AddProxyConfig(agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) error {
 
-	client, err := newClientWithPort(port)
+	client, err := newClientWithPort()
 	if err != nil {
 		return err
 	}
@@ -182,15 +188,14 @@ func AddProxyConfig(port int, agentId string, remotePort int, localAddr string, 
 
 }
 
-func ListProxyConfigs(port int) error {
-
+func ListProxyConfigs() error {
 	boolToString := func(b bool) string {
 		if b {
 			return "ON"
 		}
 		return "OFF"
 	}
-	client, err := newClientWithPort(port)
+	client, err := newClientWithPort()
 	if err != nil {
 		return err
 	}
@@ -209,9 +214,9 @@ func ListProxyConfigs(port int) error {
 
 }
 
-func RemoveProxyConfig(port int, agentId, localAddr string) error {
+func RemoveProxyConfig(agentId, localAddr string) error {
 
-	client, err := newClientWithPort(port)
+	client, err := newClientWithPort()
 	if err != nil {
 		return err
 	}
@@ -223,8 +228,8 @@ func RemoveProxyConfig(port int, agentId, localAddr string) error {
 
 }
 
-func LoadProxyConfigFile(port int) error {
-	client, err := newClientWithPort(port)
+func LoadProxyConfigFile() error {
+	client, err := newClientWithPort()
 	if err != nil {
 		return err
 	}
@@ -232,8 +237,8 @@ func LoadProxyConfigFile(port int) error {
 	return err
 }
 
-func SaveProxyConfigToFile(port int) error {
-	client, err := newClientWithPort(port)
+func SaveProxyConfigToFile() error {
+	client, err := newClientWithPort()
 	if err != nil {
 		return err
 	}
