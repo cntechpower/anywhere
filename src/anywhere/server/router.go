@@ -82,7 +82,6 @@ func addAPIRouter(router *gin.Engine) error {
 	api := operations.NewAnywhereServerAPI(swaggerSpec)
 	server := restapi.NewServer(api)
 	defer server.Shutdown()
-	server.Port = port
 	server.ConfigureAPI()
 	apiRouter := router.Group("/api")
 	handler := server.GetHandler()

@@ -2,7 +2,6 @@ package main
 
 import (
 	"anywhere/log"
-	"anywhere/model"
 	"anywhere/server/anywhereServer"
 	"anywhere/server/handler/rpcHandler"
 	"anywhere/server/restapi/api/restapi"
@@ -21,13 +20,6 @@ import (
 
 //server global config
 var version string
-var port, grpcPort int
-var certFile, keyFile, caFile, serverId string
-var adminUser, adminPass string
-
-//web interface config
-var isWebEnable bool
-var webAddress, restAddress string
 
 //args for add proxy config command
 var addProxyAgentId, addProxyLocalAddr, addProxyWhiteListIps string
@@ -63,7 +55,7 @@ func main() {
 		Short: "list agents",
 		Long:  `list anywhere agents.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := rpcHandler.ListAgent(grpcPort); err != nil {
+			if err := rpcHandler.ListAgent(); err != nil {
 				fmt.Printf("error query agent list: %v\n", err)
 			}
 		},
@@ -78,7 +70,7 @@ func main() {
 		Short: "add proxy config",
 		Long:  `add a proxy config.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := rpcHandler.AddProxyConfig(grpcPort, addProxyAgentId, addProxyRemoteAddr, addProxyLocalAddr, addProxyIsWhiteListOn, addProxyWhiteListIps); err != nil {
+			if err := rpcHandler.AddProxyConfig(addProxyAgentId, addProxyRemoteAddr, addProxyLocalAddr, addProxyIsWhiteListOn, addProxyWhiteListIps); err != nil {
 				fmt.Printf("error adding proxy config : %v\n", err)
 			}
 		},
@@ -89,7 +81,7 @@ func main() {
 		Short: "delete proxy config",
 		Long:  `delete a proxy config.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := rpcHandler.RemoveProxyConfig(grpcPort, delProxyAgentId, delProxyLocalAddr); err != nil {
+			if err := rpcHandler.RemoveProxyConfig(delProxyAgentId, delProxyLocalAddr); err != nil {
 				fmt.Printf("error deleting proxy config : %v\n", err)
 			}
 		},
@@ -100,7 +92,7 @@ func main() {
 		Short: "list proxy configs",
 		Long:  `add a proxy config.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := rpcHandler.ListProxyConfigs(grpcPort); err != nil {
+			if err := rpcHandler.ListProxyConfigs(); err != nil {
 				fmt.Printf("error query proxy config list: %v\n", err)
 			}
 		},
@@ -111,7 +103,7 @@ func main() {
 		Short: "load proxy configs",
 		Long:  `load proxy configs from config file.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := rpcHandler.LoadProxyConfigFile(grpcPort); err != nil {
+			if err := rpcHandler.LoadProxyConfigFile(); err != nil {
 				fmt.Printf("error load proxy config: %v\n", err)
 			}
 		},
@@ -122,8 +114,23 @@ func main() {
 		Short: "save proxy configs",
 		Long:  `save proxy configs to config file.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := rpcHandler.SaveProxyConfigToFile(grpcPort); err != nil {
+			if err := rpcHandler.SaveProxyConfigToFile(); err != nil {
 				fmt.Printf("error save proxy config: %v\n", err)
+			}
+		},
+	}
+	var configCmd = &cobra.Command{
+		Use:   "config",
+		Short: "config file admin interface",
+		Long:  `config file admin interface.`,
+	}
+	var resetConfigCmd = &cobra.Command{
+		Use:   "reset",
+		Short: "reset system config file",
+		Long:  `reset system config file 'anywhered.json'`,
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := anywhereServer.WriteInitConfigFile(); err != nil {
+				fmt.Printf("error reset proxy config: %v\n", err)
 			}
 		},
 	}
@@ -136,18 +143,6 @@ func main() {
 
 	proxyDelCmd.PersistentFlags().StringVar(&delProxyAgentId, "agent-id", "", "del from which agent")
 	proxyDelCmd.PersistentFlags().StringVar(&delProxyLocalAddr, "local-addr", "", "del from which localAddr")
-
-	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 1111, "anywhered serve port")
-	rootCmd.PersistentFlags().StringVarP(&restAddress, "rest-address", "a", "127.0.0.1:1112", "anywhered rest api address")
-	rootCmd.PersistentFlags().IntVarP(&grpcPort, "grpc-port", "g", 1113, "anywhered grpc port")
-	rootCmd.PersistentFlags().StringVarP(&serverId, "server-id", "s", "anywhered-1", "anywhered server id")
-	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "credential/server.crt", "cert file")
-	rootCmd.PersistentFlags().StringVar(&keyFile, "key", "credential/server.key", "key file")
-	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "credential/ca.crt", "ca file")
-	rootCmd.PersistentFlags().BoolVar(&isWebEnable, "web", false, "enable web interface")
-	rootCmd.PersistentFlags().StringVar(&webAddress, "web-address", "0.0.0.0:1114", "web interface port")
-	rootCmd.PersistentFlags().StringVar(&adminUser, "admin-user", "admin", "admin username")
-	rootCmd.PersistentFlags().StringVar(&adminPass, "admin-pass", "admin", "admin password")
 
 	//main service
 	rootCmd.AddCommand(startCmd)
@@ -162,6 +157,10 @@ func main() {
 	proxyCmd.AddCommand(proxyDelCmd)
 	proxyCmd.AddCommand(proxyLoadCmd)
 	proxyCmd.AddCommand(proxySaveCmd)
+
+	//config file manage cmds
+	rootCmd.AddCommand(configCmd)
+	configCmd.AddCommand(resetConfigCmd)
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)
 	}
@@ -170,9 +169,13 @@ func main() {
 
 func run(_ *cobra.Command, _ []string) error {
 	log.InitLogger("")
-	s := anywhereServer.InitServerInstance(serverId, port)
+	c, err := anywhereServer.ParseSystemConfigFile()
+	if err != nil {
+		return err
+	}
+	s := anywhereServer.InitServerInstance(c.ServerId, c.Net.MainPort)
 
-	tlsConfig, err := tls.ParseTlsConfig(certFile, keyFile, caFile)
+	tlsConfig, err := tls.ParseTlsConfig(c.Ssl.CertFile, c.Ssl.KeyFile, c.Ssl.CaFile)
 	if err != nil {
 		return err
 	}
@@ -183,32 +186,14 @@ func run(_ *cobra.Command, _ []string) error {
 
 	// start rpc server
 	rpcExitChan := make(chan error, 0)
-	go rpcHandler.StartRpcServer(grpcPort, rpcExitChan)
+	go rpcHandler.StartRpcServer(c.Net.GrpcPort, rpcExitChan)
 	webExitChan := make(chan error, 0)
-	if isWebEnable {
-		go startUIAndAPIService(webAddress, adminUser, adminPass, webExitChan)
+	if c.Net.IsWebEnable {
+		go startUIAndAPIService(c.Net.WebAddr, c.User.AdminUser, c.User.AdminPass, webExitChan)
 
 	}
 
-	if err := anywhereServer.WriteSystemConfigFile(&model.SystemConfig{
-		ServerId: serverId,
-		Ssl: &model.SslConfig{
-			CertFile: certFile,
-			KeyFile:  keyFile,
-			CaFile:   caFile,
-		},
-		Net: &model.NetworkConfig{
-			MainPort:    port,
-			GrpcPort:    grpcPort,
-			IsWebEnable: isWebEnable,
-			RestAddr:    restAddress,
-			WebAddr:     webAddress,
-		},
-		User: &model.UserConfig{
-			AdminUser: adminUser,
-			AdminPass: adminPass,
-		},
-	}); err != nil {
+	if err := anywhereServer.WriteInitConfigFile(); err != nil {
 		return err
 	}
 
@@ -241,7 +226,6 @@ func startAPIServer(addr string, tlsConfig *tls_.Config, errChan chan error) {
 	api := operations.NewAnywhereServerAPI(swaggerSpec)
 	server := restapi.NewServer(api)
 	defer server.Shutdown()
-	server.Port = port
 	server.ConfigureAPI()
 	var l net.Listener
 	if tlsConfig != nil {

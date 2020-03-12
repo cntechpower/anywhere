@@ -1,46 +1,19 @@
 {
-    "ProxyConfigs": [
-        {
-            "AgentId": "anywhere-agent-1",
-            "RemoteAddr": "0.0.0.0:3022",
-            "LocalAddr": "10.0.0.8:22",
-            "IsWhiteListOn": true,
-            "WhiteListIps": "180.169.60.146,117.186.5.201"
-        },
-        {
-            "AgentId": "anywhere-agent-1",
-            "RemoteAddr": "0.0.0.0:9497",
-            "LocalAddr": "10.0.0.2:80",
-            "IsWhiteListOn": true,
-            "WhiteListIps": "180.169.60.146,117.186.5.201"
-        },
-        {
-            "AgentId": "anywhere-agent-1",
-            "RemoteAddr": "0.0.0.0:6689",
-            "LocalAddr": "10.0.0.8:80",
-            "IsWhiteListOn": true,
-            "WhiteListIps": "180.169.60.146,117.186.5.201"
-        },
-        {
-            "AgentId": "anywhere-agent-1",
-            "RemoteAddr": "0.0.0.0:9495",
-            "LocalAddr": "10.0.0.2:3389",
-            "IsWhiteListOn": true,
-            "WhiteListIps": "180.169.60.146,117.186.5.201"
-        },
-        {
-            "AgentId": "anywhere-agent-1",
-            "RemoteAddr": "0.0.0.0:9496",
-            "LocalAddr": "10.0.0.33:3389",
-            "IsWhiteListOn": true,
-            "WhiteListIps": "180.169.60.146,117.186.5.201"
-        },
-        {
-            "AgentId": "anywhere-agent-1",
-            "RemoteAddr": "0.0.0.0:2022",
-            "LocalAddr": "10.0.0.2:22",
-            "IsWhiteListOn": true,
-            "WhiteListIps": "180.169.60.146,117.186.5.201"
-        }
-    ]
+    "server_id": "anywhered-1",
+    "ssl_config": {
+        "cert_file_path": "credential/server.crt",
+        "key_file_path": "credential/server.key",
+        "ca_file_path": "credential/ca.crt"
+    },
+    "net_config": {
+        "port": 1111,
+        "grpc_port": 1113,
+        "is_web_enable": true,
+        "rest_api_listen_addr": "127.0.0.1:1112",
+        "web_ui_listen_addr": "0.0.0.0:1114"
+    },
+    "user_config": {
+        "admin_user_name": "admin",
+        "admin_password": "admin"
+    }
 }
