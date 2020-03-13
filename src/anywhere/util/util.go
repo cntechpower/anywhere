@@ -154,9 +154,9 @@ func CaptureProfile(name, dumpPath string, extraInfo int) error {
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-func RandId() string {
+func RandString(n int) string {
 	rand.Seed(time.Now().UnixNano())
-	b := make([]rune, 3)
+	b := make([]rune, n)
 	for i := range b {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}

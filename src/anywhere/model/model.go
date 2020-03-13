@@ -39,8 +39,10 @@ type SslConfig struct {
 }
 
 type UserConfig struct {
-	AdminUser string `json:"admin_user_name"`
-	AdminPass string `json:"admin_password"`
+	AdminUser      string `json:"admin_user_name"`
+	AdminPass      string `json:"admin_password"`
+	AdminOtpEnable bool   `json:"admin_otp_enable"`
+	AdminOtpCode   string `json:"admin_otp_code"`
 }
 
 type SystemConfig struct {

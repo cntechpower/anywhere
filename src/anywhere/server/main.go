@@ -189,7 +189,7 @@ func run(_ *cobra.Command, _ []string) error {
 	go rpcHandler.StartRpcServer(c.Net.GrpcPort, rpcExitChan)
 	webExitChan := make(chan error, 0)
 	if c.Net.IsWebEnable {
-		go startUIAndAPIService(c.Net.WebAddr, c.User.AdminUser, c.User.AdminPass, webExitChan)
+		go startUIAndAPIService(c.Net.WebAddr, c.User.AdminUser, c.User.AdminPass, c.User.AdminOtpCode, c.User.AdminOtpEnable, webExitChan)
 
 	}
 
