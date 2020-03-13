@@ -2,15 +2,13 @@ package main
 
 import (
 	"anywhere/log"
+	"anywhere/server/auth"
 	"anywhere/server/restapi/api/restapi"
 	"anywhere/server/restapi/api/restapi/operations"
 	"anywhere/util"
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
-
-	"github.com/dgrijalva/jwt-go"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -20,39 +18,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var jwtKey = []byte("anywhereToken")
-var initUser = "aROnOCXRQZBx5vNT"
-var initPass = "P8xw8RCxBCm7Holh"
+var userValidator *auth.UserValidator
+var jwtValidator *auth.JwtValidator
+var totpValidator *auth.TOTPValidator
 
 var (
-	ErrUserPassIsRequired = gin.H{"message": "username is required"}
+	ErrUserPassIsRequired = gin.H{"message": "username/password/otp_code is required"}
 	ErrUserPassWrong      = gin.H{"message": "username/password wrong"}
 )
-
-func getJwt(user string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user": user,
-		"nbf":  time.Now(),
-		"exp":  time.Now().Add(8 * time.Hour),
-	})
-	return token.SignedString(jwtKey)
-}
-
-func checkJwt(c *gin.Context) error {
-	session := sessions.Default(c)
-	auth := session.Get("auth")
-	tokenString, ok := auth.(string)
-	if !ok {
-		redirectToLogin(c)
-	}
-	_, err := jwt.Parse(tokenString, func(token *jwt.Token) (i interface{}, e error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return jwtKey, nil
-	})
-	return err
-}
 
 func addUIRouter(router *gin.Engine) error {
 	if !util.CheckPathExist("./static") {
@@ -78,7 +51,6 @@ func addAPIRouter(router *gin.Engine) error {
 	if err != nil {
 		return err
 	}
-
 	api := operations.NewAnywhereServerAPI(swaggerSpec)
 	server := restapi.NewServer(api)
 	defer server.Shutdown()
@@ -105,17 +77,22 @@ func sessionFilter(c *gin.Context) {
 		c.Next()
 		return
 	}
+	session := sessions.Default(c)
+	authHeader := session.Get("auth")
+	tokenString, ok := authHeader.(string)
+	if !ok {
+		redirectToLogin(c)
+	}
 
-	if err := checkJwt(c); err != nil {
-		l.Infof("check jwt error: %v", err)
+	if !jwtValidator.Validate("", tokenString) {
 		redirectToLogin(c)
 	}
 }
 
 func userLogin(c *gin.Context) {
+	//get username/password/otpcode from form
 	session := sessions.Default(c)
 	userName, ok := c.GetPostForm("username")
-	log.GetDefaultLogger().Infof("called userLogin")
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusBadRequest, ErrUserPassIsRequired)
 		return
@@ -125,56 +102,55 @@ func userLogin(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, ErrUserPassIsRequired)
 		return
 	}
-	if userName != initUser || password != initPass {
+	otpCode, ok := c.GetPostForm("otpcode")
+	if !ok {
+		c.AbortWithStatusJSON(http.StatusBadRequest, ErrUserPassIsRequired)
+		return
+	}
+
+	//username & password check
+	if !userValidator.Validate(userName, password) {
 		c.AbortWithStatusJSON(http.StatusNotAcceptable, ErrUserPassWrong)
 		return
 	}
-	log.GetDefaultLogger().Infof("called userLogin")
-	token, err := getJwt(userName)
+
+	//OTP check
+	if !totpValidator.Validate(userName, otpCode) {
+		c.AbortWithStatusJSON(http.StatusNotAcceptable, ErrUserPassWrong)
+		return
+	}
+	//validate success, generate setCookie
+	token, err := jwtValidator.Generate(userName)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	session.Set("auth", token)
-	log.GetDefaultLogger().Info(session.Save())
+	_ = session.Save() //ignore session save error
 	c.Header("Access-Control-Allow-Origin", "*")
 	c.JSON(http.StatusOK, gin.H{"message": "login success"})
-	//c.Redirect(http.StatusTemporaryRedirect, "/react/")
 }
 
-func startUIAndAPIService(addr, user, pass string, errChan chan error) {
+func startUIAndAPIService(addr, user, pass, totpSecret string, otpEnable bool, errChan chan error) {
 	if err := util.CheckAddrValid(addr); err != nil {
 		errChan <- err
 	}
 	router := gin.New()
-	initUser = user
-	initPass = pass
+	userValidator = auth.NewUserValidator(user, pass)
+	jwtValidator = auth.NewJwtValidator()
+	totpValidator = auth.NewTOTPValidator(user, totpSecret, otpEnable)
 	//session auth
 	store := cookie.NewStore([]byte("secret"))
 	router.Use(sessions.Sessions("anywhere", store))
 	router.Use(sessionFilter)
-
-	//router.LoadHTMLFiles("./static/login.html", "./static/index.html")
 	router.LoadHTMLFiles("./static/index.html")
-	//router.Any("/login", func(c *gin.Context) {
-	//	c.HTML(http.StatusOK, "login.html", nil)
-	//})
 	router.POST("/user_login", userLogin)
-
-	//header auth
-	//router.Use(authFilter)
-
 	if err := addUIRouter(router); err != nil {
 		errChan <- err
 	}
 	if err := addAPIRouter(router); err != nil {
 		errChan <- err
 	}
-	//not support tls
-	//http://10.0.0.8/self-code/anywhere/issues/29
-	//if certFile != "" && keyFile != "" {
-	//	errChan <- router.RunTLS(addr, certFile, keyFile)
-	//}
 	errChan <- router.Run(addr)
 
 }

@@ -26,6 +26,18 @@
   version = "v9"
 
 [[projects]]
+  digest = "1:7b94d37d65c0445053c6f3e73090e3966c1c29127035492c349e14f25c440359"
+  name = "github.com/boombuler/barcode"
+  packages = [
+    ".",
+    "qr",
+    "utils",
+  ]
+  pruneopts = "UT"
+  revision = "3cfea5ab600ae37946be2b763b8ec2c1cf2d272d"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:76dc72490af7174349349838f2fe118996381b31ea83243812a97e5a0fd5ed55"
   name = "github.com/dgrijalva/jwt-go"
   packages = ["."]
@@ -331,6 +343,14 @@
   version = "v0.0.1"
 
 [[projects]]
+  digest = "1:dcb9a425a9669263b7957d12db6ab6df5eae1e1821b3746d2444b714eb0ed41b"
+  name = "github.com/pquerna/otp"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "43bebefda392017900e7a7b237b4c914c6a55b50"
+  version = "v1.2.0"
+
+[[projects]]
   digest = "1:c5dfe46811af7e2eff7c11fc84b6c841520338613c056f659f262d5a4fb42fa8"
   name = "github.com/rs/cors"
   packages = ["."]
@@ -522,6 +542,7 @@
     "github.com/golang/protobuf/proto",
     "github.com/jessevdk/go-flags",
     "github.com/olekukonko/tablewriter",
+    "github.com/pquerna/otp",
     "github.com/rs/cors",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",

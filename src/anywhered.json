@@ -14,6 +14,8 @@
     },
     "user_config": {
         "admin_user_name": "admin",
-        "admin_password": "admin"
+        "admin_password": "admin",
+        "admin_otp_enable": false,
+        "admin_otp_code": "ZKQVBFY55NJGGWBV5F6CU5CEK2YAWIB6"
     }
 }

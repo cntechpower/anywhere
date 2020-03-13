@@ -189,7 +189,7 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, cl
 }
 
 func (a *Agent) handelProxyConnection(c net.Conn, localAddr string) {
-	l := log.GetCustomLogger("[%v]proxy: %v->%v", util.RandId(), c.RemoteAddr().String(), localAddr)
+	l := log.GetCustomLogger("[%v]proxy: %v->%v", util.RandString(3), c.RemoteAddr().String(), localAddr)
 	dst, err := a.GetProxyConn(localAddr)
 	if err != nil {
 		l.Infof("get conn error: %v", err)
