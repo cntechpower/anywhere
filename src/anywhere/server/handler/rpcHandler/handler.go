@@ -73,7 +73,7 @@ func (h *rpcHandlers) AddProxyConfig(ctx context.Context, input *pb.AddProxyConf
 	if err := util.CheckAddrValid(config.LocalAddr); err != nil {
 		return nil, fmt.Errorf("invalid localAddr %v in config, error: %v", config.LocalAddr, err)
 	}
-	if err := s.AddProxyConfigToAgent(config.AgentId, int(config.RemotePort), config.LocalAddr, config.IsWhiteListOn, config.WhiteListIps); err != nil {
+	if err := s.AddProxyConfigToAgent(config.AgentId, int(config.RemotePort), config.LocalAddr, config.IsWhiteListOn, config.WhiteCidrList); err != nil {
 		return nil, err
 	}
 	return &pb.Empty{}, nil
@@ -94,7 +94,7 @@ func (h *rpcHandlers) ListProxyConfigs(ctx context.Context, input *pb.Empty) (*p
 			RemotePort:    int64(config.RemotePort),
 			LocalAddr:     config.LocalAddr,
 			IsWhiteListOn: config.IsWhiteListOn,
-			WhiteListIps:  config.WhiteListIps,
+			WhiteCidrList: config.WhiteCidrList,
 		})
 	}
 	return res, nil
@@ -178,7 +178,7 @@ func AddProxyConfig(agentId string, remotePort int, localAddr string, isWhiteLis
 		RemotePort:    int64(remotePort),
 		LocalAddr:     localAddr,
 		IsWhiteListOn: isWhiteListOn,
-		WhiteListIps:  whiteListIps,
+		WhiteCidrList: whiteListIps,
 	}}
 	_, err = client.AddProxyConfig(context.Background(), input)
 	if err != nil {
@@ -207,7 +207,7 @@ func ListProxyConfigs() error {
 	table.SetAutoFormatHeaders(false)
 	table.SetHeader([]string{"AgentId", "RemoteAddr", "LocalAddr", "IsWhiteListOn", "IpWhiteList"})
 	for _, config := range configs.Config {
-		table.Append([]string{config.AgentId, strconv.Itoa(int(config.RemotePort)), config.LocalAddr, boolToString(config.IsWhiteListOn), config.WhiteListIps})
+		table.Append([]string{config.AgentId, strconv.Itoa(int(config.RemotePort)), config.LocalAddr, boolToString(config.IsWhiteListOn), config.WhiteCidrList})
 	}
 	table.Render()
 	return nil

@@ -1,21 +1,24 @@
 package util
 
 import (
+	"net"
 	"strings"
+	"sync"
 )
 
 type whiteList struct {
-	list map[string]bool
+	cidrs []*net.IPNet
+	//any r/w to cidrs should hold mutex by caller
+	mutex sync.RWMutex
 }
 
-func isPrivateIp(s string) bool {
-	if strings.HasPrefix(s, "172.16") ||
-		strings.HasPrefix(s, "10.0") ||
-		strings.HasPrefix(s, "192.168") ||
-		strings.HasPrefix(s, "127.0.0.1") {
-		return true
-	}
-	return false
+func getPrivateCidrs() []*net.IPNet {
+	_, ipNetLocalHost, _ := net.ParseCIDR("127.0.0.1/32")
+	_, ipNetA, _ := net.ParseCIDR("10.0.0.0/8")
+	_, ipNetB, _ := net.ParseCIDR("127.16.0.0/12")
+	_, ipNetC, _ := net.ParseCIDR("192.168.0.0/16")
+	return []*net.IPNet{ipNetLocalHost, ipNetA, ipNetB, ipNetC}
+
 }
 
 func (l *whiteList) AddrInWhiteList(addr string) bool {
@@ -23,29 +26,46 @@ func (l *whiteList) AddrInWhiteList(addr string) bool {
 	return l.IpInWhiteList(ip)
 }
 
-func (l *whiteList) AddIpToList(ip string) {
-	l.list[ip] = true
+func (l *whiteList) AddCidrToList(cidrString string) error {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+	_, cidr, err := net.ParseCIDR(cidrString)
+	if err != nil {
+		return err
+	}
+	l.cidrs = append(l.cidrs, cidr)
+	return nil
 }
 
-func NewWhiteList(ips string) *whiteList {
-	l := &whiteList{list: make(map[string]bool, 0)}
-	if ips == "" {
-		return l
+func NewWhiteList(cidrList string) (*whiteList, error) {
+	l := &whiteList{
+		cidrs: make([]*net.IPNet, 0),
+		mutex: sync.RWMutex{},
 	}
-	ipList := strings.Split(ips, ",")
-	for _, ip := range ipList {
-		l.list[ip] = true
+
+	//add private to start of cidrs
+	l.cidrs = append(l.cidrs, getPrivateCidrs()...)
+	if cidrList == "" {
+		return l, nil
 	}
-	return l
+	cidrs := strings.Split(cidrList, ",")
+	for _, cidrString := range cidrs {
+		_, cidr, err := net.ParseCIDR(cidrString)
+		if err != nil {
+			return nil, err
+		}
+		l.cidrs = append(l.cidrs, cidr)
+	}
+	return l, nil
 }
 
 func (l *whiteList) IpInWhiteList(ip string) bool {
-	if isPrivateIp(ip) {
-		return true
-	}
-	val, ok := l.list[ip]
-	if ok == val == true {
-		return true
+	l.mutex.RLock()
+	defer l.mutex.RUnlock()
+	for _, cidr := range l.cidrs {
+		if cidr.Contains(net.ParseIP(ip)) {
+			return true
+		}
 	}
 	return false
 }

@@ -343,9 +343,13 @@
   version = "v0.0.1"
 
 [[projects]]
-  digest = "1:dcb9a425a9669263b7957d12db6ab6df5eae1e1821b3746d2444b714eb0ed41b"
+  digest = "1:3e5eb9af2330c7a46d64592800813c33adf94305ce53a3fae42191ea18e520e6"
   name = "github.com/pquerna/otp"
-  packages = ["."]
+  packages = [
+    ".",
+    "hotp",
+    "totp",
+  ]
   pruneopts = "UT"
   revision = "43bebefda392017900e7a7b237b4c914c6a55b50"
   version = "v1.2.0"
@@ -407,9 +411,10 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:15cfa875e9fc8111932f9f02f6495ae47b89bc685bbb494f9b66e9afb0a701ca"
+  digest = "1:e974bfbd5a0f2bbc10ae45a71cf55a032b7876746fad60daa29fe6212bcc894e"
   name = "golang.org/x/net"
   packages = [
+    "context",
     "http/httpguts",
     "http2",
     "http2/hpack",
@@ -542,14 +547,13 @@
     "github.com/golang/protobuf/proto",
     "github.com/jessevdk/go-flags",
     "github.com/olekukonko/tablewriter",
-    "github.com/pquerna/otp",
+    "github.com/pquerna/otp/totp",
     "github.com/rs/cors",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
+    "golang.org/x/net/context",
     "golang.org/x/net/netutil",
     "google.golang.org/grpc",
-    "google.golang.org/grpc/codes",
-    "google.golang.org/grpc/status",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

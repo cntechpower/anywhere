@@ -1,0 +1,11 @@
+{
+    "ProxyConfigs": [
+        {
+            "agent_id": "anywhere-agent-1",
+            "remote_port": 1555,
+            "local_addr": "10.0.0.8:80",
+            "is_white_list_enable": true,
+            "white_cidr_list": "177.88.0.0/16"
+        }
+    ]
+}

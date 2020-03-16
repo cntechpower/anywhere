@@ -201,7 +201,7 @@ func (o *PostV1ProxyAddParams) bindWhiteListEnable(rawData []string, hasKey bool
 	return nil
 }
 
-// bindWhiteListIps binds and validates parameter WhiteListIps from formData.
+// bindWhiteListIps binds and validates parameter WhiteCidrList from formData.
 func (o *PostV1ProxyAddParams) bindWhiteListIps(rawData []string, hasKey bool, formats strfmt.Registry) error {
 	if !hasKey {
 		return errors.Required("white_list_ips", "formData")

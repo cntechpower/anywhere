@@ -51,7 +51,7 @@ func (s *anyWhereServer) LoadProxyConfigFile() error {
 	return nil
 }
 
-const configFile = "anywhered-proxy-config.json"
+const configFile = "proxy.json"
 const systemConfigFIle = "anywhered.json"
 
 func ParseProxyConfigFile() (*model.GlobalConfig, error) {

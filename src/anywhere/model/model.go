@@ -13,11 +13,11 @@ type AgentInfo struct {
 }
 
 type ProxyConfig struct {
-	AgentId       string
-	RemotePort    int
-	LocalAddr     string
-	IsWhiteListOn bool
-	WhiteListIps  string
+	AgentId       string `json:"agent_id"`
+	RemotePort    int    `json:"remote_port"`
+	LocalAddr     string `json:"local_addr"`
+	IsWhiteListOn bool   `json:"is_white_list_enable"`
+	WhiteCidrList string `json:"white_cidr_list"`
 }
 
 type GlobalConfig struct {
@@ -65,7 +65,7 @@ func NewProxyConfig(agentId string, remotePort int, localAddr string, isWhiteLis
 		RemotePort:    remotePort,
 		LocalAddr:     localAddr,
 		IsWhiteListOn: isWhiteListOn,
-		WhiteListIps:  whiteListIps,
+		WhiteCidrList: whiteListIps,
 	}, nil
 
 }
