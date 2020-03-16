@@ -48,7 +48,7 @@ func ListProxyV1() ([]*models.ProxyConfigInfo, error) {
 			LocalAddr:     config.LocalAddr,
 			RemotePort:    config.RemotePort,
 			IsWhitelistOn: config.IsWhiteListOn,
-			WhitelistIps:  config.WhiteListIps,
+			WhitelistIps:  config.WhiteCidrList,
 		})
 	}
 	return res, nil
@@ -65,7 +65,7 @@ func AddProxyConfigV1(params v1.PostV1ProxyAddParams) (*models.ProxyConfigInfo, 
 			RemotePort:    params.RemotePort,
 			LocalAddr:     params.LocalAddr,
 			IsWhiteListOn: params.WhiteListEnable,
-			WhiteListIps:  params.WhiteListIps,
+			WhiteCidrList: params.WhiteListIps,
 		},
 	}); err != nil {
 		return nil, err

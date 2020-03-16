@@ -124,7 +124,7 @@ func (s *anyWhereServer) ListProxyConfigs() []*model.ProxyConfig {
 				RemotePort:    config.RemotePort,
 				LocalAddr:     config.LocalAddr,
 				IsWhiteListOn: config.IsWhiteListOn,
-				WhiteListIps:  config.WhiteListIps,
+				WhiteCidrList: config.WhiteCidrList,
 			})
 		}
 	}

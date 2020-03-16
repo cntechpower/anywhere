@@ -86,7 +86,7 @@ func (a *Agent) proxyConfigHandler(config *proxyConfig) {
 		a.errChan <- errMsg
 		return
 	}
-	go a.handelTunnelConnection(ln, config.LocalAddr, config.closeChan, config.ProxyConfig.IsWhiteListOn, config.ProxyConfig.WhiteListIps)
+	go a.handelTunnelConnection(ln, config.LocalAddr, config.closeChan, config.ProxyConfig.IsWhiteListOn, config.ProxyConfig.WhiteCidrList)
 }
 
 func (a *Agent) AddProxyConfig(config *model.ProxyConfig) error {
@@ -167,7 +167,11 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, cl
 	}()
 
 	//always try to get a whitelist
-	whiteList := util.NewWhiteList(whiteListIps)
+	whiteList, err := util.NewWhiteList(whiteListIps)
+	if err != nil {
+		l.Errorf("init white list error: %v", err)
+		return
+	}
 	for {
 		c, err := ln.AcceptTCP()
 		if err != nil {
