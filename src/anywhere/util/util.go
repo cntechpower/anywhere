@@ -162,3 +162,10 @@ func RandString(n int) string {
 	}
 	return string(b)
 }
+
+func StringNvl(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}

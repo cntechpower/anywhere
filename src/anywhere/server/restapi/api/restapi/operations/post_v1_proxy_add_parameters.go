@@ -18,10 +18,18 @@ import (
 )
 
 // NewPostV1ProxyAddParams creates a new PostV1ProxyAddParams object
-// no default values defined in spec.
+// with the default values initialized.
 func NewPostV1ProxyAddParams() PostV1ProxyAddParams {
 
-	return PostV1ProxyAddParams{}
+	var (
+		// initialize parameters with default values
+
+		whiteListIpsDefault = string("")
+	)
+
+	return PostV1ProxyAddParams{
+		WhiteListIps: &whiteListIpsDefault,
+	}
 }
 
 // PostV1ProxyAddParams contains all the bound params for the post v1 proxy add operation
@@ -54,10 +62,10 @@ type PostV1ProxyAddParams struct {
 	*/
 	WhiteListEnable bool
 	/*white_list_ips
-	  Required: true
 	  In: formData
+	  Default: ""
 	*/
-	WhiteListIps string
+	WhiteListIps *string
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
@@ -201,23 +209,21 @@ func (o *PostV1ProxyAddParams) bindWhiteListEnable(rawData []string, hasKey bool
 	return nil
 }
 
-// bindWhiteListIps binds and validates parameter WhiteCidrList from formData.
+// bindWhiteListIps binds and validates parameter WhiteListIps from formData.
 func (o *PostV1ProxyAddParams) bindWhiteListIps(rawData []string, hasKey bool, formats strfmt.Registry) error {
-	if !hasKey {
-		return errors.Required("white_list_ips", "formData")
-	}
 	var raw string
 	if len(rawData) > 0 {
 		raw = rawData[len(rawData)-1]
 	}
 
-	// Required: true
+	// Required: false
 
-	if err := validate.RequiredString("white_list_ips", "formData", raw); err != nil {
-		return err
+	if raw == "" { // empty values pass all other validations
+		// Default values have been previously initialized by NewPostV1ProxyAddParams()
+		return nil
 	}
 
-	o.WhiteListIps = raw
+	o.WhiteListIps = &raw
 
 	return nil
 }

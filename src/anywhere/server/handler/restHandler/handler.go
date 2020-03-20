@@ -5,6 +5,7 @@ import (
 	"anywhere/server/restapi/api/models"
 	v1 "anywhere/server/restapi/api/restapi/operations"
 	pb "anywhere/server/rpc/definitions"
+	"anywhere/util"
 
 	"context"
 )
@@ -65,7 +66,7 @@ func AddProxyConfigV1(params v1.PostV1ProxyAddParams) (*models.ProxyConfigInfo, 
 			RemotePort:    params.RemotePort,
 			LocalAddr:     params.LocalAddr,
 			IsWhiteListOn: params.WhiteListEnable,
-			WhiteCidrList: params.WhiteListIps,
+			WhiteCidrList: util.StringNvl(params.WhiteListIps),
 		},
 	}); err != nil {
 		return nil, err
@@ -75,7 +76,7 @@ func AddProxyConfigV1(params v1.PostV1ProxyAddParams) (*models.ProxyConfigInfo, 
 		IsWhitelistOn: params.WhiteListEnable,
 		LocalAddr:     params.LocalAddr,
 		RemotePort:    params.RemotePort,
-		WhitelistIps:  params.WhiteListIps,
+		WhitelistIps:  util.StringNvl(params.WhiteListIps),
 	}, nil
 
 }

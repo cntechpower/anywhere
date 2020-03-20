@@ -69,6 +69,7 @@ paths:
         - in: formData
           name: white_list_ips
           description: "white_list_ips"
+          default: ""
           type: string
       responses:
         200:

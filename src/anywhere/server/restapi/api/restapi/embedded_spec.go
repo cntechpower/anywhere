@@ -91,10 +91,10 @@ func init() {
           },
           {
             "type": "string",
+            "default": "",
             "description": "white_list_ips",
             "name": "white_list_ips",
-            "in": "formData",
-            "required": true
+            "in": "formData"
           }
         ],
         "responses": {
@@ -261,10 +261,10 @@ func init() {
           },
           {
             "type": "string",
+            "default": "",
             "description": "white_list_ips",
             "name": "white_list_ips",
-            "in": "formData",
-            "required": true
+            "in": "formData"
           }
         ],
         "responses": {
