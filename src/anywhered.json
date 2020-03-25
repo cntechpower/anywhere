@@ -1,12 +1,12 @@
 {
     "server_id": "anywhered-1",
+    "server_port": 1111,
     "ssl_config": {
         "cert_file_path": "credential/server.crt",
         "key_file_path": "credential/server.key",
         "ca_file_path": "credential/ca.crt"
     },
-    "net_config": {
-        "port": 1111,
+    "ui_config": {
         "grpc_port": 1113,
         "is_web_enable": true,
         "rest_api_listen_addr": "127.0.0.1:1112",

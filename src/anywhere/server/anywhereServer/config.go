@@ -2,21 +2,23 @@ package anywhereServer
 
 import (
 	"anywhere/model"
+	"anywhere/util"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"reflect"
 )
 
 var initConfig = &model.SystemConfig{
 	ServerId: "anywhered-1",
+	MainPort: 1111,
 	Ssl: &model.SslConfig{
 		CertFile: "credential/server.crt",
 		KeyFile:  "credential/server.key",
 		CaFile:   "credential/ca.crt",
 	},
-	Net: &model.NetworkConfig{
-		MainPort:    1111,
+	UiConfig: &model.UiConfig{
 		GrpcPort:    1113,
 		IsWebEnable: true,
 		RestAddr:    "127.0.0.1:1112",
@@ -91,6 +93,47 @@ func writeProxyConfigFile(configs []*model.ProxyConfig) error {
 
 }
 
+func getConfigJsonTag(sectionName, configName string) (string, string) {
+	printName := configName
+	printSection := sectionName
+	if sectionName == "main" {
+		field, ok := reflect.TypeOf(&model.SystemConfig{}).Elem().FieldByName(configName)
+		if ok {
+			if jsonTag := field.Tag.Get("json"); jsonTag != "" {
+				printName = jsonTag
+			}
+		}
+	} else {
+		section, ok := reflect.TypeOf(&model.SystemConfig{}).Elem().FieldByName(sectionName)
+		if ok {
+			if jsonTag := section.Tag.Get("json"); jsonTag != "" {
+				printSection = jsonTag
+			}
+			if section.Type.Elem().Kind() == reflect.Struct {
+				configField, ok := section.Type.Elem().FieldByName(configName)
+				if ok {
+					if jsonTag := configField.Tag.Get("json"); jsonTag != "" {
+						printName = jsonTag
+					}
+				}
+			}
+
+		}
+
+	}
+	return printSection, printName
+}
+
+func newConfigMissedError(sectionName, configName string) error {
+	printSection, printName := getConfigJsonTag(sectionName, configName)
+	return fmt.Errorf("%s is required in config section [%s], use `./anywhered config reset` to get default config file", printName, printSection)
+}
+
+func newConfigIllegalError(sectionName, configName string, err error) error {
+	printSection, printName := getConfigJsonTag(sectionName, configName)
+	return fmt.Errorf("%s is illegal in config section [%s], reason: %v", printName, printSection, err)
+}
+
 func ParseSystemConfigFile() (*model.SystemConfig, error) {
 	file, err := os.Open(systemConfigFIle)
 	if err != nil {
@@ -104,6 +147,39 @@ func ParseSystemConfigFile() (*model.SystemConfig, error) {
 	if err := json.Unmarshal(content, config); err != nil {
 		return nil, err
 	}
+	if config.ServerId == "" {
+		return nil, newConfigMissedError("main", "ServerId")
+	}
+	if config.MainPort == 0 {
+		return nil, newConfigMissedError("main", "MainPort")
+	}
+	if config.UiConfig != nil {
+		if config.UiConfig.GrpcPort == 0 {
+			return nil, newConfigMissedError("UiConfig", "GrpcPort")
+		}
+		if err := util.CheckAddrValid(config.UiConfig.WebAddr); err != nil {
+			return nil, newConfigIllegalError("UiConfig", "WebAddr", err)
+		}
+		if err := util.CheckAddrValid(config.UiConfig.RestAddr); err != nil {
+			return nil, newConfigIllegalError("UiConfig", "RestAddr", err)
+		}
+		if config.User == nil {
+			return nil, newConfigMissedError("main", "User")
+		}
+	}
+
+	if config.Ssl != nil {
+		if !util.CheckPathExist(config.Ssl.CaFile) {
+			return nil, newConfigIllegalError("Ssl", "CaFile", fmt.Errorf("file not exist"))
+		}
+		if !util.CheckPathExist(config.Ssl.KeyFile) {
+			return nil, newConfigIllegalError("Ssl", "KeyFile", fmt.Errorf("file not exist"))
+		}
+		if !util.CheckPathExist(config.Ssl.CertFile) {
+			return nil, newConfigIllegalError("Ssl", "CertFile", fmt.Errorf("file not exist"))
+		}
+	}
+
 	return config, nil
 }
 
@@ -112,7 +188,7 @@ func GetGrpcPort() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return c.Net.GrpcPort, nil
+	return c.UiConfig.GrpcPort, nil
 }
 
 func WriteSystemConfigFile(config *model.SystemConfig) error {
