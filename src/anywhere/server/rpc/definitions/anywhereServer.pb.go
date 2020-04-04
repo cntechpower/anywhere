@@ -8,6 +8,8 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -487,6 +489,29 @@ type AnywhereServerServer interface {
 	RemoveProxyConfig(context.Context, *RemoveProxyConfigInput) (*Empty, error)
 	LoadProxyConfigFile(context.Context, *Empty) (*Empty, error)
 	SaveProxyConfigToFile(context.Context, *Empty) (*Empty, error)
+}
+
+// UnimplementedAnywhereServerServer can be embedded to have forward compatible implementations.
+type UnimplementedAnywhereServerServer struct {
+}
+
+func (*UnimplementedAnywhereServerServer) ListAgent(ctx context.Context, req *Empty) (*Agents, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAgent not implemented")
+}
+func (*UnimplementedAnywhereServerServer) AddProxyConfig(ctx context.Context, req *AddProxyConfigInput) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddProxyConfig not implemented")
+}
+func (*UnimplementedAnywhereServerServer) ListProxyConfigs(ctx context.Context, req *Empty) (*ListProxyConfigsOutput, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListProxyConfigs not implemented")
+}
+func (*UnimplementedAnywhereServerServer) RemoveProxyConfig(ctx context.Context, req *RemoveProxyConfigInput) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveProxyConfig not implemented")
+}
+func (*UnimplementedAnywhereServerServer) LoadProxyConfigFile(ctx context.Context, req *Empty) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LoadProxyConfigFile not implemented")
+}
+func (*UnimplementedAnywhereServerServer) SaveProxyConfigToFile(ctx context.Context, req *Empty) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SaveProxyConfigToFile not implemented")
 }
 
 func RegisterAnywhereServerServer(s *grpc.Server, srv AnywhereServerServer) {

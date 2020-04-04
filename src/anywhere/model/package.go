@@ -27,7 +27,6 @@ type DataConnRegisterMsg struct {
 	ProxyAddr string
 }
 
-
 type RequestMsg struct {
 	Version string
 	ReqType ReqType

@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+
+package anywhereAgentRpc;
+
+service Anywhere {
+    rpc ListConns(Empty)returns(Conns){}
+    rpc KillConnById(KillConnByIdInput)returns(Empty){}
+    rpc KillAllConns(Empty)returns(Empty){}
+}
+
+message Empty{}
+
+message Conn {
+    int64 connId = 1;
+    string srcRemoteAddr = 2;
+    string srcLocalAddr = 3;
+    string dstRemoteAddr = 4;
+    string dstLocalAddr = 5;
+
+}
+
+message Conns{
+    repeated Conn conn = 1;
+}
+
+message KillConnByIdInput {
+    int64 connId = 1;
+}

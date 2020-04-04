@@ -3,7 +3,6 @@ package anywhereAgent
 import (
 	"anywhere/conn"
 	"anywhere/log"
-	"anywhere/model"
 	"anywhere/tls"
 	"anywhere/util"
 	_tls "crypto/tls"
@@ -11,14 +10,13 @@ import (
 )
 
 type Agent struct {
-	Id           string
-	Addr         *net.TCPAddr
-	credential   *_tls.Config
-	AdminConn    *conn.BaseConn
-	DataConn     []*conn.BaseConn
-	ProxyConfigs []model.ProxyConfig
-	version      string
-	status       string
+	id          string
+	addr        *net.TCPAddr
+	credential  *_tls.Config
+	adminConn   *conn.BaseConn
+	joinedConns *conn.JoinedConnList
+	version     string
+	status      string
 }
 
 var agentInstance *Agent
@@ -32,11 +30,11 @@ func InitAnyWhereAgent(id, ip string, port int) *Agent {
 		panic(err)
 	}
 	agentInstance = &Agent{
-		Id:           id,
-		Addr:         addr,
-		ProxyConfigs: nil,
-		version:      "0.0.1",
-		status:       "INIT",
+		id:          id,
+		addr:        addr,
+		joinedConns: conn.NewJoinedConnList(),
+		version:     "0.0.1",
+		status:      "INIT",
 	}
 	return agentInstance
 }
@@ -52,7 +50,7 @@ func (a *Agent) SetCredentials(certFile, keyFile, caFile string) error {
 
 func (a *Agent) Start() {
 	if a.status == "RUNNING" {
-		panic("agent already started")
+		panic("try to start a agent which is already started")
 	}
 	a.initControlConn(1)
 
@@ -62,9 +60,21 @@ func (a *Agent) Start() {
 }
 
 func (a *Agent) Stop() {
-	if a.AdminConn != nil {
-		a.AdminConn.Close()
+	if a.adminConn != nil {
+		a.adminConn.Close()
 		log.GetDefaultLogger().Info("Agent Stopping...")
 	}
 	a.status = "STOPPED"
+}
+
+func (a *Agent) ListJoinedConns() []*conn.JoinedConnListItem {
+	return a.joinedConns.List()
+}
+
+func (a *Agent) KillJoinedConnById(id int) error {
+	return a.joinedConns.KillById(id)
+}
+
+func (a *Agent) FlushJoinedConns() {
+	a.joinedConns.Flush()
 }

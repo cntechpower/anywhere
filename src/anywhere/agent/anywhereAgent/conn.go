@@ -14,9 +14,9 @@ func (a *Agent) mustGetTlsConnToServer() *_tls.Conn {
 	var c *_tls.Conn
 	for {
 		var err error
-		c, err = tls.DialTlsServer(a.Addr.IP.String(), a.Addr.Port, a.credential)
+		c, err = tls.DialTlsServer(a.addr.IP.String(), a.addr.Port, a.credential)
 		if err != nil {
-			log.GetDefaultLogger().Errorf("can not connect to server %v, error: %v", a.Addr, err)
+			log.GetDefaultLogger().Errorf("can not connect to server %v, error: %v", a.addr, err)
 			// sleep 5 second and retry
 			time.Sleep(5 * time.Second)
 			continue
@@ -31,20 +31,25 @@ func (a *Agent) newProxyConn(localAddr string) {
 		log.GetDefaultLogger().Errorf("error while dial to localAddr %v", err)
 		return
 	}
+	//let server use this local connection
 	c := conn.NewBaseConn(a.mustGetTlsConnToServer())
-	p := model.NewTunnelBeginMsg(a.Id, localAddr)
-	pkg := model.NewRequestMsg(a.version, model.PkgTunnelBegin, a.Id, "", p)
+	//TODO: optimize this package generate
+	p := model.NewTunnelBeginMsg(a.id, localAddr)
+	pkg := model.NewRequestMsg(a.version, model.PkgTunnelBegin, a.id, "", p)
 	if err := c.Send(pkg); err != nil {
 		log.GetDefaultLogger().Errorf("error while send tunnel pkg : %v", err)
 		_ = c.Close()
+		_ = dst.Close()
 	}
 	log.GetDefaultLogger().Infof("called newProxyConn for %v", localAddr)
+	idx := a.joinedConns.Add(c, conn.NewBaseConn(dst))
 	conn.JoinConn(c, dst)
+	a.joinedConns.Remove(idx)
 }
 
 func (a *Agent) getTlsConnToServer() (*_tls.Conn, error) {
 	var c *_tls.Conn
-	c, err := tls.DialTlsServer(a.Addr.IP.String(), a.Addr.Port, a.credential)
+	c, err := tls.DialTlsServer(a.addr.IP.String(), a.addr.Port, a.credential)
 	if err != nil {
 		return nil, err
 	}
@@ -56,14 +61,14 @@ func (a *Agent) initControlConn(dur int) {
 CONNECT:
 	c := a.mustGetTlsConnToServer()
 	a.status = "INIT"
-	a.AdminConn = conn.NewBaseConn(c)
+	a.adminConn = conn.NewBaseConn(c)
 	if err := a.SendControlConnRegisterPkg(); err != nil {
-		log.GetDefaultLogger().Errorf("can not send register pkg to server %v, error: %v", a.Addr, err)
+		log.GetDefaultLogger().Errorf("can not send register pkg to server %v, error: %v", a.addr, err)
 		_ = c.Close()
 		time.Sleep(time.Duration(dur) * time.Second)
 		goto CONNECT
 	}
-	log.GetDefaultLogger().Infof("init control connection to server %v success", a.Addr)
+	log.GetDefaultLogger().Infof("init control connection to server %v success", a.addr)
 	a.status = "RUNNING"
 
 }
@@ -72,12 +77,12 @@ func (a *Agent) ControlConnHeartBeatSendLoop(dur int, errChan chan error) {
 	l := log.GetCustomLogger("agent_heartBeater")
 	go func() {
 		for {
-			if err := a.SendHeartBeatPkg(); err != nil {
-				_ = a.AdminConn.Close()
+			if err := a.sendHeartBeatPkg(); err != nil {
+				_ = a.adminConn.Close()
 				l.Errorf("send heartbeat error: %v, sleep %v s and try again", err, dur)
 
 			} else {
-				a.AdminConn.SetAck(time.Now(), time.Now())
+				a.adminConn.SetAck(time.Now(), time.Now())
 			}
 			time.Sleep(time.Duration(dur) * time.Second)
 		}
@@ -86,15 +91,15 @@ func (a *Agent) ControlConnHeartBeatSendLoop(dur int, errChan chan error) {
 }
 
 func (a *Agent) handleAdminConnection() {
-	if a.AdminConn == nil {
+	if a.adminConn == nil {
 		log.GetDefaultLogger().Errorf("handle on nil admin connection")
 		return
 	}
 	msg := &model.RequestMsg{}
 	for {
-		if err := a.AdminConn.Receive(&msg); err != nil {
+		if err := a.adminConn.Receive(&msg); err != nil {
 			log.GetDefaultLogger().Errorf("receive from admin conn error: %v, call reconnecting", err)
-			_ = a.AdminConn.Close()
+			_ = a.adminConn.Close()
 			time.Sleep(time.Second)
 			a.initControlConn(1)
 			continue
@@ -106,7 +111,7 @@ func (a *Agent) handleAdminConnection() {
 			go a.newProxyConn(m.LocalAddr)
 		default:
 			log.GetDefaultLogger().Errorf("got unknown ReqType: %v, message is: %v", msg.ReqType, string(msg.Message))
-			_ = a.AdminConn.Close()
+			_ = a.adminConn.Close()
 		}
 	}
 }
