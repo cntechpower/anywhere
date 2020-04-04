@@ -25,7 +25,7 @@ type GlobalConfig struct {
 }
 
 type UiConfig struct {
-	GrpcPort    int    `json:"grpc_port"`
+	GrpcAddr    string `json:"grpc_addr"`
 	IsWebEnable bool   `json:"is_web_enable"`
 	RestAddr    string `json:"rest_api_listen_addr"`
 	WebAddr     string `json:"web_ui_listen_addr"`

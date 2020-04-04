@@ -8,7 +8,7 @@ import (
 	"net"
 )
 
-func (s *anyWhereServer) listenPort(addr string) *net.TCPListener {
+func (s *Server) listenPort(addr string) *net.TCPListener {
 	rAddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
 		log.GetDefaultLogger().Errorf("parse proxy port error: %v", err)
@@ -20,7 +20,7 @@ func (s *anyWhereServer) listenPort(addr string) *net.TCPListener {
 	return ln
 }
 
-func (s *anyWhereServer) AddProxyConfigToAgent(agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteList string) error {
+func (s *Server) AddProxyConfigToAgent(agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteList string) error {
 
 	pkg, err := model.NewProxyConfig(agentId, remotePort, localAddr, isWhiteListOn, whiteList)
 	if err != nil {
@@ -30,14 +30,14 @@ func (s *anyWhereServer) AddProxyConfigToAgent(agentId string, remotePort int, l
 
 }
 
-func (s *anyWhereServer) AddProxyConfigToAgentByModel(config *model.ProxyConfig) error {
+func (s *Server) AddProxyConfigToAgentByModel(config *model.ProxyConfig) error {
 	if !s.isAgentExist(config.AgentId) {
 		return fmt.Errorf("agent %v not exist", config.AgentId)
 	}
 	return s.agents[config.AgentId].AddProxyConfig(config)
 }
 
-func (s *anyWhereServer) RemoveProxyConfigFromAgent(agentId, localAddr string) error {
+func (s *Server) RemoveProxyConfigFromAgent(agentId, localAddr string) error {
 	if !s.isAgentExist(agentId) {
 		return fmt.Errorf("agent %v not exist", agentId)
 	}

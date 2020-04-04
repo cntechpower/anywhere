@@ -1,6 +1,7 @@
 package anywhereServer
 
 import (
+	"anywhere/conn"
 	"anywhere/log"
 	"anywhere/model"
 	"anywhere/util"
@@ -10,7 +11,7 @@ import (
 	"sync"
 )
 
-type anyWhereServer struct {
+type Server struct {
 	serverId      string
 	serverAddr    *net.TCPAddr
 	credential    *_tls.Config
@@ -24,18 +25,18 @@ type anyWhereServer struct {
 	ErrChan       chan error
 }
 
-var serverInstance *anyWhereServer
+var serverInstance *Server
 
-func GetServerInstance() *anyWhereServer {
+func GetServerInstance() *Server {
 	return serverInstance
 }
 
-func InitServerInstance(serverId string, port int) *anyWhereServer {
+func InitServerInstance(serverId string, port int) *Server {
 	addr, err := util.GetAddrByIpPort("0.0.0.0", port)
 	if err != nil {
 		panic(err)
 	}
-	serverInstance = &anyWhereServer{
+	serverInstance = &Server{
 		serverId:      serverId,
 		serverAddr:    addr,
 		proxyMutex:    sync.Mutex{},
@@ -48,11 +49,11 @@ func InitServerInstance(serverId string, port int) *anyWhereServer {
 	return serverInstance
 }
 
-func (s *anyWhereServer) SetCredentials(config *_tls.Config) {
+func (s *Server) SetCredentials(config *_tls.Config) {
 	s.credential = config
 }
 
-func (s *anyWhereServer) checkServerInit() error {
+func (s *Server) checkServerInit() error {
 	if s.credential == nil {
 		return fmt.Errorf("credential is empty")
 	}
@@ -66,7 +67,7 @@ func (s *anyWhereServer) checkServerInit() error {
 
 }
 
-func (s *anyWhereServer) Start() {
+func (s *Server) Start() {
 	if err := s.checkServerInit(); err != nil {
 		panic(err)
 	}
@@ -91,14 +92,14 @@ func (s *anyWhereServer) Start() {
 
 }
 
-func (s *anyWhereServer) isAgentExist(id string) bool {
+func (s *Server) isAgentExist(id string) bool {
 	if _, ok := s.agents[id]; ok {
 		return true
 	}
 	return false
 }
 
-func (s *anyWhereServer) ListAgentInfo() []*model.AgentInfo {
+func (s *Server) ListAgentInfo() []*model.AgentInfo {
 	res := make([]*model.AgentInfo, 0)
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
@@ -113,7 +114,7 @@ func (s *anyWhereServer) ListAgentInfo() []*model.AgentInfo {
 	return res
 }
 
-func (s *anyWhereServer) ListProxyConfigs() []*model.ProxyConfig {
+func (s *Server) ListProxyConfigs() []*model.ProxyConfig {
 	res := make([]*model.ProxyConfig, 0)
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
@@ -131,7 +132,7 @@ func (s *anyWhereServer) ListProxyConfigs() []*model.ProxyConfig {
 	return res
 }
 
-func (s *anyWhereServer) RegisterAgent(info *Agent) (isUpdate bool) {
+func (s *Server) RegisterAgent(info *Agent) (isUpdate bool) {
 	s.agentsRwMutex.Lock()
 	defer s.agentsRwMutex.Unlock()
 	isUpdate = s.isAgentExist(info.Id)
@@ -144,4 +145,35 @@ func (s *anyWhereServer) RegisterAgent(info *Agent) (isUpdate bool) {
 	}
 
 	return isUpdate
+}
+
+func (s *Server) ListJoinedConns(agentId string) (map[string][]*conn.JoinedConnListItem, error) {
+	res := make(map[string][]*conn.JoinedConnListItem, 0)
+	if agentId != "" { //only get specified agent
+		if !s.isAgentExist(agentId) {
+			return nil, fmt.Errorf("no such agent id %v", agentId)
+		}
+		res[agentId] = s.agents[agentId].joinedConns.List()
+		return res, nil
+	}
+	for agentId, agent := range s.agents {
+		res[agentId] = agent.joinedConns.List()
+	}
+	return res, nil
+}
+
+func (s *Server) KillJoinedConnById(agentId string, id int) error {
+	if agentId == "" {
+		return fmt.Errorf("agent id is empty")
+	}
+	if !s.isAgentExist(agentId) {
+		return fmt.Errorf("no such agent id %v", agentId)
+	}
+	return s.agents[agentId].joinedConns.KillById(id)
+}
+
+func (s *Server) FlushJoinedConns() {
+	for _, agent := range s.agents {
+		agent.joinedConns.Flush()
+	}
 }

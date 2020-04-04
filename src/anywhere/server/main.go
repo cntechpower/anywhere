@@ -41,6 +41,9 @@ func main() {
 
 	//config file manage cmds
 	rootCmd.AddCommand(cmd.GetConfigCmd())
+
+	//conn cmds
+	rootCmd.AddCommand(cmd.GetConnCmd())
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)
 	}
@@ -65,7 +68,7 @@ func run(_ *cobra.Command, _ []string) error {
 
 	// start rpc server
 	rpcExitChan := make(chan error, 0)
-	go rpcHandler.StartRpcServer(c.UiConfig.GrpcPort, rpcExitChan)
+	go rpcHandler.StartRpcServer(s, c.UiConfig.GrpcAddr, rpcExitChan)
 	webExitChan := make(chan error, 0)
 	if c.UiConfig.IsWebEnable {
 		go startUIAndAPIService(c.UiConfig.WebAddr, c.User.AdminUser, c.User.AdminPass, c.User.AdminOtpCode, c.User.AdminOtpEnable, webExitChan)

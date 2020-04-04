@@ -7,7 +7,7 @@
         "ca_file_path": "credential/ca.crt"
     },
     "ui_config": {
-        "grpc_port": 1113,
+        "grpc_addr": "127.0.0.1:1113",
         "is_web_enable": true,
         "rest_api_listen_addr": "127.0.0.1:1112",
         "web_ui_listen_addr": "0.0.0.0:1114"

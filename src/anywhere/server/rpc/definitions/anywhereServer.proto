@@ -10,6 +10,9 @@ service AnywhereServer {
     rpc RemoveProxyConfig(RemoveProxyConfigInput)returns(Empty){}
     rpc LoadProxyConfigFile(Empty)returns(Empty){}
     rpc SaveProxyConfigToFile(Empty)returns(Empty){}
+    rpc ListConns(ListConnsInput)returns(Conns){}
+    rpc KillConnById(KillConnByIdInput)returns(Empty){}
+    rpc KillAllConns(Empty)returns(Empty){}
 }
 
 message Empty{}
@@ -45,4 +48,27 @@ message ListProxyConfigsOutput{
 message RemoveProxyConfigInput{
     string agentId = 1;
     string localAddr = 2;
+}
+
+message ListConnsInput{
+    string agentId = 1;
+}
+
+message Conn {
+    string agentId = 1;
+    int64 connId = 2;
+    string srcRemoteAddr = 3;
+    string srcLocalAddr = 4;
+    string dstRemoteAddr = 5;
+    string dstLocalAddr = 6;
+
+}
+
+message Conns{
+    repeated Conn conn = 1;
+}
+
+message KillConnByIdInput {
+    string agentId = 1;
+    int64 connId = 2;
 }

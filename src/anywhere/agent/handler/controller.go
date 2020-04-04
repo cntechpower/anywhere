@@ -4,11 +4,13 @@ import (
 	"anywhere/agent/anywhereAgent"
 	pb "anywhere/agent/rpc/definitions"
 	"anywhere/util"
+	"bufio"
 	"context"
 	"fmt"
 	"net"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/olekukonko/tablewriter"
 
@@ -76,6 +78,14 @@ func KillConn(grpcAddr string, id int) error {
 }
 
 func FlushConns(grpcAddr string) error {
+	fmt.Println("ATTENTION: are you sure to flush all connections?")
+	fmt.Println("y/n ?")
+	reader := bufio.NewReader(os.Stdin)
+	text, _ := reader.ReadString('\n')
+	if strings.TrimSpace(text) != "y" {
+		fmt.Println("cancelled")
+		return nil
+	}
 	client, err := NewClient(grpcAddr)
 	if err != nil {
 		return err

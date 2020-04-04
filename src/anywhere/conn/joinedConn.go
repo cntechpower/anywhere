@@ -44,6 +44,9 @@ func (l *JoinedConnList) Add(src, dst *BaseConn) int {
 }
 
 func (l *JoinedConnList) KillById(id int) error {
+	if id < 0 {
+		return fmt.Errorf("illegal id %v", id)
+	}
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
 	if len(l.list) < (id + 1) {
@@ -61,7 +64,7 @@ func (l *JoinedConnList) Remove(id int) error {
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
 	if len(l.list) < (id + 1) {
-		return fmt.Errorf("no such joinedConn")
+		return fmt.Errorf("no such joinedConn %v", id)
 	}
 	l.list = append(l.list[:id], l.list[id+1:]...)
 	return nil
@@ -74,7 +77,6 @@ func (l *JoinedConnList) Flush() {
 		joinedConn.src.Close()
 		joinedConn.dst.Close()
 	}
-	//l.list = make([]*joinedConn, 0)
 }
 
 func (l *JoinedConnList) List() []*JoinedConnListItem {

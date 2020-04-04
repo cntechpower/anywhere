@@ -1,41 +1,24 @@
 package rpcHandler
 
 import (
+	"anywhere/server/anywhereServer"
 	pb "anywhere/server/rpc/definitions"
 	"anywhere/util"
 	"context"
 	"fmt"
-	"net"
-	"os"
-	"strconv"
-
-	"anywhere/server/anywhereServer"
-
-	"github.com/olekukonko/tablewriter"
-	"google.golang.org/grpc"
 )
 
 var (
 	ErrServerNotInit = fmt.Errorf("anywhere server not init")
 )
 
-var grpcAddress *net.TCPAddr
-
-var grpcPort int
-
-func init() {
-	grpcPort, _ = anywhereServer.GetGrpcPort()
-}
-
 type rpcHandlers struct {
-	grpcPort int
+	s *anywhereServer.Server
 }
 
-func GetRpcHandlers(grpcPort int) *rpcHandlers {
-	return &rpcHandlers{grpcPort: grpcPort}
+func GetRpcHandlers(s *anywhereServer.Server) *rpcHandlers {
+	return &rpcHandlers{s: s}
 }
-
-//RPC Handler Start
 
 func (h *rpcHandlers) ListAgent(ctx context.Context, empty *pb.Empty) (*pb.Agents, error) {
 	s := anywhereServer.GetServerInstance()
@@ -125,143 +108,37 @@ func (h *rpcHandlers) SaveProxyConfigToFile(ctx context.Context, input *pb.Empty
 	return &pb.Empty{}, s.SaveConfigToFile()
 }
 
-//RPC Handler END
-
-func NewClient() (pb.AnywhereServerClient, error) {
-	cc, err := grpc.Dial(grpcAddress.String(), grpc.WithInsecure())
+func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (*pb.Conns, error) {
+	agentConnsMap, err := h.s.ListJoinedConns(input.AgentId)
 	if err != nil {
 		return nil, err
 	}
-	return pb.NewAnywhereServerClient(cc), nil
-}
-
-func newClientWithPort() (pb.AnywhereServerClient, error) {
-	addr, err := util.GetAddrByIpPort("127.0.0.1", grpcPort)
-	if err != nil {
-		return nil, err
+	res := &pb.Conns{
+		Conn: make([]*pb.Conn, 0),
 	}
-	cc, err := grpc.Dial(addr.String(), grpc.WithInsecure())
-	if err != nil {
-		return nil, err
-	}
-	return pb.NewAnywhereServerClient(cc), nil
-}
 
-func ListAgent() error {
-	client, err := newClientWithPort()
-	if err != nil {
-		return err
-	}
-	res, err := client.ListAgent(context.Background(), &pb.Empty{})
-	if err != nil {
-		return err
-	}
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"AgentId", "AgentAddr", "LastAckSend", "LastAckRcv"})
-	for _, agent := range res.Agent {
-		table.Append([]string{agent.AgentId, agent.AgentRemoteAddr, agent.AgentLastAckSend, agent.AgentLastAckRcv})
-	}
-	table.Render()
-
-	return nil
-}
-
-func AddProxyConfig(agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) error {
-
-	client, err := newClientWithPort()
-	if err != nil {
-		return err
-	}
-	input := &pb.AddProxyConfigInput{Config: &pb.ProxyConfig{
-		AgentId:       agentId,
-		RemotePort:    int64(remotePort),
-		LocalAddr:     localAddr,
-		IsWhiteListOn: isWhiteListOn,
-		WhiteCidrList: whiteListIps,
-	}}
-	_, err = client.AddProxyConfig(context.Background(), input)
-	if err != nil {
-		return fmt.Errorf("add proxy config error: %v", err)
-	}
-	return nil
-
-}
-
-func ListProxyConfigs() error {
-	boolToString := func(b bool) string {
-		if b {
-			return "ON"
+	for agentId, agentConns := range agentConnsMap {
+		for _, conn := range agentConns {
+			res.Conn = append(res.Conn, &pb.Conn{
+				AgentId:       agentId,
+				ConnId:        int64(conn.ConnId),
+				SrcRemoteAddr: conn.SrcRemoteAddr,
+				SrcLocalAddr:  conn.SrcLocalAddr,
+				DstRemoteAddr: conn.DstRemoteAddr,
+				DstLocalAddr:  conn.DstLocalAddr,
+			})
 		}
-		return "OFF"
-	}
-	client, err := newClientWithPort()
-	if err != nil {
-		return err
-	}
-	configs, err := client.ListProxyConfigs(context.Background(), &pb.Empty{})
-	if err != nil {
-		return fmt.Errorf("list proxy config error: %v", err)
-	}
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"AgentId", "RemoteAddr", "LocalAddr", "IsWhiteListOn", "IpWhiteList"})
-	for _, config := range configs.Config {
-		table.Append([]string{config.AgentId, strconv.Itoa(int(config.RemotePort)), config.LocalAddr, boolToString(config.IsWhiteListOn), config.WhiteCidrList})
-	}
-	table.Render()
-	return nil
 
+	}
+
+	return res, nil
 }
 
-func RemoveProxyConfig(agentId, localAddr string) error {
-
-	client, err := newClientWithPort()
-	if err != nil {
-		return err
-	}
-	_, err = client.RemoveProxyConfig(context.Background(), &pb.RemoveProxyConfigInput{
-		AgentId:   agentId,
-		LocalAddr: localAddr,
-	})
-	return err
-
+func (h *rpcHandlers) KillConnById(ctx context.Context, input *pb.KillConnByIdInput) (*pb.Empty, error) {
+	return &pb.Empty{}, h.s.KillJoinedConnById(input.AgentId, int(input.ConnId))
 }
 
-func LoadProxyConfigFile() error {
-	client, err := newClientWithPort()
-	if err != nil {
-		return err
-	}
-	_, err = client.LoadProxyConfigFile(context.Background(), &pb.Empty{})
-	return err
-}
-
-func SaveProxyConfigToFile() error {
-	client, err := newClientWithPort()
-	if err != nil {
-		return err
-	}
-	_, err = client.SaveProxyConfigToFile(context.Background(), &pb.Empty{})
-	return err
-}
-
-func StartRpcServer(port int, errChan chan error) {
-	addr, err := util.GetAddrByIpPort("127.0.0.1", port)
-	if err != nil {
-		errChan <- err
-		return
-	}
-
-	l, err := net.Listen("tcp", addr.String())
-	if err != nil {
-		errChan <- err
-		return
-	}
-	grpcServer := grpc.NewServer()
-	pb.RegisterAnywhereServerServer(grpcServer, GetRpcHandlers(port))
-	grpcAddress = addr
-	if err := grpcServer.Serve(l); err != nil {
-		errChan <- err
-	}
+func (h *rpcHandlers) KillAllConns(ctx context.Context, empty *pb.Empty) (*pb.Empty, error) {
+	h.s.FlushJoinedConns()
+	return &pb.Empty{}, nil
 }

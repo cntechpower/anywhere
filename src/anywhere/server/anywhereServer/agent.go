@@ -33,6 +33,7 @@ type Agent struct {
 	chanProxyConns   map[string]chan *conn.BaseConn
 	errChan          chan error
 	CloseChan        chan struct{}
+	joinedConns      *conn.JoinedConnList
 }
 type proxyConfig struct {
 	*model.ProxyConfig
@@ -51,6 +52,7 @@ func NewAgentInfo(agentId string, c net.Conn, errChan chan error) *Agent {
 		proxyConfigChan: make(chan *proxyConfig, 0),
 		errChan:         errChan,
 		CloseChan:       make(chan struct{}, 0),
+		joinedConns:     conn.NewJoinedConnList(),
 	}
 	return a
 }
@@ -200,7 +202,11 @@ func (a *Agent) handelProxyConnection(c net.Conn, localAddr string) {
 		_ = c.Close()
 		return
 	}
+	idx := a.joinedConns.Add(conn.NewBaseConn(c), dst)
 	conn.JoinConn(dst.Conn, c)
+	if err := a.joinedConns.Remove(idx); err != nil {
+		l.Errorf("remove conn from list error: %v", err)
+	}
 	l.Infof("proxy conn closed")
 
 }
@@ -228,4 +234,16 @@ func (a *Agent) handleAdminConnection() {
 			return
 		}
 	}
+}
+
+func (a *Agent) ListJoinedConns() []*conn.JoinedConnListItem {
+	return a.joinedConns.List()
+}
+
+func (a *Agent) KillJoinedConnById(id int) error {
+	return a.joinedConns.KillById(id)
+}
+
+func (a *Agent) FlushJoinedConns() {
+	a.joinedConns.Flush()
 }
