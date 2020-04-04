@@ -26,7 +26,7 @@ func main() {
 		Long:  "anywhere server Version 0.0.1 -" + version,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := run(cmd, args); err != nil {
-				panic(err)
+				log.GetDefaultLogger().Fatal(err)
 			}
 		},
 	}
@@ -36,7 +36,7 @@ func main() {
 	//agent cmds
 	rootCmd.AddCommand(cmd.GetAgentCmd())
 
-	//proxy cmds
+	//proxy cmds:wq:wq:wq:w
 	rootCmd.AddCommand(cmd.GetProxyCmd())
 
 	//config file manage cmds
@@ -53,8 +53,7 @@ func run(_ *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
-	s := anywhereServer.InitServerInstance(c.ServerId, c.Net.MainPort)
-
+	s := anywhereServer.InitServerInstance(c.ServerId, c.MainPort)
 	tlsConfig, err := tls.ParseTlsConfig(c.Ssl.CertFile, c.Ssl.KeyFile, c.Ssl.CaFile)
 	if err != nil {
 		return err
@@ -66,10 +65,10 @@ func run(_ *cobra.Command, _ []string) error {
 
 	// start rpc server
 	rpcExitChan := make(chan error, 0)
-	go rpcHandler.StartRpcServer(c.Net.GrpcPort, rpcExitChan)
+	go rpcHandler.StartRpcServer(c.UiConfig.GrpcPort, rpcExitChan)
 	webExitChan := make(chan error, 0)
-	if c.Net.IsWebEnable {
-		go startUIAndAPIService(c.Net.WebAddr, c.User.AdminUser, c.User.AdminPass, c.User.AdminOtpCode, c.User.AdminOtpEnable, webExitChan)
+	if c.UiConfig.IsWebEnable {
+		go startUIAndAPIService(c.UiConfig.WebAddr, c.User.AdminUser, c.User.AdminPass, c.User.AdminOtpCode, c.User.AdminOtpEnable, webExitChan)
 
 	}
 
