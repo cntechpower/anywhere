@@ -8,7 +8,7 @@ import (
 	"net"
 )
 
-func (s *anyWhereServer) handleNewConnection(c net.Conn) {
+func (s *Server) handleNewConnection(c net.Conn) {
 	l := log.GetCustomLogger("anywhereServerMainLoop")
 
 	var msg model.RequestMsg

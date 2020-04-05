@@ -19,7 +19,7 @@ var initConfig = &model.SystemConfig{
 		CaFile:   "credential/ca.crt",
 	},
 	UiConfig: &model.UiConfig{
-		GrpcPort:    1113,
+		GrpcAddr:    "127.0.0.1:1113",
 		IsWebEnable: true,
 		RestAddr:    "127.0.0.1:1112",
 		WebAddr:     "0.0.0.0:1114",
@@ -32,7 +32,7 @@ var initConfig = &model.SystemConfig{
 	},
 }
 
-func (s *anyWhereServer) SaveConfigToFile() error {
+func (s *Server) SaveConfigToFile() error {
 	configs := s.ListProxyConfigs()
 	if len(configs) == 0 {
 		return fmt.Errorf("anywhere server is with no config, skip")
@@ -40,7 +40,7 @@ func (s *anyWhereServer) SaveConfigToFile() error {
 	return writeProxyConfigFile(configs)
 }
 
-func (s *anyWhereServer) LoadProxyConfigFile() error {
+func (s *Server) LoadProxyConfigFile() error {
 	configs, err := ParseProxyConfigFile()
 	if err != nil {
 		return err
@@ -154,8 +154,8 @@ func ParseSystemConfigFile() (*model.SystemConfig, error) {
 		return nil, newConfigMissedError("main", "MainPort")
 	}
 	if config.UiConfig != nil {
-		if config.UiConfig.GrpcPort == 0 {
-			return nil, newConfigMissedError("UiConfig", "GrpcPort")
+		if config.UiConfig.GrpcAddr == "" {
+			return nil, newConfigMissedError("UiConfig", "GrpcAddr")
 		}
 		if err := util.CheckAddrValid(config.UiConfig.WebAddr); err != nil {
 			return nil, newConfigIllegalError("UiConfig", "WebAddr", err)
@@ -183,12 +183,12 @@ func ParseSystemConfigFile() (*model.SystemConfig, error) {
 	return config, nil
 }
 
-func GetGrpcPort() (int, error) {
+func GetGrpcAddr() (string, error) {
 	c, err := ParseSystemConfigFile()
 	if err != nil {
-		return 0, err
+		return "", err
 	}
-	return c.UiConfig.GrpcPort, nil
+	return c.UiConfig.GrpcAddr, nil
 }
 
 func WriteSystemConfigFile(config *model.SystemConfig) error {

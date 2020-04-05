@@ -8,6 +8,8 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -351,6 +353,210 @@ func (m *RemoveProxyConfigInput) GetLocalAddr() string {
 	return ""
 }
 
+type ListConnsInput struct {
+	AgentId              string   `protobuf:"bytes,1,opt,name=agentId,proto3" json:"agentId,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListConnsInput) Reset()         { *m = ListConnsInput{} }
+func (m *ListConnsInput) String() string { return proto.CompactTextString(m) }
+func (*ListConnsInput) ProtoMessage()    {}
+func (*ListConnsInput) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0707d1479bfd60ca, []int{7}
+}
+
+func (m *ListConnsInput) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListConnsInput.Unmarshal(m, b)
+}
+func (m *ListConnsInput) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListConnsInput.Marshal(b, m, deterministic)
+}
+func (m *ListConnsInput) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListConnsInput.Merge(m, src)
+}
+func (m *ListConnsInput) XXX_Size() int {
+	return xxx_messageInfo_ListConnsInput.Size(m)
+}
+func (m *ListConnsInput) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListConnsInput.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListConnsInput proto.InternalMessageInfo
+
+func (m *ListConnsInput) GetAgentId() string {
+	if m != nil {
+		return m.AgentId
+	}
+	return ""
+}
+
+type Conn struct {
+	AgentId              string   `protobuf:"bytes,1,opt,name=agentId,proto3" json:"agentId,omitempty"`
+	ConnId               int64    `protobuf:"varint,2,opt,name=connId,proto3" json:"connId,omitempty"`
+	SrcRemoteAddr        string   `protobuf:"bytes,3,opt,name=srcRemoteAddr,proto3" json:"srcRemoteAddr,omitempty"`
+	SrcLocalAddr         string   `protobuf:"bytes,4,opt,name=srcLocalAddr,proto3" json:"srcLocalAddr,omitempty"`
+	DstRemoteAddr        string   `protobuf:"bytes,5,opt,name=dstRemoteAddr,proto3" json:"dstRemoteAddr,omitempty"`
+	DstLocalAddr         string   `protobuf:"bytes,6,opt,name=dstLocalAddr,proto3" json:"dstLocalAddr,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Conn) Reset()         { *m = Conn{} }
+func (m *Conn) String() string { return proto.CompactTextString(m) }
+func (*Conn) ProtoMessage()    {}
+func (*Conn) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0707d1479bfd60ca, []int{8}
+}
+
+func (m *Conn) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Conn.Unmarshal(m, b)
+}
+func (m *Conn) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Conn.Marshal(b, m, deterministic)
+}
+func (m *Conn) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Conn.Merge(m, src)
+}
+func (m *Conn) XXX_Size() int {
+	return xxx_messageInfo_Conn.Size(m)
+}
+func (m *Conn) XXX_DiscardUnknown() {
+	xxx_messageInfo_Conn.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Conn proto.InternalMessageInfo
+
+func (m *Conn) GetAgentId() string {
+	if m != nil {
+		return m.AgentId
+	}
+	return ""
+}
+
+func (m *Conn) GetConnId() int64 {
+	if m != nil {
+		return m.ConnId
+	}
+	return 0
+}
+
+func (m *Conn) GetSrcRemoteAddr() string {
+	if m != nil {
+		return m.SrcRemoteAddr
+	}
+	return ""
+}
+
+func (m *Conn) GetSrcLocalAddr() string {
+	if m != nil {
+		return m.SrcLocalAddr
+	}
+	return ""
+}
+
+func (m *Conn) GetDstRemoteAddr() string {
+	if m != nil {
+		return m.DstRemoteAddr
+	}
+	return ""
+}
+
+func (m *Conn) GetDstLocalAddr() string {
+	if m != nil {
+		return m.DstLocalAddr
+	}
+	return ""
+}
+
+type Conns struct {
+	Conn                 []*Conn  `protobuf:"bytes,1,rep,name=conn,proto3" json:"conn,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Conns) Reset()         { *m = Conns{} }
+func (m *Conns) String() string { return proto.CompactTextString(m) }
+func (*Conns) ProtoMessage()    {}
+func (*Conns) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0707d1479bfd60ca, []int{9}
+}
+
+func (m *Conns) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Conns.Unmarshal(m, b)
+}
+func (m *Conns) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Conns.Marshal(b, m, deterministic)
+}
+func (m *Conns) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Conns.Merge(m, src)
+}
+func (m *Conns) XXX_Size() int {
+	return xxx_messageInfo_Conns.Size(m)
+}
+func (m *Conns) XXX_DiscardUnknown() {
+	xxx_messageInfo_Conns.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Conns proto.InternalMessageInfo
+
+func (m *Conns) GetConn() []*Conn {
+	if m != nil {
+		return m.Conn
+	}
+	return nil
+}
+
+type KillConnByIdInput struct {
+	AgentId              string   `protobuf:"bytes,1,opt,name=agentId,proto3" json:"agentId,omitempty"`
+	ConnId               int64    `protobuf:"varint,2,opt,name=connId,proto3" json:"connId,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *KillConnByIdInput) Reset()         { *m = KillConnByIdInput{} }
+func (m *KillConnByIdInput) String() string { return proto.CompactTextString(m) }
+func (*KillConnByIdInput) ProtoMessage()    {}
+func (*KillConnByIdInput) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0707d1479bfd60ca, []int{10}
+}
+
+func (m *KillConnByIdInput) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_KillConnByIdInput.Unmarshal(m, b)
+}
+func (m *KillConnByIdInput) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_KillConnByIdInput.Marshal(b, m, deterministic)
+}
+func (m *KillConnByIdInput) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KillConnByIdInput.Merge(m, src)
+}
+func (m *KillConnByIdInput) XXX_Size() int {
+	return xxx_messageInfo_KillConnByIdInput.Size(m)
+}
+func (m *KillConnByIdInput) XXX_DiscardUnknown() {
+	xxx_messageInfo_KillConnByIdInput.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_KillConnByIdInput proto.InternalMessageInfo
+
+func (m *KillConnByIdInput) GetAgentId() string {
+	if m != nil {
+		return m.AgentId
+	}
+	return ""
+}
+
+func (m *KillConnByIdInput) GetConnId() int64 {
+	if m != nil {
+		return m.ConnId
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterType((*Empty)(nil), "anywhereRpc.Empty")
 	proto.RegisterType((*Agent)(nil), "anywhereRpc.Agent")
@@ -359,6 +565,10 @@ func init() {
 	proto.RegisterType((*AddProxyConfigInput)(nil), "anywhereRpc.AddProxyConfigInput")
 	proto.RegisterType((*ListProxyConfigsOutput)(nil), "anywhereRpc.ListProxyConfigsOutput")
 	proto.RegisterType((*RemoveProxyConfigInput)(nil), "anywhereRpc.RemoveProxyConfigInput")
+	proto.RegisterType((*ListConnsInput)(nil), "anywhereRpc.ListConnsInput")
+	proto.RegisterType((*Conn)(nil), "anywhereRpc.Conn")
+	proto.RegisterType((*Conns)(nil), "anywhereRpc.Conns")
+	proto.RegisterType((*KillConnByIdInput)(nil), "anywhereRpc.KillConnByIdInput")
 }
 
 func init() {
@@ -366,35 +576,45 @@ func init() {
 }
 
 var fileDescriptor_0707d1479bfd60ca = []byte{
-	// 447 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0x4d, 0x6f, 0x13, 0x31,
-	0x14, 0xcc, 0x76, 0x49, 0x4a, 0x5e, 0x44, 0x29, 0x8e, 0xa8, 0xac, 0x0a, 0xa1, 0xc8, 0x70, 0x88,
-	0x38, 0x24, 0x28, 0x20, 0xae, 0x68, 0x55, 0xf1, 0x51, 0x14, 0x68, 0xe4, 0x20, 0x71, 0x5e, 0xd6,
-	0x6e, 0x6b, 0x91, 0xda, 0x2b, 0xdb, 0x0d, 0xe4, 0xe7, 0xf0, 0x13, 0x38, 0xf0, 0xff, 0xd0, 0xbe,
-	0x10, 0x6a, 0x67, 0x37, 0x08, 0x6e, 0xf6, 0xbc, 0xc9, 0x64, 0x66, 0xfc, 0xb4, 0xf0, 0x3c, 0xd7,
-	0xab, 0xaf, 0x97, 0xd2, 0xca, 0xb1, 0x93, 0x76, 0x29, 0xed, 0xd8, 0x96, 0xc5, 0x58, 0xc8, 0x73,
-	0xa5, 0x95, 0x57, 0x46, 0xbb, 0xf1, 0x66, 0x3e, 0xc7, 0xf1, 0xa8, 0xb4, 0xc6, 0x1b, 0xd2, 0xdb,
-	0xa0, 0xbc, 0x2c, 0xd8, 0x3e, 0xb4, 0x5f, 0x5d, 0x95, 0x7e, 0xc5, 0xbe, 0x27, 0xd0, 0xce, 0x2e,
-	0xa4, 0xf6, 0x84, 0xc2, 0x7e, 0x5e, 0x1d, 0x4e, 0x05, 0x4d, 0x06, 0xc9, 0xb0, 0xcb, 0x37, 0x57,
-	0x32, 0x84, 0xbb, 0x78, 0xe4, 0xf2, 0xca, 0x78, 0x99, 0x09, 0x61, 0xe9, 0x1e, 0x32, 0xb6, 0xe1,
-	0x3f, 0xcc, 0x69, 0xee, 0x7c, 0x56, 0x7c, 0xe1, 0xc5, 0x92, 0xa6, 0x01, 0xf3, 0x06, 0x26, 0x4f,
-	0xe0, 0x30, 0x84, 0xe6, 0x52, 0x0b, 0x7a, 0x0b, 0xa9, 0x35, 0x9c, 0x4d, 0xa0, 0x83, 0x16, 0x1d,
-	0x19, 0x42, 0x1b, 0xa7, 0x34, 0x19, 0xa4, 0xc3, 0xde, 0x84, 0x8c, 0x82, 0x4c, 0x23, 0xe4, 0xf0,
-	0x35, 0x81, 0xfd, 0x48, 0xa0, 0x37, 0xb3, 0xe6, 0xdb, 0xea, 0xc4, 0xe8, 0x73, 0x75, 0xf1, 0x97,
-	0x74, 0x0f, 0x01, 0x2c, 0x26, 0x98, 0x19, 0xeb, 0x31, 0x58, 0xca, 0x03, 0x84, 0x3c, 0x80, 0xee,
-	0xc2, 0x14, 0xf9, 0x02, 0x73, 0xaf, 0xd3, 0xdc, 0x00, 0xe4, 0x31, 0xdc, 0x51, 0xee, 0xd3, 0xa5,
-	0xf2, 0x72, 0xaa, 0x9c, 0x3f, 0xd3, 0x18, 0xe2, 0x36, 0x8f, 0xc1, 0x8a, 0x85, 0xd7, 0x13, 0x25,
-	0x6c, 0x05, 0xd1, 0x36, 0xea, 0xc4, 0x20, 0x7b, 0x03, 0xfd, 0x4c, 0x88, 0xc0, 0xf5, 0xa9, 0x2e,
-	0xaf, 0x3d, 0x79, 0x0a, 0x9d, 0xf5, 0x15, 0x9d, 0xf7, 0x26, 0x34, 0x4a, 0x1d, 0xd0, 0xf9, 0x6f,
-	0x1e, 0x7b, 0x07, 0x47, 0x95, 0x60, 0x30, 0x72, 0x67, 0xd7, 0x7e, 0x5b, 0x2b, 0xfd, 0x27, 0xad,
-	0x19, 0x1c, 0x55, 0x0f, 0xbc, 0x94, 0x35, 0x5f, 0xbb, 0x2b, 0x8d, 0x2a, 0xdb, 0xdb, 0xaa, 0x6c,
-	0xf2, 0x33, 0x85, 0x83, 0x2c, 0xda, 0x50, 0xf2, 0x02, 0xba, 0x95, 0xe1, 0xf5, 0x22, 0xc6, 0xaf,
-	0x8a, 0x6b, 0x7a, 0xdc, 0xaf, 0xbf, 0xb4, 0x63, 0x2d, 0xf2, 0x16, 0x0e, 0xe2, 0xc6, 0xc8, 0x20,
-	0x26, 0xd6, 0xeb, 0x3c, 0x6e, 0x90, 0x67, 0x2d, 0xf2, 0x1e, 0x0e, 0xb7, 0x2b, 0x6b, 0x34, 0xf2,
-	0x28, 0xc2, 0x9a, 0x5b, 0x66, 0x2d, 0xf2, 0x01, 0xee, 0xd5, 0x5a, 0x23, 0xf1, 0x6f, 0x9b, 0x5b,
-	0xdd, 0x61, 0xef, 0x25, 0xf4, 0xa7, 0x26, 0x0f, 0xc3, 0xbc, 0x56, 0x0b, 0xd9, 0xe8, 0xb0, 0x59,
-	0x20, 0x83, 0xfb, 0xf3, 0x3c, 0xfa, 0xbb, 0x8f, 0xe6, 0xff, 0x24, 0x3e, 0x77, 0xf0, 0x3b, 0xf2,
-	0xec, 0x57, 0x00, 0x00, 0x00, 0xff, 0xff, 0xe2, 0xa9, 0xfd, 0x7b, 0x7f, 0x04, 0x00, 0x00,
+	// 599 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x55, 0x5f, 0x6f, 0x12, 0x4f,
+	0x14, 0x65, 0xcb, 0x9f, 0xfe, 0xb8, 0xf4, 0x87, 0x65, 0x88, 0x64, 0x53, 0x4d, 0x43, 0x46, 0x4d,
+	0x48, 0x1f, 0xc0, 0xa0, 0x31, 0x3e, 0x69, 0x56, 0xac, 0x8a, 0xa2, 0x25, 0x8b, 0x89, 0xcf, 0xeb,
+	0xce, 0xb4, 0xdd, 0x48, 0x67, 0xc8, 0xcc, 0x14, 0xe5, 0xe3, 0xf8, 0x11, 0xfc, 0x1e, 0x7e, 0x1d,
+	0xdf, 0xcd, 0xcc, 0x42, 0x99, 0x61, 0x97, 0xb6, 0xbe, 0x31, 0xe7, 0x9e, 0x3d, 0x7b, 0xee, 0xbd,
+	0x67, 0x16, 0x78, 0x1a, 0xb1, 0xc5, 0xf7, 0x73, 0x2a, 0x68, 0x4f, 0x52, 0x31, 0xa7, 0xa2, 0x27,
+	0x66, 0x71, 0x8f, 0xd0, 0xd3, 0x84, 0x25, 0x2a, 0xe1, 0x4c, 0xf6, 0x56, 0xf5, 0x89, 0x29, 0x77,
+	0x67, 0x82, 0x2b, 0x8e, 0x6a, 0x2b, 0x34, 0x9c, 0xc5, 0x78, 0x17, 0xca, 0xc7, 0x17, 0x33, 0xb5,
+	0xc0, 0x3f, 0x3d, 0x28, 0x07, 0x67, 0x94, 0x29, 0xe4, 0xc3, 0x6e, 0xa4, 0x7f, 0x0c, 0x89, 0xef,
+	0xb5, 0xbd, 0x4e, 0x35, 0x5c, 0x1d, 0x51, 0x07, 0xee, 0x98, 0x9f, 0x21, 0xbd, 0xe0, 0x8a, 0x06,
+	0x84, 0x08, 0x7f, 0xc7, 0x30, 0x36, 0xe1, 0x2b, 0xe6, 0x28, 0x92, 0x2a, 0x88, 0xbf, 0x85, 0xf1,
+	0xdc, 0x2f, 0x5a, 0xcc, 0x35, 0x8c, 0x8e, 0x60, 0xdf, 0x86, 0x26, 0x94, 0x11, 0xbf, 0x64, 0xa8,
+	0x19, 0x1c, 0xf7, 0xa1, 0x62, 0x2c, 0x4a, 0xd4, 0x81, 0xb2, 0xa9, 0xfa, 0x5e, 0xbb, 0xd8, 0xa9,
+	0xf5, 0x51, 0xd7, 0xea, 0xa9, 0x6b, 0x38, 0x61, 0x4a, 0xc0, 0xbf, 0x3c, 0xa8, 0x8d, 0x05, 0xff,
+	0xb1, 0x18, 0x70, 0x76, 0x9a, 0x9c, 0x5d, 0xd3, 0xdd, 0x21, 0x80, 0x30, 0x1d, 0x8c, 0xb9, 0x50,
+	0xa6, 0xb1, 0x62, 0x68, 0x21, 0xe8, 0x3e, 0x54, 0xa7, 0x3c, 0x8e, 0xa6, 0xa6, 0xef, 0xb4, 0x9b,
+	0x35, 0x80, 0x1e, 0xc2, 0xff, 0x89, 0xfc, 0x72, 0x9e, 0x28, 0x3a, 0x4a, 0xa4, 0x3a, 0x61, 0xa6,
+	0x89, 0xff, 0x42, 0x17, 0xd4, 0x2c, 0x73, 0x1c, 0x24, 0x44, 0x68, 0xc8, 0x2f, 0x1b, 0x1d, 0x17,
+	0xc4, 0x6f, 0xa1, 0x19, 0x10, 0x62, 0xb9, 0x1e, 0xb2, 0xd9, 0xa5, 0x42, 0x8f, 0xa1, 0x92, 0x1e,
+	0x8d, 0xf3, 0x5a, 0xdf, 0x77, 0xba, 0xb6, 0xe8, 0xe1, 0x92, 0x87, 0xdf, 0x43, 0x4b, 0x0b, 0x5a,
+	0x25, 0x79, 0x72, 0xa9, 0x36, 0xb5, 0x8a, 0xb7, 0xd2, 0x1a, 0x43, 0x4b, 0x2f, 0x78, 0x4e, 0x33,
+	0xbe, 0xb6, 0x8f, 0xd4, 0x19, 0xd9, 0xce, 0xc6, 0xc8, 0xf0, 0x11, 0xd4, 0xb5, 0xbb, 0x01, 0x67,
+	0x4c, 0xde, 0xa0, 0x84, 0x7f, 0x7b, 0x50, 0xd2, 0xc4, 0x6b, 0x5e, 0xd6, 0x82, 0x4a, 0xcc, 0x19,
+	0x1b, 0x92, 0xe5, 0xee, 0x96, 0x27, 0x3d, 0x73, 0x29, 0x62, 0x2b, 0xb3, 0xe9, 0xee, 0x5c, 0x10,
+	0x61, 0xd8, 0x93, 0x22, 0x1e, 0x5d, 0xb9, 0x4d, 0x33, 0xe8, 0x60, 0x5a, 0x89, 0x48, 0x3b, 0xfd,
+	0xcb, 0xed, 0x39, 0xa0, 0x56, 0x22, 0x52, 0xad, 0x95, 0x2a, 0xa9, 0x92, 0x8d, 0xe1, 0x2e, 0x94,
+	0x4d, 0xdb, 0xe8, 0x11, 0x94, 0xb4, 0xcd, 0xe5, 0x16, 0x1a, 0xce, 0x16, 0x34, 0x23, 0x34, 0x65,
+	0x7c, 0x0c, 0x8d, 0x0f, 0xc9, 0x74, 0xaa, 0x91, 0x57, 0x8b, 0x21, 0xb9, 0x69, 0xee, 0x5b, 0x46,
+	0xd1, 0xff, 0x53, 0x82, 0x7a, 0xe0, 0x7c, 0x13, 0xd0, 0x33, 0xa8, 0xea, 0x25, 0xa4, 0x57, 0xdf,
+	0xbd, 0x47, 0xe6, 0xc3, 0x70, 0xd0, 0xcc, 0xde, 0x2d, 0x89, 0x0b, 0xe8, 0x1d, 0xd4, 0xdd, 0x8c,
+	0xa2, 0xb6, 0x4b, 0xcc, 0x06, 0xf8, 0x20, 0x47, 0x1e, 0x17, 0xd0, 0x47, 0xd8, 0xdf, 0x0c, 0x69,
+	0xae, 0x91, 0x07, 0x0e, 0x96, 0x9f, 0x6b, 0x5c, 0x40, 0x9f, 0xa0, 0x91, 0xc9, 0x29, 0x72, 0x9f,
+	0xcd, 0xcf, 0xf1, 0x16, 0x7b, 0x2f, 0xa1, 0x39, 0xe2, 0x91, 0xdd, 0xcc, 0x9b, 0x64, 0x4a, 0x73,
+	0x1d, 0xe6, 0x0b, 0x04, 0x70, 0x77, 0x12, 0x39, 0xaf, 0xfb, 0xcc, 0xff, 0x51, 0xe2, 0x45, 0xba,
+	0xa4, 0x34, 0x32, 0xf7, 0x32, 0x73, 0x58, 0xdf, 0xa0, 0x8d, 0xe7, 0x4d, 0x01, 0x17, 0xd0, 0x6b,
+	0xd8, 0xb3, 0xe3, 0x83, 0x0e, 0x1d, 0x56, 0x26, 0x59, 0x5b, 0x5c, 0x3c, 0x4f, 0x55, 0x82, 0x94,
+	0x2d, 0x6f, 0xef, 0xff, 0x6b, 0xc5, 0xfc, 0xf3, 0x3c, 0xf9, 0x1b, 0x00, 0x00, 0xff, 0xff, 0xfa,
+	0x97, 0xf2, 0x4c, 0xb1, 0x06, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -415,6 +635,9 @@ type AnywhereServerClient interface {
 	RemoveProxyConfig(ctx context.Context, in *RemoveProxyConfigInput, opts ...grpc.CallOption) (*Empty, error)
 	LoadProxyConfigFile(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 	SaveProxyConfigToFile(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
+	ListConns(ctx context.Context, in *ListConnsInput, opts ...grpc.CallOption) (*Conns, error)
+	KillConnById(ctx context.Context, in *KillConnByIdInput, opts ...grpc.CallOption) (*Empty, error)
+	KillAllConns(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type anywhereServerClient struct {
@@ -479,6 +702,33 @@ func (c *anywhereServerClient) SaveProxyConfigToFile(ctx context.Context, in *Em
 	return out, nil
 }
 
+func (c *anywhereServerClient) ListConns(ctx context.Context, in *ListConnsInput, opts ...grpc.CallOption) (*Conns, error) {
+	out := new(Conns)
+	err := c.cc.Invoke(ctx, "/anywhereRpc.AnywhereServer/ListConns", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *anywhereServerClient) KillConnById(ctx context.Context, in *KillConnByIdInput, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/anywhereRpc.AnywhereServer/KillConnById", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *anywhereServerClient) KillAllConns(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/anywhereRpc.AnywhereServer/KillAllConns", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AnywhereServerServer is the server API for AnywhereServer service.
 type AnywhereServerServer interface {
 	ListAgent(context.Context, *Empty) (*Agents, error)
@@ -487,6 +737,41 @@ type AnywhereServerServer interface {
 	RemoveProxyConfig(context.Context, *RemoveProxyConfigInput) (*Empty, error)
 	LoadProxyConfigFile(context.Context, *Empty) (*Empty, error)
 	SaveProxyConfigToFile(context.Context, *Empty) (*Empty, error)
+	ListConns(context.Context, *ListConnsInput) (*Conns, error)
+	KillConnById(context.Context, *KillConnByIdInput) (*Empty, error)
+	KillAllConns(context.Context, *Empty) (*Empty, error)
+}
+
+// UnimplementedAnywhereServerServer can be embedded to have forward compatible implementations.
+type UnimplementedAnywhereServerServer struct {
+}
+
+func (*UnimplementedAnywhereServerServer) ListAgent(ctx context.Context, req *Empty) (*Agents, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAgent not implemented")
+}
+func (*UnimplementedAnywhereServerServer) AddProxyConfig(ctx context.Context, req *AddProxyConfigInput) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddProxyConfig not implemented")
+}
+func (*UnimplementedAnywhereServerServer) ListProxyConfigs(ctx context.Context, req *Empty) (*ListProxyConfigsOutput, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListProxyConfigs not implemented")
+}
+func (*UnimplementedAnywhereServerServer) RemoveProxyConfig(ctx context.Context, req *RemoveProxyConfigInput) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveProxyConfig not implemented")
+}
+func (*UnimplementedAnywhereServerServer) LoadProxyConfigFile(ctx context.Context, req *Empty) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LoadProxyConfigFile not implemented")
+}
+func (*UnimplementedAnywhereServerServer) SaveProxyConfigToFile(ctx context.Context, req *Empty) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SaveProxyConfigToFile not implemented")
+}
+func (*UnimplementedAnywhereServerServer) ListConns(ctx context.Context, req *ListConnsInput) (*Conns, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListConns not implemented")
+}
+func (*UnimplementedAnywhereServerServer) KillConnById(ctx context.Context, req *KillConnByIdInput) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method KillConnById not implemented")
+}
+func (*UnimplementedAnywhereServerServer) KillAllConns(ctx context.Context, req *Empty) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method KillAllConns not implemented")
 }
 
 func RegisterAnywhereServerServer(s *grpc.Server, srv AnywhereServerServer) {
@@ -601,6 +886,60 @@ func _AnywhereServer_SaveProxyConfigToFile_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AnywhereServer_ListConns_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListConnsInput)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnywhereServerServer).ListConns(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/anywhereRpc.AnywhereServer/ListConns",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnywhereServerServer).ListConns(ctx, req.(*ListConnsInput))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AnywhereServer_KillConnById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(KillConnByIdInput)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnywhereServerServer).KillConnById(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/anywhereRpc.AnywhereServer/KillConnById",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnywhereServerServer).KillConnById(ctx, req.(*KillConnByIdInput))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AnywhereServer_KillAllConns_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnywhereServerServer).KillAllConns(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/anywhereRpc.AnywhereServer/KillAllConns",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnywhereServerServer).KillAllConns(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _AnywhereServer_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "anywhereRpc.AnywhereServer",
 	HandlerType: (*AnywhereServerServer)(nil),
@@ -628,6 +967,18 @@ var _AnywhereServer_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SaveProxyConfigToFile",
 			Handler:    _AnywhereServer_SaveProxyConfigToFile_Handler,
+		},
+		{
+			MethodName: "ListConns",
+			Handler:    _AnywhereServer_ListConns_Handler,
+		},
+		{
+			MethodName: "KillConnById",
+			Handler:    _AnywhereServer_KillConnById_Handler,
+		},
+		{
+			MethodName: "KillAllConns",
+			Handler:    _AnywhereServer_KillAllConns_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

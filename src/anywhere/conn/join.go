@@ -14,7 +14,6 @@ func JoinConn(remote, local net.Conn) {
 		defer src.Close()
 		defer dst.Close()
 
-		//dConn := io.MultiWriter(remote, os.Stdout)
 		if _, err := io.Copy(dst, src); err != nil {
 			return
 		}

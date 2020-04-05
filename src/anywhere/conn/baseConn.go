@@ -44,6 +44,10 @@ func (c *BaseConn) GetRemoteAddr() string {
 	return c.RemoteAddr().String()
 }
 
+func (c *BaseConn) GetLocalAddr() string {
+	return c.LocalAddr().String()
+}
+
 func NewBaseConn(c net.Conn) *BaseConn {
 	return &BaseConn{
 		Conn:            c,
