@@ -1,6 +1,7 @@
 package conn
 
 import (
+	"anywhere/util"
 	"fmt"
 	"sync"
 )
@@ -19,13 +20,13 @@ type JoinedConnListItem struct {
 }
 
 type JoinedConnList struct {
-	list   []*joinedConn
+	list   map[int]*joinedConn
 	listMu sync.RWMutex
 }
 
 func NewJoinedConnList() *JoinedConnList {
 	return &JoinedConnList{
-		list: make([]*joinedConn, 0),
+		list: make(map[int]*joinedConn, 0),
 	}
 }
 
@@ -33,13 +34,22 @@ func (l *JoinedConnList) Add(src, dst *BaseConn) int {
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
 	if l.list == nil {
-		l.list = make([]*joinedConn, 0)
+		l.list = make(map[int]*joinedConn, 0)
 	}
-	l.list = append(l.list, &joinedConn{
+	idx := util.RandInt(9999)
+	for {
+		if c, exist := l.list[idx]; exist && c != nil {
+			idx = util.RandInt(9999)
+		} else {
+			break
+		}
+	}
+
+	l.list[idx] = &joinedConn{
 		src: src,
 		dst: dst,
-	})
-	return len(l.list) - 1 //return index
+	}
+	return idx //return index
 
 }
 
@@ -49,11 +59,12 @@ func (l *JoinedConnList) KillById(id int) error {
 	}
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
-	if len(l.list) < (id + 1) {
-		return fmt.Errorf("no such joinedConn")
+	if c, exist := l.list[id]; !exist {
+		return fmt.Errorf("no such id %v", id)
+	} else {
+		c.src.Close()
+		c.dst.Close()
 	}
-	l.list[id].src.Close()
-	l.list[id].dst.Close()
 	return nil
 }
 
@@ -63,10 +74,11 @@ func (l *JoinedConnList) Remove(id int) error {
 	}
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
-	if len(l.list) < (id + 1) {
-		return fmt.Errorf("no such joinedConn %v", id)
+	if _, exist := l.list[id]; !exist {
+		return fmt.Errorf("no such id %v", id)
+	} else {
+		delete(l.list, id)
 	}
-	l.list = append(l.list[:id], l.list[id+1:]...)
 	return nil
 }
 

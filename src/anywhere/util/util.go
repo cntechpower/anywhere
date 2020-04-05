@@ -163,6 +163,10 @@ func RandString(n int) string {
 	return string(b)
 }
 
+func RandInt(n int) int {
+	return rand.Intn(n)
+}
+
 func StringNvl(s *string) string {
 	if s == nil {
 		return ""

@@ -3,6 +3,7 @@ package handler
 import (
 	"anywhere/agent/anywhereAgent"
 	pb "anywhere/agent/rpc/definitions"
+	"anywhere/log"
 	"anywhere/util"
 	"bufio"
 	"context"
@@ -29,7 +30,7 @@ func StartRpcServer(agent *anywhereAgent.Agent, addr string, errChan chan error)
 		return
 	}
 	grpcServer := grpc.NewServer()
-	pb.RegisterAnywhereServer(grpcServer, &anywhereAgentRpcHandler{agent})
+	pb.RegisterAnywhereServer(grpcServer, &anywhereAgentRpcHandler{a: agent, l: log.GetCustomLogger("grpc_handler")})
 	if err := grpcServer.Serve(l); err != nil {
 		errChan <- err
 	}

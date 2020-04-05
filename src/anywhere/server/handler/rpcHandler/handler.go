@@ -1,11 +1,14 @@
 package rpcHandler
 
 import (
+	"anywhere/log"
 	"anywhere/server/anywhereServer"
 	pb "anywhere/server/rpc/definitions"
 	"anywhere/util"
 	"context"
 	"fmt"
+
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -14,13 +17,16 @@ var (
 
 type rpcHandlers struct {
 	s *anywhereServer.Server
+	l *logrus.Entry
 }
 
 func GetRpcHandlers(s *anywhereServer.Server) *rpcHandlers {
-	return &rpcHandlers{s: s}
+	return &rpcHandlers{s: s, l: log.GetCustomLogger("grpc_handler")}
 }
 
 func (h *rpcHandlers) ListAgent(ctx context.Context, empty *pb.Empty) (*pb.Agents, error) {
+	h.l.Infof("calling list agents")
+	defer h.l.Infof("called list agents")
 	s := anywhereServer.GetServerInstance()
 	if s == nil {
 		return &pb.Agents{}, ErrServerNotInit
@@ -109,6 +115,8 @@ func (h *rpcHandlers) SaveProxyConfigToFile(ctx context.Context, input *pb.Empty
 }
 
 func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (*pb.Conns, error) {
+	h.l.Infof("calling list conns")
+	defer h.l.Infof("called list conns")
 	agentConnsMap, err := h.s.ListJoinedConns(input.AgentId)
 	if err != nil {
 		return nil, err
@@ -135,10 +143,14 @@ func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (
 }
 
 func (h *rpcHandlers) KillConnById(ctx context.Context, input *pb.KillConnByIdInput) (*pb.Empty, error) {
+	h.l.Infof("calling kill conn %v on agent %v", input.ConnId, input.AgentId)
+	defer h.l.Infof("called kill conn %v on agent %v", input.ConnId, input.AgentId)
 	return &pb.Empty{}, h.s.KillJoinedConnById(input.AgentId, int(input.ConnId))
 }
 
 func (h *rpcHandlers) KillAllConns(ctx context.Context, empty *pb.Empty) (*pb.Empty, error) {
+	h.l.Infof("calling flush conns")
+	defer h.l.Infof("called flush conns")
 	h.s.FlushJoinedConns()
 	return &pb.Empty{}, nil
 }
