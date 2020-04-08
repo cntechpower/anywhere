@@ -22,6 +22,7 @@ message Agent{
     string agentRemoteAddr = 2;
     string agentLastAckRcv =3;
     string agentLastAckSend =4;
+    int64 agentProxyConfigCount =5;
 }
 
 message Agents{

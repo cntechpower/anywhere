@@ -152,6 +152,9 @@ func init() {
         },
         "lastAckSend": {
           "type": "string"
+        },
+        "proxyConfigCount": {
+          "type": "integer"
         }
       }
     },
@@ -322,6 +325,9 @@ func init() {
         },
         "lastAckSend": {
           "type": "string"
+        },
+        "proxyConfigCount": {
+          "type": "integer"
         }
       }
     },

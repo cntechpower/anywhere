@@ -105,10 +105,11 @@ func (s *Server) ListAgentInfo() []*model.AgentInfo {
 	defer s.agentsRwMutex.RUnlock()
 	for _, agent := range s.agents {
 		res = append(res, &model.AgentInfo{
-			Id:          agent.Id,
-			RemoteAddr:  agent.RemoteAddr.String(),
-			LastAckRcv:  agent.AdminConn.LastAckRcvTime.Format("2006-01-02 15:04:05"),
-			LastAckSend: agent.AdminConn.LastAckSendTime.Format("2006-01-02 15:04:05"),
+			Id:               agent.Id,
+			RemoteAddr:       agent.RemoteAddr.String(),
+			LastAckRcv:       agent.AdminConn.LastAckRcvTime.Format("2006-01-02 15:04:05"),
+			LastAckSend:      agent.AdminConn.LastAckSendTime.Format("2006-01-02 15:04:05"),
+			ProxyConfigCount: len(agent.ProxyConfigs),
 		})
 	}
 	return res
