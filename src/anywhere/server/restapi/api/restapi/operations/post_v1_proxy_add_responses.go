@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-openapi/runtime"
 
-	models "anywhere/server/restapi/api/models"
+	"anywhere/server/restapi/api/models"
 )
 
 // PostV1ProxyAddOKCode is the HTTP code returned for type PostV1ProxyAddOK

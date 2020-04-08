@@ -6,10 +6,11 @@ import (
 )
 
 type AgentInfo struct {
-	Id          string
-	RemoteAddr  string
-	LastAckSend string
-	LastAckRcv  string
+	Id               string
+	RemoteAddr       string
+	LastAckSend      string
+	LastAckRcv       string
+	ProxyConfigCount int
 }
 
 type ProxyConfig struct {

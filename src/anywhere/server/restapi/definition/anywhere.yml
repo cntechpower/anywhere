@@ -99,6 +99,8 @@ definitions:
         type: string
       lastAckRcv:
         type: string
+      proxyConfigCount:
+        type: integer
 
   ProxyConfigInfo:
     type: object

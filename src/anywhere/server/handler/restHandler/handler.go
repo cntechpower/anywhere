@@ -22,10 +22,11 @@ func ListAgentV1() ([]*models.AgentListInfo, error) {
 	}
 	for _, agent := range agents.Agent {
 		a := &models.AgentListInfo{
-			AgentAdminAddr: agent.AgentRemoteAddr,
-			AgentID:        agent.AgentId,
-			LastAckSend:    agent.AgentLastAckSend,
-			LastAckRcv:     agent.AgentLastAckRcv,
+			AgentAdminAddr:   agent.AgentRemoteAddr,
+			AgentID:          agent.AgentId,
+			LastAckSend:      agent.AgentLastAckSend,
+			LastAckRcv:       agent.AgentLastAckRcv,
+			ProxyConfigCount: agent.AgentProxyConfigCount,
 		}
 		res = append(res, a)
 	}

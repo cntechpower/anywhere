@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-openapi/runtime"
 
-	models "anywhere/server/restapi/api/models"
+	"anywhere/server/restapi/api/models"
 )
 
 // GetV1ProxyListOKCode is the HTTP code returned for type GetV1ProxyListOK
