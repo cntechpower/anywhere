@@ -26,6 +26,7 @@ type GlobalConfig struct {
 }
 
 type UiConfig struct {
+	SkipLogin   bool   `json:"skip_login"`
 	GrpcAddr    string `json:"grpc_addr"`
 	IsWebEnable bool   `json:"is_web_enable"`
 	RestAddr    string `json:"rest_api_listen_addr"`
