@@ -131,7 +131,7 @@ func userLogin(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "login success"})
 }
 
-func startUIAndAPIService(addr, user, pass, totpSecret string, otpEnable bool, errChan chan error) {
+func startUIAndAPIService(addr, user, pass, totpSecret string, otpEnable bool, errChan chan error, skipLogin bool) {
 	if err := util.CheckAddrValid(addr); err != nil {
 		errChan <- err
 	}
@@ -142,7 +142,11 @@ func startUIAndAPIService(addr, user, pass, totpSecret string, otpEnable bool, e
 	//session auth
 	store := cookie.NewStore([]byte("secret"))
 	router.Use(sessions.Sessions("anywhere", store))
-	router.Use(sessionFilter)
+	//support frontend development
+	if !skipLogin {
+		router.Use(sessionFilter)
+	}
+
 	router.LoadHTMLFiles("./static/index.html")
 	router.POST("/user_login", userLogin)
 	if err := addUIRouter(router); err != nil {
