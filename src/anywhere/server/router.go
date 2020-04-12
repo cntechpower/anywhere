@@ -140,7 +140,7 @@ func startUIAndAPIService(addr, user, pass, totpSecret string, otpEnable bool, e
 	jwtValidator = auth.NewJwtValidator()
 	totpValidator = auth.NewTOTPValidator(user, totpSecret, otpEnable)
 	//session auth
-	store := cookie.NewStore([]byte("secret"))
+	store := cookie.NewStore([]byte(util.RandString(16)))
 	router.Use(sessions.Sessions("anywhere", store))
 	//support frontend development
 	if !skipLogin {
