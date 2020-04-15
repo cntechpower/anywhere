@@ -75,10 +75,6 @@ func run(_ *cobra.Command, _ []string) error {
 
 	}
 
-	if err := anywhereServer.WriteInitConfigFile(); err != nil {
-		return err
-	}
-
 	//wait for os kill signal. TODO: graceful shutdown
 	go util.ListenTTINSignalLoop()
 	serverExitChan := util.ListenKillSignal()
