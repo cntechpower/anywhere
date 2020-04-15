@@ -23,6 +23,7 @@ rpc:
 	protoc --go_out=plugins=grpc:. anywhere/agent/rpc/definitions/*.proto
 api:
 	GOPATH=${GOPATH} swagger generate server -t anywhere/server/restapi/api --exclude-main -f anywhere/server/restapi/definition/anywhere.yml
+	GOPATH=${GOPATH} swagger generate client -t anywhere/test  -f anywhere/server/restapi/definition/anywhere.yml
 build_server:
 	mkdir -p bin/
 	GOPATH=${GOPATH} go build ${LDFLAGS} -o bin/anywhered anywhere/server/*.go
@@ -30,6 +31,11 @@ build_server:
 build_agent:
 	mkdir -p bin/
 	GOPATH=${GOPATH} go build ${LDFLAGS} -o bin/anywhere anywhere/agent/*.go
+
+build_test_agent:
+	mkdir -p bin/
+	GOPATH=${GOPATH} go build ${LDFLAGS} -o bin/test anywhere/test/*.go
+
 vet:
 	GOPATH=${GOPATH} go vet ./anywhere/...
 sonar:
@@ -46,7 +52,7 @@ upload: build ui
 clean:
 	rm -rf bin/
 	rm -rf *.tar.gz
-build: vet build_server build_agent
+build: vet build_server build_agent build_test_agent
 
 docker_rpm:
 	sudo $(DOCKER) run -v $(shell pwd)/../:/universe --rm $(DOCKER_IMAGE) -c "(mkdir -p /root/rpmbuild/SOURCES >/dev/null 2>&1); cd /root/rpmbuild/SOURCES; (tar zcf ${PROJECT_NAME}.tar.gz /universe --exclude=/universe/pkg --exclude=/universe/bin --transform 's/universe/${PROJECT_NAME}-${RPM_VERSION}/' >/tmp/build.log 2>&1) && (rpmbuild -bb --define 'Version ${RPM_VERSION}' --with qa /universe/src/${PROJECT_NAME}.spec >>/tmp/build.log 2>&1) && (cat /root/rpmbuild/RPMS/x86_64/${PROJECT_NAME}-${RPM_VERSION}-qa.x86_64.rpm) || (cat /tmp/build.log && exit 1)" > ${PROJECT_NAME}-${RPM_VERSION}.x86_64.rpm
