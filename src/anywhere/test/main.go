@@ -4,11 +4,18 @@ import (
 	"anywhere/test/client"
 	"anywhere/test/client/operations"
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"strings"
 	"time"
 )
+
+var addr string
+
+func init() {
+	flag.StringVar(&addr, "addr", "127.0.0.1:1114", "rest api address")
+}
 
 func getDefaultContext() (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -16,8 +23,9 @@ func getDefaultContext() (context.Context, context.CancelFunc) {
 }
 
 func main() {
+	flag.Parse()
 	o := client.NewHTTPClientWithConfig(nil, &client.TransportConfig{
-		Host:     "127.0.0.1:1114",
+		Host:     addr,
 		BasePath: client.DefaultBasePath,
 		Schemes:  client.DefaultSchemes,
 	}).Operations
