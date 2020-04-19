@@ -1,0 +1,15 @@
+From centos:centos7
+RUN sed -i.backup 's/^enabled=1/enabled=0/' /etc/yum/pluginconf.d/fastestmirror.conf \
+        && curl -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo \
+        && curl -o /etc/yum.repos.d/epel.repo http://mirrors.aliyun.com/repo/epel-7.repo \
+        && yum clean all
+COPY bin/* /usr/local/anywhere/bin/
+COPY credential/* /usr/local/anywhere/credential/
+COPY static/* /usr/local/anywhere/static/
+COPY anywhere/test/dockerfiles/Dockerfile.server /docker-build/
+
+WORKDIR /usr/local/anywhere/
+
+RUN ./bin/anywhered config reset
+
+CMD ["./bin/anywhered","start"]
