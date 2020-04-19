@@ -19,7 +19,7 @@ var initConfig = &model.SystemConfig{
 		CaFile:   "credential/ca.crt",
 	},
 	UiConfig: &model.UiConfig{
-		SkipLogin:   false,
+		SkipLogin:   true,
 		GrpcAddr:    "127.0.0.1:1113",
 		IsWebEnable: true,
 		RestAddr:    "127.0.0.1:1112",

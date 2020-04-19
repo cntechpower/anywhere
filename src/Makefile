@@ -4,6 +4,7 @@ VERSION=$(shell git rev-parse --short HEAD)
 RPM_VERSION=master
 PROJECT_NAME  = anywhere
 DOCKER        = $(shell which docker)
+DOCKER-COMPOSE        = $(shell which docker-compose)
 LDFLAGS       = -ldflags "-X 'main.version=\"${RPM_VERSION}-${GIT_VERSION}\"'"
 DOCKER_IMAGE  = 10.0.0.2:5000/actiontech/universe-compiler-go1.11-centos6:v2
 default: build
@@ -35,6 +36,25 @@ build_agent:
 build_test_agent:
 	mkdir -p bin/
 	GOPATH=${GOPATH} go build ${LDFLAGS} -o bin/test anywhere/test/*.go
+
+build_test_image: build
+	sudo $(DOCKER) build -t anywhered-test-image:latest -f anywhere/test/dockerfiles/Dockerfile.server .
+	sudo $(DOCKER) build -t anywhere-test-image:latest -f anywhere/test/dockerfiles/Dockerfile.agent .
+
+docker_test: docker_test_clean build_test_image
+	$(DOCKER-COMPOSE) -f anywhere/test/composefiles/docker-compose.yml up -d
+	sudo $(DOCKER) exec composefiles_anywhered_1 /usr/local/anywhere/bin/test
+	sleep 10
+	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.2:5000/mysql/mysql_client:8.0.19 -h172.90.101.11 -P4444 -proot -e "select @@version"
+	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.2:5000/mysql/mysql_client:5.7.28 -h172.90.101.11 -P4445 -proot -e "select @@version"
+	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net --env PASSWD=sshpass 10.0.0.2:5000/centos:sshpass_client sshpass -p sshpass ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -n root@172.90.101.11 -p 4447 /usr/sbin/ip a
+	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.2:5000/cntechpower/busybox:1.31.1-glibc wget -O - http://172.90.101.11:4446
+	sudo $(DOCKER-COMPOSE) -f anywhere/test/composefiles/docker-compose.yml down
+	sudo $(DOCKER) rmi anywhere-test-image:latest
+	sudo $(DOCKER) rmi anywhered-test-image:latest
+
+docker_test_clean:
+	$(DOCKER-COMPOSE) -f anywhere/test/composefiles/docker-compose.yml down
 
 vet:
 	GOPATH=${GOPATH} go vet ./anywhere/...
