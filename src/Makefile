@@ -44,7 +44,7 @@ build_test_image: build ui
 docker_test: docker_test_clean build_test_image
 	sudo $(DOCKER-COMPOSE) -f anywhere/test/composefiles/docker-compose.yml up -d
 	sudo $(DOCKER) exec composefiles_anywhered_1 /usr/local/anywhere/bin/test
-	sleep 20
+	sleep 40
 	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.2:5000/mysql/mysql_client:8.0.19 -h172.90.101.11 -P4444 -proot -e "select @@version"
 	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.2:5000/mysql/mysql_client:5.7.28 -h172.90.101.11 -P4445 -proot -e "select @@version"
 	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net --env PASSWD=sshpass 10.0.0.2:5000/centos:sshpass_client sshpass -p sshpass ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -n root@172.90.101.11 -p 4447 /usr/sbin/ip a
