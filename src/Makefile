@@ -42,7 +42,7 @@ build_test_image: build
 	sudo $(DOCKER) build -t anywhere-test-image:latest -f anywhere/test/dockerfiles/Dockerfile.agent .
 
 docker_test: docker_test_clean build_test_image
-	$(DOCKER-COMPOSE) -f anywhere/test/composefiles/docker-compose.yml up -d
+	sudo $(DOCKER-COMPOSE) -f anywhere/test/composefiles/docker-compose.yml up -d
 	sudo $(DOCKER) exec composefiles_anywhered_1 /usr/local/anywhere/bin/test
 	sleep 10
 	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.2:5000/mysql/mysql_client:8.0.19 -h172.90.101.11 -P4444 -proot -e "select @@version"
@@ -54,7 +54,7 @@ docker_test: docker_test_clean build_test_image
 	sudo $(DOCKER) rmi anywhered-test-image:latest
 
 docker_test_clean:
-	$(DOCKER-COMPOSE) -f anywhere/test/composefiles/docker-compose.yml down
+	sudo $(DOCKER-COMPOSE) -f anywhere/test/composefiles/docker-compose.yml down
 
 vet:
 	GOPATH=${GOPATH} go vet ./anywhere/...
