@@ -37,7 +37,7 @@ build_test_agent:
 	mkdir -p bin/
 	GOPATH=${GOPATH} go build ${LDFLAGS} -o bin/test anywhere/test/*.go
 
-build_test_image: build
+build_test_image: build ui
 	sudo $(DOCKER) build -t anywhered-test-image:latest -f anywhere/test/dockerfiles/Dockerfile.server .
 	sudo $(DOCKER) build -t anywhere-test-image:latest -f anywhere/test/dockerfiles/Dockerfile.agent .
 
