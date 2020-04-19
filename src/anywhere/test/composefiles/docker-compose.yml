@@ -12,8 +12,6 @@ services:
     networks:
       anywhere_test_net:
         ipv4_address: 172.90.101.12
-    ports:
-      - "5001:80"
     environment:
       - SERVER_ADDR=172.90.101.11
     depends_on:
