@@ -5,20 +5,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/dgrijalva/jwt-go"
 )
 
 type JwtValidator struct {
 	jwtKey []byte
-	logger *logrus.Entry
+	logger *log.Logger
 }
 
 func NewJwtValidator() *JwtValidator {
 	return &JwtValidator{
 		jwtKey: []byte("anywhere"),
-		logger: log.GetCustomLogger("jwtValidator")}
+		logger: log.GetDefaultLogger()}
 }
 
 func (v *JwtValidator) Generate(userName string) (string, error) {
@@ -32,6 +30,10 @@ func (v *JwtValidator) Generate(userName string) (string, error) {
 }
 
 func (v *JwtValidator) Validate(userName string, auth string) bool {
+	if auth == "" {
+		v.logger.Infof("validate jwt fail because jwt is empty")
+		return false
+	}
 	_, err := jwt.Parse(auth, func(token *jwt.Token) (i interface{}, e error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -39,9 +41,7 @@ func (v *JwtValidator) Validate(userName string, auth string) bool {
 		return v.jwtKey, nil
 	})
 	if err != nil {
-		v.logger.Infof("validate jwt for user %v fail", userName)
 		return false
 	}
-	v.logger.Infof("validate jwt for user %v success", userName)
 	return true
 }

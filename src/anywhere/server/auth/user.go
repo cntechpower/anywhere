@@ -3,13 +3,11 @@ package auth
 import (
 	"anywhere/log"
 	"anywhere/util"
-
-	"github.com/sirupsen/logrus"
 )
 
 type UserValidator struct {
 	userPassMap map[string] /*userName*/ string /*password*/
-	logger      *logrus.Entry
+	logger      *log.Logger
 }
 
 func NewUserValidator(userName string, password string) *UserValidator {
@@ -17,7 +15,7 @@ func NewUserValidator(userName string, password string) *UserValidator {
 		userPassMap: map[string]string{
 			userName: password,
 		},
-		logger: log.GetCustomLogger("userValidator"),
+		logger: log.GetDefaultLogger(),
 	}
 }
 

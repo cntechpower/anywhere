@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -67,8 +68,6 @@ func redirectToLogin(c *gin.Context) {
 }
 
 func sessionFilter(c *gin.Context) {
-	l := log.GetCustomLogger("sessionFilter")
-	l.Infof("request path: %v", c.Request.URL.Path)
 	if strings.HasPrefix(c.Request.URL.Path, "/react/static/") {
 		c.Next()
 		return
@@ -85,6 +84,7 @@ func sessionFilter(c *gin.Context) {
 	}
 
 	if !jwtValidator.Validate("", tokenString) {
+		log.Warnf("validate jwt for %s fail", c.ClientIP())
 		redirectToLogin(c)
 	}
 }
@@ -136,6 +136,23 @@ func startUIAndAPIService(addr, user, pass, totpSecret string, otpEnable bool, e
 		errChan <- err
 	}
 	router := gin.New()
+	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+		Formatter: func(param gin.LogFormatterParams) string {
+			return fmt.Sprintf("[%s] %s \"%s %s %s %d %s \"%s\" %s\"\n",
+				param.TimeStamp.Format(time.RFC3339),
+				param.ClientIP,
+				param.Method,
+				param.Path,
+				param.Request.Proto,
+				param.StatusCode,
+				param.Latency,
+				param.Request.UserAgent(),
+				param.ErrorMessage,
+			)
+		},
+		Output:    nil,
+		SkipPaths: []string{"/react/static"},
+	}))
 	userValidator = auth.NewUserValidator(user, pass)
 	jwtValidator = auth.NewJwtValidator()
 	totpValidator = auth.NewTOTPValidator(user, totpSecret, otpEnable)

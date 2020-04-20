@@ -4,12 +4,11 @@ import (
 	"anywhere/log"
 
 	"github.com/pquerna/otp/totp"
-	"github.com/sirupsen/logrus"
 )
 
 type TOTPValidator struct {
 	otpSecretMap map[string] /*userName*/ string /*secret*/
-	logger       *logrus.Entry
+	logger       *log.Logger
 	enable       bool
 }
 
@@ -18,7 +17,7 @@ func NewTOTPValidator(adminUser, adminSecret string, enable bool) *TOTPValidator
 		otpSecretMap: map[string]string{
 			adminUser: adminSecret,
 		},
-		logger: log.GetCustomLogger("totpValidator"),
+		logger: log.GetDefaultLogger(),
 		enable: enable,
 	}
 }

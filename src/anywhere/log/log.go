@@ -2,54 +2,94 @@ package log
 
 import (
 	"fmt"
+	_log "log"
 	"os"
 	"path"
 	"runtime"
-	"strconv"
-
-	"github.com/sirupsen/logrus"
+	"time"
 )
 
-var log *logrus.Logger
+var l *Logger
 
 func InitLogger(fileName string) {
 
-	if log != nil {
-		panic("logger already init")
+	if l != nil {
+		panic("Logger already init")
 	}
-	log = logrus.New()
-	log.Formatter = &logrus.TextFormatter{
-		ForceColors:      false,
-		DisableColors:    false,
-		DisableTimestamp: false,
-		FullTimestamp:    true,
-		TimestampFormat:  "2006-01-02 15:04:05",
-		DisableSorting:   false,
-		CallerPrettyfier: func(frame *runtime.Frame) (function string, file string) {
-			return path.Base(frame.Function) + "()", path.Base(frame.File) + ":" + strconv.Itoa(frame.Line)
-
-		},
-	}
-	log.SetReportCaller(true)
+	l = &Logger{l: &_log.Logger{}}
 	if fileName != "" {
 		// You could set this to any `io.Writer` such as a file
 		file, err := os.OpenFile("logrus.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err == nil {
-			log.Out = file
+			l.l.SetOutput(file)
 		} else {
-			log.Infof("Failed to log to file, using default stderr: %v", err)
+			l.l.SetOutput(os.Stderr)
+			l.l.Printf("Failed to log to file, using default stderr: %v\n", err)
 		}
 	} else {
-		log.Infof("log to default stderr output")
+		l.l.SetOutput(os.Stderr)
+		l.l.Println("log to default stderr output")
 	}
 
 }
 
-func GetCustomLogger(format string, a ...interface{}) *logrus.Entry {
-	s := fmt.Sprintf(format, a...)
-	return log.WithField("caller", s)
+type Logger struct {
+	l *_log.Logger
 }
 
-func GetDefaultLogger() *logrus.Logger {
-	return log
+type Level string
+
+const (
+	Info  Level = "INFO"
+	Warn  Level = "WARN"
+	Error Level = "ERROR"
+	Fatal Level = "FATAL"
+)
+
+func getCaller() (string, int) {
+	_, file, line, ok := runtime.Caller(3)
+	if ok {
+		return path.Base(file), line
+	}
+	return "unknown.go", 0
+}
+
+func (l *Logger) log(level Level, format string, a ...interface{}) {
+	file, line := getCaller()
+	l.l.Println(fmt.Sprintf("[%s] <%s> (%s:%v) %s", time.Now().Format(time.RFC3339), level, file, line, fmt.Sprintf(format, a...)))
+}
+
+func (l *Logger) Infof(format string, a ...interface{}) {
+	l.log(Info, format, a...)
+}
+
+func (l *Logger) Errorf(format string, a ...interface{}) {
+	l.log(Error, format, a...)
+}
+
+func (l *Logger) Warnf(format string, a ...interface{}) {
+	l.log(Warn, format, a...)
+}
+
+func (l *Logger) Fatalf(format string, a ...interface{}) {
+	l.log(Error, format, a...)
+}
+
+func Infof(format string, a ...interface{}) {
+	l.Infof(format, a...)
+}
+
+func Errorf(format string, a ...interface{}) {
+	l.Errorf(format, a...)
+}
+
+func Warnf(format string, a ...interface{}) {
+	l.Warnf(format, a...)
+}
+
+func Fatalf(format string, a ...interface{}) {
+	l.Fatalf(format, a...)
+}
+func GetDefaultLogger() *Logger {
+	return l
 }
