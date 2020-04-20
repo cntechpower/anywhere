@@ -76,13 +76,12 @@ func (s *Server) Start() {
 		panic(err)
 	}
 	s.listener = ln
-	l := log.GetCustomLogger("anyWhereServerMainLoop")
 
 	go func() {
 		for {
 			c, err := s.listener.Accept()
 			if err != nil {
-				l.Infof("accept conn error: %v", err)
+				log.Infof("server port accept conn error: %v", err)
 				continue
 			}
 			go s.handleNewConnection(c)

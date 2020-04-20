@@ -7,8 +7,6 @@ import (
 	"anywhere/util"
 	"context"
 	"fmt"
-
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -17,11 +15,11 @@ var (
 
 type rpcHandlers struct {
 	s *anywhereServer.Server
-	l *logrus.Entry
+	l *log.Logger
 }
 
 func GetRpcHandlers(s *anywhereServer.Server) *rpcHandlers {
-	return &rpcHandlers{s: s, l: log.GetCustomLogger("grpc_handler")}
+	return &rpcHandlers{s: s, l: log.GetDefaultLogger()}
 }
 
 func (h *rpcHandlers) ListAgent(ctx context.Context, empty *pb.Empty) (*pb.Agents, error) {

@@ -99,9 +99,9 @@ func run(_ *cobra.Command, _ []string) error {
 
 	select {
 	case err := <-rpcExitChan:
-		log.GetDefaultLogger().Fatalf("Grpc existing unexpected: %v", err)
+		log.Fatalf("Grpc existing unexpected: %v", err)
 	case <-serverExitChan:
-		log.GetDefaultLogger().Info("Agent Existing")
+		log.Infof("Agent Existing")
 	}
 	return nil
 }

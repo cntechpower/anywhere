@@ -63,23 +63,22 @@ CONNECT:
 	a.status = "INIT"
 	a.adminConn = conn.NewBaseConn(c)
 	if err := a.SendControlConnRegisterPkg(); err != nil {
-		log.GetDefaultLogger().Errorf("can not send register pkg to server %v, error: %v", a.addr, err)
+		log.Errorf("can not send register pkg to server %v, error: %v", a.addr, err)
 		_ = c.Close()
 		time.Sleep(time.Duration(dur) * time.Second)
 		goto CONNECT
 	}
-	log.GetDefaultLogger().Infof("init control connection to server %v success", a.addr)
+	log.Infof("init control connection to server %v success", a.addr)
 	a.status = "RUNNING"
 
 }
 
 func (a *Agent) ControlConnHeartBeatSendLoop(dur int, errChan chan error) {
-	l := log.GetCustomLogger("agent_heartBeater")
 	go func() {
 		for {
 			if err := a.sendHeartBeatPkg(); err != nil {
 				_ = a.adminConn.Close()
-				l.Errorf("send heartbeat error: %v, sleep %v s and try again", err, dur)
+				log.Errorf("send heartbeat error: %v, sleep %v s and try again", err, dur)
 
 			} else {
 				a.adminConn.SetAck(time.Now(), time.Now())

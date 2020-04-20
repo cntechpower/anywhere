@@ -26,7 +26,7 @@ func main() {
 		Long:  "anywhere server Version 0.0.1 -" + version,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := run(cmd, args); err != nil {
-				log.GetDefaultLogger().Fatal(err)
+				log.Fatalf(err.Error())
 			}
 		},
 	}

@@ -3,15 +3,14 @@ package handler
 import (
 	"anywhere/agent/anywhereAgent"
 	pb "anywhere/agent/rpc/definitions"
-
-	"github.com/sirupsen/logrus"
+	"anywhere/log"
 
 	"context"
 )
 
 type anywhereAgentRpcHandler struct {
 	a *anywhereAgent.Agent
-	l *logrus.Entry
+	l *log.Logger
 }
 
 func (h *anywhereAgentRpcHandler) ListConns(ctx context.Context, empty *pb.Empty) (*pb.Conns, error) {

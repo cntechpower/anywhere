@@ -68,13 +68,12 @@ func (a *Agent) requestNewProxyConn(localAddr string) {
 }
 
 func (a *Agent) ProxyConfigHandleLoop() {
-	l := log.GetCustomLogger("proxy_handle_%v", a.Id)
-	l.Infof("started loop for %v", a.AdminConn.RemoteAddr())
+	log.Infof("started loop for agent %v, addr %v", a.Id, a.AdminConn.RemoteAddr())
 	go func() {
 		<-a.CloseChan
 		close(a.proxyConfigChan)
 	}()
-	defer l.Infof("stopped loop for %v", a.AdminConn.RemoteAddr())
+	defer log.Infof("stopped loop for agent %v, %v", a.Id, a.AdminConn.RemoteAddr())
 	for p := range a.proxyConfigChan {
 		go a.proxyConfigHandler(p)
 	}
@@ -122,8 +121,6 @@ func (a *Agent) RemoveProxyConfig(localAddr string) error {
 }
 
 func (a *Agent) GetProxyConn(proxyAddr string) (*conn.BaseConn, error) {
-	l := log.GetCustomLogger("get_proxy_conn_%v_%v", a.Id, proxyAddr)
-
 	if _, ok := a.chanProxyConns[proxyAddr]; !ok {
 		a.chanProxyConns[proxyAddr] = make(chan *conn.BaseConn, AGENTPROXYCONNBUFFER)
 	}
@@ -140,7 +137,7 @@ func (a *Agent) GetProxyConn(proxyAddr string) (*conn.BaseConn, error) {
 	}
 	//http://10.0.0.8/self-code/anywhere/issues/15
 	err := a.AdminConn.Close()
-	l.Infof("get conn failed, close admin conn, err: %v", err)
+	log.Infof("get conn from agent %v proxy addr %v failed, close admin conn, err: %v", a.Id, proxyAddr, err)
 
 	return nil, newErrTimeoutWaitingProxyConn(proxyAddr)
 }
@@ -160,7 +157,7 @@ func (a *Agent) PutProxyConn(proxyAddr string, c *conn.BaseConn) error {
 }
 
 func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, closeChan chan struct{}, isWhiteListOn bool, whiteListIps string) {
-	l := log.GetCustomLogger("tunnel_%v_handler", localAddr)
+	header := fmt.Sprintf("tunnel_%v_handler", localAddr)
 	closeFlag := false
 	go func() {
 		<-closeChan
@@ -171,22 +168,22 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, cl
 	//always try to get a whitelist
 	whiteList, err := util.NewWhiteList(whiteListIps)
 	if err != nil {
-		l.Errorf("init white list error: %v", err)
+		log.Errorf("%v: init white list error: %v", header, err)
 		return
 	}
 	for {
 		c, err := ln.AcceptTCP()
 		if err != nil {
 			if closeFlag {
-				l.Infof("handler closed")
+				log.Infof("%v: handler closed", header)
 				return
 			}
-			l.Infof("accept new conn error: %v", err)
+			log.Infof("%v: accept new conn error: %v", header, err)
 			continue
 		}
 		if isWhiteListOn && !whiteList.AddrInWhiteList(c.RemoteAddr().String()) {
 			_ = c.Close()
-			l.Infof("refused %v connection because it is not in white list", c.RemoteAddr())
+			log.Infof("%v: refused %v connection because it is not in white list", header, c.RemoteAddr())
 			continue
 		}
 		go a.handelProxyConnection(c, localAddr)
@@ -195,32 +192,31 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, cl
 }
 
 func (a *Agent) handelProxyConnection(c net.Conn, localAddr string) {
-	l := log.GetCustomLogger("[%v]proxy: %v->%v", util.RandString(3), c.RemoteAddr().String(), localAddr)
+	header := fmt.Sprintf("proxy: %v->%v", c.RemoteAddr().String(), localAddr)
 	dst, err := a.GetProxyConn(localAddr)
 	if err != nil {
-		l.Infof("get conn error: %v", err)
+		log.Infof("%v: get conn error: %v", header, err)
 		_ = c.Close()
 		return
 	}
 	idx := a.joinedConns.Add(conn.NewBaseConn(c), dst)
 	conn.JoinConn(dst.Conn, c)
 	if err := a.joinedConns.Remove(idx); err != nil {
-		l.Errorf("remove conn from list error: %v", err)
+		log.Errorf("%v: remove conn from list error: %v", header, err)
 	}
-	l.Infof("proxy conn closed")
+	log.Infof("%v: proxy conn closed", header)
 
 }
 
 func (a *Agent) handleAdminConnection() {
-	l := log.GetCustomLogger("%v_adminConnHandler", a.Id)
 	if a.AdminConn == nil {
-		l.Errorf("handle on nil admin connection: %v", a.Id)
+		log.Errorf("agent %v admin connection is nil, skip handle loop", a.Id)
 		return
 	}
 	msg := &model.RequestMsg{}
 	for {
 		if err := a.AdminConn.Receive(&msg); err != nil {
-			l.Errorf("receive from admin conn error: %v, wait client reconnecting", err)
+			log.Errorf("receive from agent %v admin conn error: %v, wait client reconnecting", a.Id, err)
 			_ = a.AdminConn.Close()
 			return
 		}

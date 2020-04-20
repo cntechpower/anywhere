@@ -62,7 +62,7 @@ func (a *Agent) Start() {
 func (a *Agent) Stop() {
 	if a.adminConn != nil {
 		a.adminConn.Close()
-		log.GetDefaultLogger().Info("Agent Stopping...")
+		log.Infof("Agent Stopping...")
 	}
 	a.status = "STOPPED"
 }
