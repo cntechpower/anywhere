@@ -70,9 +70,7 @@ upload: build ui
 	curl -T  anywhere-$(VERSION).tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
 	curl -T  anywhere-latest.tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
 
-upload_release: build_release ui
-	tar -czvf anywhere-$(VERSION).tar.gz bin/ credential/ static/
-	tar -czvf anywhere-latest.tar.gz bin/ credential/ static/
+upload_release:
 	mv anywhere-$(VERSION).tar.gz /var/www/html/
 	rm -rf /var/www/html/anywhere-latest.tar.gz && mv anywhere-latest.tar.gz /var/www/html/
 
@@ -82,6 +80,8 @@ clean:
 build: vet build_server build_agent build_test_agent
 
 build_release: vet build_server build_agent newkey
+	tar -czvf anywhere-$(VERSION).tar.gz bin/ credential/ static/
+	tar -czvf anywhere-latest.tar.gz bin/ credential/ static/
 
 docker_rpm:
 	sudo $(DOCKER) run -v $(shell pwd)/../:/universe --rm $(DOCKER_IMAGE) -c "(mkdir -p /root/rpmbuild/SOURCES >/dev/null 2>&1); cd /root/rpmbuild/SOURCES; (tar zcf ${PROJECT_NAME}.tar.gz /universe --exclude=/universe/pkg --exclude=/universe/bin --transform 's/universe/${PROJECT_NAME}-${RPM_VERSION}/' >/tmp/build.log 2>&1) && (rpmbuild -bb --define 'Version ${RPM_VERSION}' --with qa /universe/src/${PROJECT_NAME}.spec >>/tmp/build.log 2>&1) && (cat /root/rpmbuild/RPMS/x86_64/${PROJECT_NAME}-${RPM_VERSION}-qa.x86_64.rpm) || (cat /tmp/build.log && exit 1)" > ${PROJECT_NAME}-${RPM_VERSION}.x86_64.rpm
