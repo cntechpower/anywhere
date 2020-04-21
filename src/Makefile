@@ -79,7 +79,7 @@ clean:
 	rm -rf *.tar.gz
 build: vet build_server build_agent build_test_agent
 
-build_release: vet build_server build_agent newkey
+build_release: vet build_server build_agent newkey ui
 	tar -czvf anywhere-$(VERSION).tar.gz bin/ credential/ static/
 	tar -czvf anywhere-latest.tar.gz bin/ credential/ static/
 
