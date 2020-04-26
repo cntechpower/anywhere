@@ -30,7 +30,7 @@ func StartRpcServer(agent *anywhereAgent.Agent, addr string, errChan chan error)
 		return
 	}
 	grpcServer := grpc.NewServer()
-	pb.RegisterAnywhereServer(grpcServer, &anywhereAgentRpcHandler{a: agent, l: log.GetDefaultLogger()})
+	pb.RegisterAnywhereServer(grpcServer, &anywhereAgentRpcHandler{a: agent, logHeader: log.NewHeader("agent")})
 	if err := grpcServer.Serve(l); err != nil {
 		errChan <- err
 	}

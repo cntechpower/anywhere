@@ -9,14 +9,15 @@ import (
 )
 
 type JwtValidator struct {
-	jwtKey []byte
-	logger *log.Logger
+	jwtKey    []byte
+	logHeader *log.Header
 }
 
 func NewJwtValidator() *JwtValidator {
 	return &JwtValidator{
-		jwtKey: []byte("anywhere"),
-		logger: log.GetDefaultLogger()}
+		jwtKey:    []byte("anywhere"),
+		logHeader: log.NewHeader("JwtValidator"),
+	}
 }
 
 func (v *JwtValidator) Generate(userName string) (string, error) {
@@ -25,13 +26,13 @@ func (v *JwtValidator) Generate(userName string) (string, error) {
 		"nbf":  time.Now(),
 		"exp":  time.Now().Add(8 * time.Hour),
 	})
-	v.logger.Infof("generate jwt for user %v", userName)
+	log.Infof(v.logHeader, "generate jwt for user %v", userName)
 	return token.SignedString(v.jwtKey)
 }
 
 func (v *JwtValidator) Validate(userName string, auth string) bool {
 	if auth == "" {
-		v.logger.Infof("validate jwt fail because jwt is empty")
+		log.Infof(v.logHeader, "validate jwt fail because jwt is empty")
 		return false
 	}
 	_, err := jwt.Parse(auth, func(token *jwt.Token) (i interface{}, e error) {

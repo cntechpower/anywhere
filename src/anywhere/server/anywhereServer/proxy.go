@@ -9,13 +9,14 @@ import (
 )
 
 func (s *Server) listenPort(addr string) *net.TCPListener {
+	h := log.NewHeader("serverListenPort")
 	rAddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
-		log.GetDefaultLogger().Errorf("parse proxy port error: %v", err)
+		log.Errorf(h, "parse proxy port error: %v", err)
 	}
 	ln, err := net.ListenTCP("tcp", rAddr)
 	if err != nil {
-		log.GetDefaultLogger().Errorf("listen proxy port error: %v", err)
+		log.Errorf(h, "listen proxy port error: %v", err)
 	}
 	return ln
 }

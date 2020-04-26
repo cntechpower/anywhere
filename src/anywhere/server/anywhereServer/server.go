@@ -68,6 +68,7 @@ func (s *Server) checkServerInit() error {
 }
 
 func (s *Server) Start() {
+	h := log.NewHeader("serverStart")
 	if err := s.checkServerInit(); err != nil {
 		panic(err)
 	}
@@ -81,7 +82,7 @@ func (s *Server) Start() {
 		for {
 			c, err := s.listener.Accept()
 			if err != nil {
-				log.Infof("server port accept conn error: %v", err)
+				log.Infof(h, "server port accept conn error: %v", err)
 				continue
 			}
 			go s.handleNewConnection(c)

@@ -9,13 +9,13 @@ import (
 )
 
 type anywhereAgentRpcHandler struct {
-	a *anywhereAgent.Agent
-	l *log.Logger
+	a         *anywhereAgent.Agent
+	logHeader *log.Header
 }
 
 func (h *anywhereAgentRpcHandler) ListConns(ctx context.Context, empty *pb.Empty) (*pb.Conns, error) {
-	h.l.Infof("calling list conns")
-	defer h.l.Infof("called list conns")
+	log.Infof(h.logHeader, "calling list conns")
+	defer log.Infof(h.logHeader, "called list conns")
 	conns := h.a.ListJoinedConns()
 	res := &pb.Conns{
 		Conn: make([]*pb.Conn, 0),
@@ -35,14 +35,14 @@ func (h *anywhereAgentRpcHandler) ListConns(ctx context.Context, empty *pb.Empty
 }
 
 func (h *anywhereAgentRpcHandler) KillConnById(ctx context.Context, input *pb.KillConnByIdInput) (*pb.Empty, error) {
-	h.l.Infof("calling kill conn %v", input.ConnId)
-	defer h.l.Infof("called kill conn %v", input.ConnId)
+	log.Infof(h.logHeader, "calling kill conn %v", input.ConnId)
+	defer log.Infof(h.logHeader, "called kill conn %v", input.ConnId)
 	return &pb.Empty{}, h.a.KillJoinedConnById(int(input.ConnId))
 }
 
 func (h *anywhereAgentRpcHandler) KillAllConns(ctx context.Context, empty *pb.Empty) (*pb.Empty, error) {
-	h.l.Infof("calling flush conns")
-	defer h.l.Infof("called flush conns")
+	log.Infof(h.logHeader, "calling flush conns")
+	defer log.Infof(h.logHeader, "called flush conns")
 	h.a.FlushJoinedConns()
 	return &pb.Empty{}, nil
 }
