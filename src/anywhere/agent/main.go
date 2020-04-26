@@ -84,8 +84,8 @@ func main() {
 }
 
 func run(_ *cobra.Command, _ []string) error {
-
 	log.InitLogger("")
+	h := log.NewHeader("agentMain")
 	a := anywhereAgent.InitAnyWhereAgent(agentId, serverIp, serverPort)
 	if err := a.SetCredentials(certFile, keyFile, caFile); err != nil {
 		return err
@@ -99,9 +99,9 @@ func run(_ *cobra.Command, _ []string) error {
 
 	select {
 	case err := <-rpcExitChan:
-		log.Fatalf("Grpc existing unexpected: %v", err)
+		log.Fatalf(h, "Grpc existing unexpected: %v", err)
 	case <-serverExitChan:
-		log.Infof("Agent Existing")
+		log.Infof(h, "Agent Existing")
 	}
 	return nil
 }

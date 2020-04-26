@@ -68,6 +68,7 @@ func redirectToLogin(c *gin.Context) {
 }
 
 func sessionFilter(c *gin.Context) {
+	h := log.NewHeader("sessionFilter")
 	if strings.HasPrefix(c.Request.URL.Path, "/react/static/") {
 		c.Next()
 		return
@@ -84,7 +85,7 @@ func sessionFilter(c *gin.Context) {
 	}
 
 	if !jwtValidator.Validate("", tokenString) {
-		log.Warnf("validate jwt for %s fail", c.ClientIP())
+		log.Warnf(h, "validate jwt for %s fail", c.ClientIP())
 		redirectToLogin(c)
 	}
 }

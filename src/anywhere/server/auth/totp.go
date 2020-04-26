@@ -8,7 +8,7 @@ import (
 
 type TOTPValidator struct {
 	otpSecretMap map[string] /*userName*/ string /*secret*/
-	logger       *log.Logger
+	logHeader    *log.Header
 	enable       bool
 }
 
@@ -17,8 +17,8 @@ func NewTOTPValidator(adminUser, adminSecret string, enable bool) *TOTPValidator
 		otpSecretMap: map[string]string{
 			adminUser: adminSecret,
 		},
-		logger: log.GetDefaultLogger(),
-		enable: enable,
+		logHeader: log.NewHeader("TOTPValidator"),
+		enable:    enable,
 	}
 }
 
@@ -28,10 +28,10 @@ func (v *TOTPValidator) Generate(userName string) (string, error) {
 		AccountName: userName,
 	})
 	if err != nil {
-		v.logger.Infof("generate totp secret for user %v fail", userName)
+		log.Infof(v.logHeader, "generate totp secret for user %v fail", userName)
 		return "", err
 	}
-	v.logger.Infof("generate totp secret for user %v success", userName)
+	log.Infof(v.logHeader, "generate totp secret for user %v success", userName)
 	v.otpSecretMap[userName] = key.Secret()
 	return key.Secret(), nil
 }
@@ -42,9 +42,9 @@ func (v *TOTPValidator) Validate(userName string, auth string) bool {
 	}
 	secret, ok := v.otpSecretMap[userName]
 	if ok && totp.Validate(auth, secret) {
-		v.logger.Infof("validate totp for user %v success", userName)
+		log.Infof(v.logHeader, "validate totp for user %v success", userName)
 		return true
 	}
-	v.logger.Infof("validate totp for user %v fail", userName)
+	log.Infof(v.logHeader, "validate totp for user %v fail", userName)
 	return false
 }

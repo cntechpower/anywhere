@@ -8,6 +8,7 @@ import (
 )
 
 func JoinConn(remote, local net.Conn) {
+	h := log.NewHeader("JoinConn")
 	var wg sync.WaitGroup
 	joinWithClose := func(dst, src net.Conn) {
 		defer wg.Done()
@@ -21,6 +22,6 @@ func JoinConn(remote, local net.Conn) {
 	wg.Add(2)
 	go joinWithClose(remote, local)
 	go joinWithClose(local, remote)
-	log.GetDefaultLogger().Infof("joined conn %v and %v", remote.LocalAddr(), local.RemoteAddr())
+	log.Infof(h, "joined conn %v and %v", remote.LocalAddr(), local.RemoteAddr())
 	wg.Wait()
 }

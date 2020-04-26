@@ -26,7 +26,7 @@ func main() {
 		Long:  "anywhere server Version 0.0.1 -" + version,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := run(cmd, args); err != nil {
-				log.Fatalf(err.Error())
+				log.Fatalf(log.NewHeader("serverMain"), err.Error())
 			}
 		},
 	}
@@ -52,6 +52,7 @@ func main() {
 
 func run(_ *cobra.Command, _ []string) error {
 	log.InitLogger("")
+	h := log.NewHeader("serverMain")
 	c, err := anywhereServer.ParseSystemConfigFile()
 	if err != nil {
 		return err
@@ -80,13 +81,13 @@ func run(_ *cobra.Command, _ []string) error {
 	serverExitChan := util.ListenKillSignal()
 	select {
 	case <-serverExitChan:
-		log.GetDefaultLogger().Infof("Server Existing")
+		log.Infof(h, "Server Existing")
 	case err := <-webExitChan:
-		log.GetDefaultLogger().Fatalf("api server exit with error: %v", err)
+		log.Fatalf(h, "api server exit with error: %v", err)
 	case err := <-rpcExitChan:
-		log.GetDefaultLogger().Fatalf("rpc server exit with error: %v", err)
+		log.Fatalf(h, "rpc server exit with error: %v", err)
 	case err := <-s.ExitChan:
-		log.GetDefaultLogger().Fatalf("anywhere server exit with error: %v", err)
+		log.Fatalf(h, "anywhere server exit with error: %v", err)
 	}
 	return nil
 }

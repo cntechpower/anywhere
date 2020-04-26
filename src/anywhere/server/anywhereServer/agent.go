@@ -58,32 +58,34 @@ func NewAgentInfo(agentId string, c net.Conn, errChan chan error) *Agent {
 }
 
 func (a *Agent) requestNewProxyConn(localAddr string) {
+	h := log.NewHeader("requestNewProxyConn")
 	p := model.NewTunnelBeginMsg(a.Id, localAddr)
 	pkg := model.NewRequestMsg(a.version, model.PkgTunnelBegin, a.Id, "", p)
 	if err := a.AdminConn.Send(pkg); err != nil {
 		errMsg := fmt.Errorf("agent %v request for new proxy conn error %v", a.Id, err)
-		log.GetDefaultLogger().Errorf("%v", err)
+		log.Errorf(h, "%v", err)
 		a.errChan <- errMsg
 	}
 }
 
 func (a *Agent) ProxyConfigHandleLoop() {
-	log.Infof("started loop for agent %v, addr %v", a.Id, a.AdminConn.RemoteAddr())
+	h := log.NewHeader("proxyConfigHandleLoop")
+	log.Infof(h, "started loop for agent %v, addr %v", a.Id, a.AdminConn.RemoteAddr())
 	go func() {
 		<-a.CloseChan
 		close(a.proxyConfigChan)
 	}()
-	defer log.Infof("stopped loop for agent %v, %v", a.Id, a.AdminConn.RemoteAddr())
+	defer log.Infof(h, "stopped loop for agent %v, %v", a.Id, a.AdminConn.RemoteAddr())
 	for p := range a.proxyConfigChan {
-		go a.proxyConfigHandler(p)
+		go a.proxyConfigHandler(p, h)
 	}
 }
 
-func (a *Agent) proxyConfigHandler(config *proxyConfig) {
+func (a *Agent) proxyConfigHandler(config *proxyConfig, h *log.Header) {
 	ln, err := util.ListenTcp("0.0.0.0:" + strconv.Itoa(config.RemotePort))
 	if err != nil {
 		errMsg := fmt.Errorf("agent %v proxyConfigHandler got error %v", a.Id, err)
-		log.GetDefaultLogger().Errorf("%v", errMsg)
+		log.Errorf(h, "%v", errMsg)
 		a.errChan <- errMsg
 		return
 	}
@@ -91,19 +93,20 @@ func (a *Agent) proxyConfigHandler(config *proxyConfig) {
 }
 
 func (a *Agent) AddProxyConfig(config *model.ProxyConfig) error {
+	h := log.NewHeader("AddProxyConfig")
 	if _, exist := a.ProxyConfigs[config.LocalAddr]; exist {
 		return fmt.Errorf("proxy config %v is already exist in %v", config.LocalAddr, a.Id)
 	}
 	a.proxyConfigMutex.Lock()
 	defer a.proxyConfigMutex.Unlock()
-	log.GetDefaultLogger().Infof("adding proxy config: %v", config)
+	log.Infof(h, "adding proxy config: %v", config)
 	closeChan := make(chan struct{}, 0)
 	pConfig := &proxyConfig{
 		ProxyConfig: config,
 		closeChan:   closeChan,
 	}
 	a.proxyConfigChan <- pConfig
-	log.GetDefaultLogger().Infof("add %v done", config)
+	log.Infof(h, "add %v done", config)
 	a.ProxyConfigs[config.LocalAddr] = pConfig
 	return nil
 }
@@ -121,6 +124,7 @@ func (a *Agent) RemoveProxyConfig(localAddr string) error {
 }
 
 func (a *Agent) GetProxyConn(proxyAddr string) (*conn.BaseConn, error) {
+	h := log.NewHeader("GetProxyConn")
 	if _, ok := a.chanProxyConns[proxyAddr]; !ok {
 		a.chanProxyConns[proxyAddr] = make(chan *conn.BaseConn, AGENTPROXYCONNBUFFER)
 	}
@@ -137,7 +141,7 @@ func (a *Agent) GetProxyConn(proxyAddr string) (*conn.BaseConn, error) {
 	}
 	//http://10.0.0.8/self-code/anywhere/issues/15
 	err := a.AdminConn.Close()
-	log.Infof("get conn from agent %v proxy addr %v failed, close admin conn, err: %v", a.Id, proxyAddr, err)
+	log.Infof(h, "get conn from agent %v proxy addr %v failed, close admin conn, err: %v", a.Id, proxyAddr, err)
 
 	return nil, newErrTimeoutWaitingProxyConn(proxyAddr)
 }
@@ -157,7 +161,7 @@ func (a *Agent) PutProxyConn(proxyAddr string, c *conn.BaseConn) error {
 }
 
 func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, closeChan chan struct{}, isWhiteListOn bool, whiteListIps string) {
-	header := fmt.Sprintf("tunnel_%v_handler", localAddr)
+	h := log.NewHeader(fmt.Sprintf("tunnel_%v_handler", localAddr))
 	closeFlag := false
 	go func() {
 		<-closeChan
@@ -168,22 +172,22 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, cl
 	//always try to get a whitelist
 	whiteList, err := util.NewWhiteList(whiteListIps)
 	if err != nil {
-		log.Errorf("%v: init white list error: %v", header, err)
+		log.Errorf(h, "init white list error: %v", err)
 		return
 	}
 	for {
 		c, err := ln.AcceptTCP()
 		if err != nil {
 			if closeFlag {
-				log.Infof("%v: handler closed", header)
+				log.Infof(h, "handler closed")
 				return
 			}
-			log.Infof("%v: accept new conn error: %v", header, err)
+			log.Infof(h, "ccept new conn error: %v", err)
 			continue
 		}
 		if isWhiteListOn && !whiteList.AddrInWhiteList(c.RemoteAddr().String()) {
 			_ = c.Close()
-			log.Infof("%v: refused %v connection because it is not in white list", header, c.RemoteAddr())
+			log.Infof(h, "refused %v connection because it is not in white list", c.RemoteAddr())
 			continue
 		}
 		go a.handelProxyConnection(c, localAddr)
@@ -192,31 +196,32 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, cl
 }
 
 func (a *Agent) handelProxyConnection(c net.Conn, localAddr string) {
-	header := fmt.Sprintf("proxy: %v->%v", c.RemoteAddr().String(), localAddr)
+	h := log.NewHeader(fmt.Sprintf("proxy: %v->%v", c.RemoteAddr().String(), localAddr))
 	dst, err := a.GetProxyConn(localAddr)
 	if err != nil {
-		log.Infof("%v: get conn error: %v", header, err)
+		log.Infof(h, "get conn error: %v", err)
 		_ = c.Close()
 		return
 	}
 	idx := a.joinedConns.Add(conn.NewBaseConn(c), dst)
 	conn.JoinConn(dst.Conn, c)
 	if err := a.joinedConns.Remove(idx); err != nil {
-		log.Errorf("%v: remove conn from list error: %v", header, err)
+		log.Errorf(h, "remove conn from list error: %v", err)
 	}
-	log.Infof("%v: proxy conn closed", header)
+	log.Infof(h, "proxy conn closed")
 
 }
 
 func (a *Agent) handleAdminConnection() {
+	h := log.NewHeader("handleAdminConnection")
 	if a.AdminConn == nil {
-		log.Errorf("agent %v admin connection is nil, skip handle loop", a.Id)
+		log.Errorf(h, "agent %v admin connection is nil, skip handle loop", a.Id)
 		return
 	}
 	msg := &model.RequestMsg{}
 	for {
 		if err := a.AdminConn.Receive(&msg); err != nil {
-			log.Errorf("receive from agent %v admin conn error: %v, wait client reconnecting", a.Id, err)
+			log.Errorf(h, "receive from agent %v admin conn error: %v, wait client reconnecting", a.Id, err)
 			_ = a.AdminConn.Close()
 			return
 		}
@@ -225,7 +230,7 @@ func (a *Agent) handleAdminConnection() {
 			m, _ := model.ParseHeartBeatPkg(msg.Message)
 			a.AdminConn.SetAck(m.SendTime, time.Now())
 		default:
-			log.GetDefaultLogger().Errorf("got unknown ReqType: %v ,body: %v, will close admin conn", msg.ReqType, msg.Message)
+			log.Errorf(h, "got unknown ReqType: %v ,body: %v, will close admin conn", msg.ReqType, msg.Message)
 			_ = a.AdminConn.Close()
 			return
 		}

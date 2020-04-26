@@ -9,32 +9,26 @@ import (
 	"time"
 )
 
-var l *Logger
+var globalLogger *_log.Logger
 
 func InitLogger(fileName string) {
-
-	if l != nil {
+	if globalLogger != nil {
 		panic("Logger already init")
 	}
-	l = &Logger{l: &_log.Logger{}}
+	globalLogger = &_log.Logger{}
 	if fileName != "" {
 		// You could set this to any `io.Writer` such as a file
-		file, err := os.OpenFile("logrus.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		file, err := os.OpenFile("anywhere.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err == nil {
-			l.l.SetOutput(file)
+			globalLogger.SetOutput(file)
 		} else {
-			l.l.SetOutput(os.Stderr)
-			l.l.Printf("Failed to log to file, using default stderr: %v\n", err)
+			globalLogger.SetOutput(os.Stderr)
+			globalLogger.Printf("Failed to log to file, using default stderr: %v\n", err)
 		}
 	} else {
-		l.l.SetOutput(os.Stderr)
-		l.l.Println("log to default stderr output")
+		globalLogger.SetOutput(os.Stderr)
+		globalLogger.Println("log to default stderr output")
 	}
-
-}
-
-type Logger struct {
-	l *_log.Logger
 }
 
 type Level string
@@ -46,50 +40,44 @@ const (
 	Fatal Level = "FATAL"
 )
 
-func getCaller() (string, int) {
-	_, file, line, ok := runtime.Caller(3)
+func getCaller(skip int) (string, int) {
+	_, file, line, ok := runtime.Caller(skip)
 	if ok {
 		return path.Base(file), line
 	}
 	return "unknown.go", 0
 }
 
-func (l *Logger) log(level Level, format string, a ...interface{}) {
-	file, line := getCaller()
-	l.l.Println(fmt.Sprintf("[%s] <%s> (%s:%v) %s", time.Now().Format(time.RFC3339), level, file, line, fmt.Sprintf(format, a...)))
+func log(skip int, h *Header, level Level, format string, a ...interface{}) {
+	file, line := getCaller(skip)
+
+	globalLogger.Println(fmt.Sprintf("[%s] <%s> |%s| (%s:%v) %s", time.Now().Format("2006-01-02 15:04:05"), level, h, file, line, fmt.Sprintf(format, a...)))
 }
 
-func (l *Logger) Infof(format string, a ...interface{}) {
-	l.log(Info, format, a...)
+type Header struct {
+	name string
 }
 
-func (l *Logger) Errorf(format string, a ...interface{}) {
-	l.log(Error, format, a...)
+func NewHeader(n string) *Header {
+	return &Header{name: n}
 }
 
-func (l *Logger) Warnf(format string, a ...interface{}) {
-	l.log(Warn, format, a...)
+func (h *Header) String() string {
+	return h.name
 }
 
-func (l *Logger) Fatalf(format string, a ...interface{}) {
-	l.log(Error, format, a...)
+func Infof(h *Header, format string, a ...interface{}) {
+	log(3, h, Info, format, a...)
 }
 
-func Infof(format string, a ...interface{}) {
-	l.Infof(format, a...)
+func Errorf(h *Header, format string, a ...interface{}) {
+	log(3, h, Error, format, a...)
 }
 
-func Errorf(format string, a ...interface{}) {
-	l.Errorf(format, a...)
+func Warnf(h *Header, format string, a ...interface{}) {
+	log(3, h, Warn, format, a...)
 }
 
-func Warnf(format string, a ...interface{}) {
-	l.Warnf(format, a...)
-}
-
-func Fatalf(format string, a ...interface{}) {
-	l.Fatalf(format, a...)
-}
-func GetDefaultLogger() *Logger {
-	return l
+func Fatalf(h *Header, format string, a ...interface{}) {
+	log(3, h, Error, format, a...)
 }

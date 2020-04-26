@@ -14,17 +14,20 @@ var (
 )
 
 type rpcHandlers struct {
-	s *anywhereServer.Server
-	l *log.Logger
+	s         *anywhereServer.Server
+	logHeader *log.Header
 }
 
 func GetRpcHandlers(s *anywhereServer.Server) *rpcHandlers {
-	return &rpcHandlers{s: s, l: log.GetDefaultLogger()}
+	return &rpcHandlers{
+		s:         s,
+		logHeader: log.NewHeader("rpcHandler"),
+	}
 }
 
 func (h *rpcHandlers) ListAgent(ctx context.Context, empty *pb.Empty) (*pb.Agents, error) {
-	h.l.Infof("calling list agents")
-	defer h.l.Infof("called list agents")
+	log.Infof(h.logHeader, "calling list agents")
+	defer log.Infof(h.logHeader, "called list agents")
 	s := anywhereServer.GetServerInstance()
 	if s == nil {
 		return &pb.Agents{}, ErrServerNotInit
@@ -114,8 +117,8 @@ func (h *rpcHandlers) SaveProxyConfigToFile(ctx context.Context, input *pb.Empty
 }
 
 func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (*pb.Conns, error) {
-	h.l.Infof("calling list conns")
-	defer h.l.Infof("called list conns")
+	log.Infof(h.logHeader, "calling list conns")
+	defer log.Infof(h.logHeader, "called list conns")
 	agentConnsMap, err := h.s.ListJoinedConns(input.AgentId)
 	if err != nil {
 		return nil, err
@@ -142,14 +145,14 @@ func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (
 }
 
 func (h *rpcHandlers) KillConnById(ctx context.Context, input *pb.KillConnByIdInput) (*pb.Empty, error) {
-	h.l.Infof("calling kill conn %v on agent %v", input.ConnId, input.AgentId)
-	defer h.l.Infof("called kill conn %v on agent %v", input.ConnId, input.AgentId)
+	log.Infof(h.logHeader, "calling kill conn %v on agent %v", input.ConnId, input.AgentId)
+	defer log.Infof(h.logHeader, "called kill conn %v on agent %v", input.ConnId, input.AgentId)
 	return &pb.Empty{}, h.s.KillJoinedConnById(input.AgentId, int(input.ConnId))
 }
 
 func (h *rpcHandlers) KillAllConns(ctx context.Context, empty *pb.Empty) (*pb.Empty, error) {
-	h.l.Infof("calling flush conns")
-	defer h.l.Infof("called flush conns")
+	log.Infof(h.logHeader, "calling flush conns")
+	defer log.Infof(h.logHeader, "called flush conns")
 	h.s.FlushJoinedConns()
 	return &pb.Empty{}, nil
 }

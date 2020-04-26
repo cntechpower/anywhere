@@ -46,25 +46,25 @@ func ListenKillSignal() chan os.Signal {
 func ListenTTINSignalLoop() {
 	quitChan := make(chan os.Signal, 1)
 	signal.Notify(quitChan, syscall.Signal(0x15))
-	l := log.GetDefaultLogger()
+	h := log.NewHeader("ListenTTINSignalLoop")
 	ttinChan := make(chan os.Signal, 10)
 	signal.Notify(ttinChan, syscall.Signal(0x15))
 	profileToCapture := []string{"cpu", "heap", "goroutine"}
-	l.Infof("ttin listener started")
+	log.Infof(h, "ttin listener started")
 	for {
 		sig := <-ttinChan
 		switch sig {
 		case syscall.Signal(0x15):
 			dumpPath := "./dump_" + FormatTimestampForFileName()
 			if err := MkdirIfNotExist(dumpPath); err != nil {
-				l.Errorf("mkdir error: %v", err)
+				log.Errorf(h, "mkdir error: %v", err)
 			}
 			for _, name := range profileToCapture {
 				err := CaptureProfile(name, dumpPath, 2)
-				l.Infof("capture profile for %v, err: %v", name, err)
+				log.Infof(h, "capture profile for %v, err: %v", name, err)
 			}
 		default:
-			l.Fatalf("got unexpected signal: %v ", sig.String())
+			log.Fatalf(h, "got unexpected signal: %v ", sig.String())
 		}
 	}
 }
