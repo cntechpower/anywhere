@@ -176,15 +176,20 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, cl
 		return
 	}
 	for {
+		waitTime := time.Millisecond //default error wait time 1ms
 		c, err := ln.AcceptTCP()
 		if err != nil {
+			//if got conn error, make a limiting
+			time.Sleep(waitTime)
+			waitTime = waitTime * 2 //double wait time
 			if closeFlag {
 				log.Infof(h, "handler closed")
 				return
 			}
-			log.Infof(h, "ccept new conn error: %v", err)
+			log.Infof(h, "accept new conn error: %v", err)
 			continue
 		}
+		waitTime = time.Millisecond
 		if isWhiteListOn && !whiteList.AddrInWhiteList(c.RemoteAddr().String()) {
 			_ = c.Close()
 			log.Infof(h, "refused %v connection because it is not in white list", c.RemoteAddr())
