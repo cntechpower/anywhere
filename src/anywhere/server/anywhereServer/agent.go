@@ -139,9 +139,7 @@ func (a *Agent) GetProxyConn(proxyAddr string) (*conn.BaseConn, error) {
 			continue
 		}
 	}
-	//http://10.0.0.8/self-code/anywhere/issues/15
-	err := a.AdminConn.Close()
-	log.Infof(h, "get conn from agent %v proxy addr %v failed, close admin conn, err: %v", a.Id, proxyAddr, err)
+	log.Infof(h, "get conn from agent %v proxy addr %v failed, maybe proxy address is down or agent is dead", a.Id, proxyAddr)
 
 	return nil, newErrTimeoutWaitingProxyConn(proxyAddr)
 }
