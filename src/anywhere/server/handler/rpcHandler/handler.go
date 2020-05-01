@@ -54,15 +54,15 @@ func (h *rpcHandlers) AddProxyConfig(ctx context.Context, input *pb.AddProxyConf
 	}
 	s := anywhereServer.GetServerInstance()
 	if s == nil {
-		return nil, ErrServerNotInit
+		return &pb.Empty{}, ErrServerNotInit
 	}
 	config := input.Config
 
 	if err := util.CheckPortValid(int(config.RemotePort)); err != nil {
-		return nil, fmt.Errorf("invalid remoteAddr %v in config, error: %v", config.RemotePort, err)
+		return &pb.Empty{}, fmt.Errorf("invalid remoteAddr %v in config, error: %v", config.RemotePort, err)
 	}
 	if err := util.CheckAddrValid(config.LocalAddr); err != nil {
-		return nil, fmt.Errorf("invalid localAddr %v in config, error: %v", config.LocalAddr, err)
+		return &pb.Empty{}, fmt.Errorf("invalid localAddr %v in config, error: %v", config.LocalAddr, err)
 	}
 	if err := s.AddProxyConfigToAgent(config.AgentId, int(config.RemotePort), config.LocalAddr, config.IsWhiteListOn, config.WhiteCidrList); err != nil {
 		return nil, err

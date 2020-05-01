@@ -79,8 +79,7 @@ func AddProxyConfig(agentId string, remotePort int, localAddr string, isWhiteLis
 		IsWhiteListOn: isWhiteListOn,
 		WhiteCidrList: whiteListIps,
 	}}
-	_, err = client.AddProxyConfig(context.Background(), input)
-	if err != nil {
+	if _, err = client.AddProxyConfig(context.Background(), input); err != nil {
 		return fmt.Errorf("add proxy config error: %v", err)
 	}
 	return nil
