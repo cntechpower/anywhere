@@ -80,7 +80,7 @@ func GetProxyCmd() *cobra.Command {
 	proxyAddCmd.PersistentFlags().IntVar(&addProxyRemoteAddr, "remote-addr", 0, "remote port")
 	proxyAddCmd.PersistentFlags().StringVar(&addProxyLocalAddr, "local-addr", "127.0.0.1:80", "local addr")
 	proxyAddCmd.PersistentFlags().StringVar(&addProxyWhiteListIps, "white-list", "", "local port")
-	proxyAddCmd.PersistentFlags().BoolVarP(&addProxyIsWhiteListOn, "enable-wl", "", true, "enable white list or not")
+	proxyAddCmd.PersistentFlags().BoolVar(&addProxyIsWhiteListOn, "enable-wl", false, "enable white list or not")
 	proxyDelCmd.PersistentFlags().StringVar(&delProxyAgentId, "agent-id", "", "del from which agent")
 	proxyDelCmd.PersistentFlags().StringVar(&delProxyLocalAddr, "local-addr", "", "del from which localAddr")
 	proxyCmd.AddCommand(proxyListCmd)
