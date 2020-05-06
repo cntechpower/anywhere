@@ -94,3 +94,21 @@ func FlushConns(grpcAddr string) error {
 	_, err = client.KillAllConns(context.Background(), &pb.Empty{})
 	return err
 }
+
+func ShowStatus(grpcAddr string) error {
+	client, err := NewClient(grpcAddr)
+	if err != nil {
+		return err
+	}
+	res, err := client.ShowStatus(context.Background(), &pb.Empty{})
+	if err != nil {
+		return err
+	}
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetAutoFormatHeaders(false)
+	table.SetHeader([]string{"AgentId", "LocalAddr", "ServerAddr", "LastAckSend", "LastAckRcv"})
+	table.Append([]string{res.AgentId, res.LocalAddr, res.ServerAddr, res.LastAckSendTime, res.LastAckRcvTime})
+	table.Render()
+	return nil
+}

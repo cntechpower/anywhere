@@ -35,10 +35,7 @@ func (a *Agent) newProxyConn(localAddr string) {
 	}
 	//let server use this local connection
 	c := conn.NewBaseConn(a.mustGetTlsConnToServer())
-	//TODO: optimize this package generate
-	p := model.NewTunnelBeginMsg(a.id, localAddr)
-	pkg := model.NewRequestMsg(a.version, model.PkgTunnelBegin, a.id, "", p)
-	if err := c.Send(pkg); err != nil {
+	if err := c.Send(model.NewTunnelBeginMsg(a.id, localAddr)); err != nil {
 		log.Errorf(h, "error while send tunnel pkg : %v", err)
 		_ = c.Close()
 		_ = dst.Close()
@@ -85,6 +82,7 @@ func (a *Agent) ControlConnHeartBeatSendLoop(dur int, errChan chan error) {
 				log.Errorf(h, "send heartbeat error: %v, sleep %v s and try again", err, dur)
 
 			} else {
+				a.lastAckSendTime = time.Now()
 				a.adminConn.SetAck(time.Now(), time.Now())
 			}
 			time.Sleep(time.Duration(dur) * time.Second)
@@ -113,6 +111,9 @@ func (a *Agent) handleAdminConnection() {
 			m, _ := model.ParseTunnelBeginPkg(msg.Message)
 			log.Infof(h, "got PkgDataConnTunnel for : %v", m.LocalAddr)
 			go a.newProxyConn(m.LocalAddr)
+		case model.PkgReqHeartBeatPong:
+			a.lastAckRcvTime = time.Now()
+
 		default:
 			log.Errorf(h, "got unknown ReqType: %v, message is: %v", msg.ReqType, string(msg.Message))
 			_ = a.adminConn.Close()

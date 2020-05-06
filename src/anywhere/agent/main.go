@@ -65,6 +65,16 @@ func main() {
 			}
 		},
 	}
+	var statusCmd = &cobra.Command{
+		Use:   "status",
+		Short: "status",
+		Long:  `show agent status`,
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := handler.ShowStatus(grpcAddress); err != nil {
+				fmt.Printf("error query agent status: %v\n", err)
+			}
+		},
+	}
 	rootCmd.PersistentFlags().StringVarP(&serverIp, "server-ip", "s", "127.0.0.1", "anywhered server address")
 	rootCmd.PersistentFlags().IntVarP(&serverPort, "server-port", "p", 1111, "anywhered server port")
 	rootCmd.PersistentFlags().StringVarP(&agentId, "agent-id", "i", "anywhere-agent-1", "anywhere agent id")
@@ -77,6 +87,7 @@ func main() {
 	connCmd.AddCommand(connKillCmd)
 	connCmd.AddCommand(connFlushCmd)
 	rootCmd.AddCommand(connCmd)
+	rootCmd.AddCommand(statusCmd)
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)
 	}

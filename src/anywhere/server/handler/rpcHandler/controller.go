@@ -103,7 +103,7 @@ func ListProxyConfigs() error {
 	}
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"AgentId", "RemoteAddr", "LocalAddr", "IsWhiteListOn", "IpWhiteList"})
+	table.SetHeader([]string{"AgentId", "ServerAddr", "LocalAddr", "IsWhiteListOn", "IpWhiteList"})
 	for _, config := range configs.Config {
 		table.Append([]string{config.AgentId, strconv.Itoa(int(config.RemotePort)), config.LocalAddr, boolToString(config.IsWhiteListOn), config.WhiteCidrList})
 	}

@@ -8,18 +8,22 @@ import (
 
 type ReqType string
 
+const AnywhereVersion = "0.0.2"
+
 const (
-	PkgReqHeartBeat        ReqType = "ReqHeartBeat"
-	PkgControlConnRegister ReqType = "PkgControlConnRegister"
-	PkgTunnelBegin         ReqType = "PkgTunnelBegin"
+	PkgReqHeartBeatPing    ReqType = "1"
+	PkgControlConnRegister ReqType = "2"
+	PkgTunnelBegin         ReqType = "3"
+	PkgReqHeartBeatPong    ReqType = "4"
 )
 
 type AgentRegisterMsg struct {
 	AgentId string
 }
 
-func NewAgentRegisterMsg(id string) *AgentRegisterMsg {
-	return &AgentRegisterMsg{AgentId: id}
+func NewAgentRegisterMsg(id string) *RequestMsg {
+	return newRequestMsg(PkgControlConnRegister, id, "", &AgentRegisterMsg{AgentId: id})
+
 }
 
 type DataConnRegisterMsg struct {
@@ -35,10 +39,10 @@ type RequestMsg struct {
 	Message []byte
 }
 
-func NewRequestMsg(v string, t ReqType, from, to string, msg interface{}) *RequestMsg {
+func newRequestMsg(t ReqType, from, to string, msg interface{}) *RequestMsg {
 	j, _ := json.Marshal(msg)
 	return &RequestMsg{
-		Version: v,
+		Version: AnywhereVersion,
 		ReqType: t,
 		From:    from,
 		To:      to,
@@ -65,12 +69,20 @@ type HeartBeatMsg struct {
 	SendTime   time.Time
 }
 
-func NewHeartBeatMsg(c net.Conn) HeartBeatMsg {
-	return HeartBeatMsg{
+func NewHeartBeatPingMsg(c net.Conn, id string) *RequestMsg {
+	return newRequestMsg(PkgReqHeartBeatPing, id, "", &HeartBeatMsg{
 		LocalAddr:  c.LocalAddr().String(),
 		RemoteAddr: c.RemoteAddr().String(),
 		SendTime:   time.Now(),
-	}
+	})
+}
+
+func NewHeartBeatPongMsg(c net.Conn, id string) *RequestMsg {
+	return newRequestMsg(PkgReqHeartBeatPong, id, "", &HeartBeatMsg{
+		LocalAddr:  c.LocalAddr().String(),
+		RemoteAddr: c.RemoteAddr().String(),
+		SendTime:   time.Now(),
+	})
 }
 
 type TunnelBeginMsg struct {
@@ -78,8 +90,8 @@ type TunnelBeginMsg struct {
 	LocalAddr string
 }
 
-func NewTunnelBeginMsg(id, addr string) *TunnelBeginMsg {
-	return &TunnelBeginMsg{AgentId: id, LocalAddr: addr}
+func NewTunnelBeginMsg(id, addr string) *RequestMsg {
+	return newRequestMsg(PkgTunnelBegin, id, "", &TunnelBeginMsg{AgentId: id, LocalAddr: addr})
 }
 
 func ParseHeartBeatPkg(data []byte) (*HeartBeatMsg, error) {
