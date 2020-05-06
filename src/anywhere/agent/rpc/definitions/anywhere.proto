@@ -7,6 +7,7 @@ service Anywhere {
     rpc ListConns(Empty)returns(Conns){}
     rpc KillConnById(KillConnByIdInput)returns(Empty){}
     rpc KillAllConns(Empty)returns(Empty){}
+    rpc ShowStatus(Empty)returns(ShowStatusOutput) {}
 }
 
 message Empty{}
@@ -26,4 +27,12 @@ message Conns{
 
 message KillConnByIdInput {
     int64 connId = 1;
+}
+
+message ShowStatusOutput {
+    string agentId = 1;
+    string localAddr = 2;
+    string serverAddr = 3;
+    string lastAckSendTime = 4;
+    string lastAckRcvTime = 5;
 }

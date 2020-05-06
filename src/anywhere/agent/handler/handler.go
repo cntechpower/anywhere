@@ -46,3 +46,16 @@ func (h *anywhereAgentRpcHandler) KillAllConns(ctx context.Context, empty *pb.Em
 	h.a.FlushJoinedConns()
 	return &pb.Empty{}, nil
 }
+
+func (h *anywhereAgentRpcHandler) ShowStatus(ctx context.Context, empty *pb.Empty) (*pb.ShowStatusOutput, error) {
+	log.Infof(h.logHeader, "calling show status")
+	defer log.Infof(h.logHeader, "called show status")
+	s := h.a.GetStatus()
+	return &pb.ShowStatusOutput{
+		AgentId:         s.Id,
+		LocalAddr:       s.LocalAddr,
+		ServerAddr:      s.ServerAddr,
+		LastAckSendTime: s.LastAckSend,
+		LastAckRcvTime:  s.LastAckRcv,
+	}, nil
+}

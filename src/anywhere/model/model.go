@@ -5,12 +5,20 @@ import (
 	"fmt"
 )
 
-type AgentInfo struct {
+type AgentInfoInServer struct {
 	Id               string
 	RemoteAddr       string
 	LastAckSend      string
 	LastAckRcv       string
 	ProxyConfigCount int
+}
+
+type AgentInfoInAgent struct {
+	Id          string
+	LocalAddr   string
+	ServerAddr  string
+	LastAckSend string
+	LastAckRcv  string
 }
 
 type ProxyConfig struct {

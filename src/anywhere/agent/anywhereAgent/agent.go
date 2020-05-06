@@ -3,20 +3,24 @@ package anywhereAgent
 import (
 	"anywhere/conn"
 	"anywhere/log"
+	"anywhere/model"
 	"anywhere/tls"
 	"anywhere/util"
 	_tls "crypto/tls"
 	"net"
+	"time"
 )
 
 type Agent struct {
-	id          string
-	addr        *net.TCPAddr
-	credential  *_tls.Config
-	adminConn   *conn.BaseConn
-	joinedConns *conn.JoinedConnList
-	version     string
-	status      string
+	id              string
+	addr            *net.TCPAddr
+	credential      *_tls.Config
+	adminConn       *conn.BaseConn
+	joinedConns     *conn.JoinedConnList
+	version         string
+	status          string
+	lastAckSendTime time.Time
+	lastAckRcvTime  time.Time
 }
 
 var agentInstance *Agent
@@ -33,7 +37,7 @@ func InitAnyWhereAgent(id, ip string, port int) *Agent {
 		id:          id,
 		addr:        addr,
 		joinedConns: conn.NewJoinedConnList(),
-		version:     "0.0.1",
+		version:     model.AnywhereVersion,
 		status:      "INIT",
 	}
 	return agentInstance
@@ -78,4 +82,14 @@ func (a *Agent) KillJoinedConnById(id int) error {
 
 func (a *Agent) FlushJoinedConns() {
 	a.joinedConns.Flush()
+}
+
+func (a *Agent) GetStatus() model.AgentInfoInAgent {
+	return model.AgentInfoInAgent{
+		Id:          a.id,
+		LocalAddr:   a.adminConn.LocalAddr().String(),
+		ServerAddr:  a.adminConn.RemoteAddr().String(),
+		LastAckSend: a.lastAckSendTime.Format("2006-01-02 15:04:05"),
+		LastAckRcv:  a.lastAckRcvTime.Format("2006-01-02 15:04:05"),
+	}
 }

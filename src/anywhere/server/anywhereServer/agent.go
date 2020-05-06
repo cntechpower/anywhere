@@ -59,9 +59,7 @@ func NewAgentInfo(agentId string, c net.Conn, errChan chan error) *Agent {
 
 func (a *Agent) requestNewProxyConn(localAddr string) {
 	h := log.NewHeader("requestNewProxyConn")
-	p := model.NewTunnelBeginMsg(a.Id, localAddr)
-	pkg := model.NewRequestMsg(a.version, model.PkgTunnelBegin, a.Id, "", p)
-	if err := a.AdminConn.Send(pkg); err != nil {
+	if err := a.AdminConn.Send(model.NewTunnelBeginMsg(a.Id, localAddr)); err != nil {
 		errMsg := fmt.Errorf("agent %v request for new proxy conn error %v", a.Id, err)
 		log.Errorf(h, "%v", err)
 		a.errChan <- errMsg
@@ -229,8 +227,18 @@ func (a *Agent) handleAdminConnection() {
 			return
 		}
 		switch msg.ReqType {
-		case model.PkgReqHeartBeat:
-			m, _ := model.ParseHeartBeatPkg(msg.Message)
+		case model.PkgReqHeartBeatPing:
+			m, err := model.ParseHeartBeatPkg(msg.Message)
+			if err != nil {
+				log.Errorf(h, "got corrupted heartbeat ping packet from agent %v admin conn, will close it", a.Id)
+				_ = a.AdminConn.Close()
+				return
+			}
+			if err := a.AdminConn.Send(model.NewHeartBeatPongMsg(a.AdminConn, a.Id)); err != nil {
+				log.Errorf(h, "send pong msg to %v admin conn error, will close it", a.Id)
+				_ = a.AdminConn.Close()
+				return
+			}
 			a.AdminConn.SetAck(m.SendTime, time.Now())
 		default:
 			log.Errorf(h, "got unknown ReqType: %v ,body: %v, will close admin conn", msg.ReqType, msg.Message)

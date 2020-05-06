@@ -99,12 +99,12 @@ func (s *Server) isAgentExist(id string) bool {
 	return false
 }
 
-func (s *Server) ListAgentInfo() []*model.AgentInfo {
-	res := make([]*model.AgentInfo, 0)
+func (s *Server) ListAgentInfo() []*model.AgentInfoInServer {
+	res := make([]*model.AgentInfoInServer, 0)
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
 	for _, agent := range s.agents {
-		res = append(res, &model.AgentInfo{
+		res = append(res, &model.AgentInfoInServer{
 			Id:               agent.Id,
 			RemoteAddr:       agent.RemoteAddr.String(),
 			LastAckRcv:       agent.AdminConn.LastAckRcvTime.Format("2006-01-02 15:04:05"),
