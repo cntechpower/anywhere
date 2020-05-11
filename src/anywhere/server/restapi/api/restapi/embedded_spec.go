@@ -134,6 +134,25 @@ func init() {
           }
         }
       }
+    },
+    "/v1/support/ip": {
+      "get": {
+        "summary": "Returns this server's public ip.",
+        "responses": {
+          "200": {
+            "description": "A JSON array of user names",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "default": {
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -297,6 +316,25 @@ func init() {
               "items": {
                 "$ref": "#/definitions/ProxyConfigInfo"
               }
+            }
+          },
+          "default": {
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
+          }
+        }
+      }
+    },
+    "/v1/support/ip": {
+      "get": {
+        "summary": "Returns this server's public ip.",
+        "responses": {
+          "200": {
+            "description": "A JSON array of user names",
+            "schema": {
+              "type": "string"
             }
           },
           "default": {

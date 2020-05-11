@@ -47,6 +47,9 @@ func NewAnywhereServerAPI(spec *loads.Document) *AnywhereServerAPI {
 		GetV1ProxyListHandler: GetV1ProxyListHandlerFunc(func(params GetV1ProxyListParams) middleware.Responder {
 			return middleware.NotImplemented("operation GetV1ProxyList has not yet been implemented")
 		}),
+		GetV1SupportIPHandler: GetV1SupportIPHandlerFunc(func(params GetV1SupportIPParams) middleware.Responder {
+			return middleware.NotImplemented("operation GetV1SupportIP has not yet been implemented")
+		}),
 		PostV1ProxyAddHandler: PostV1ProxyAddHandlerFunc(func(params PostV1ProxyAddParams) middleware.Responder {
 			return middleware.NotImplemented("operation PostV1ProxyAdd has not yet been implemented")
 		}),
@@ -87,6 +90,8 @@ type AnywhereServerAPI struct {
 	GetV1AgentListHandler GetV1AgentListHandler
 	// GetV1ProxyListHandler sets the operation handler for the get v1 proxy list operation
 	GetV1ProxyListHandler GetV1ProxyListHandler
+	// GetV1SupportIPHandler sets the operation handler for the get v1 support IP operation
+	GetV1SupportIPHandler GetV1SupportIPHandler
 	// PostV1ProxyAddHandler sets the operation handler for the post v1 proxy add operation
 	PostV1ProxyAddHandler PostV1ProxyAddHandler
 	// ServeError is called when an error is received, there is a default handler
@@ -160,6 +165,9 @@ func (o *AnywhereServerAPI) Validate() error {
 	}
 	if o.GetV1ProxyListHandler == nil {
 		unregistered = append(unregistered, "GetV1ProxyListHandler")
+	}
+	if o.GetV1SupportIPHandler == nil {
+		unregistered = append(unregistered, "GetV1SupportIPHandler")
 	}
 	if o.PostV1ProxyAddHandler == nil {
 		unregistered = append(unregistered, "PostV1ProxyAddHandler")
@@ -260,6 +268,10 @@ func (o *AnywhereServerAPI) initHandlerCache() {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/v1/proxy/list"] = NewGetV1ProxyList(o.context, o.GetV1ProxyListHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/v1/support/ip"] = NewGetV1SupportIP(o.context, o.GetV1SupportIPHandler)
 	if o.handlers["POST"] == nil {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}

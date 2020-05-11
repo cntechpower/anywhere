@@ -6,8 +6,8 @@ import (
 	v1 "anywhere/server/restapi/api/restapi/operations"
 	pb "anywhere/server/rpc/definitions"
 	"anywhere/util"
-
 	"context"
+	"net"
 )
 
 func ListAgentV1() ([]*models.AgentListInfo, error) {
@@ -80,4 +80,11 @@ func AddProxyConfigV1(params v1.PostV1ProxyAddParams) (*models.ProxyConfigInfo, 
 		WhitelistIps:  util.StringNvl(params.WhiteListIps),
 	}, nil
 
+}
+func GetV1SupportIP(params v1.GetV1SupportIPParams) (string, error) {
+	addr, err := net.ResolveTCPAddr("tcp", params.HTTPRequest.RemoteAddr)
+	if err != nil {
+		return "", err
+	}
+	return addr.IP.String(), nil
 }
