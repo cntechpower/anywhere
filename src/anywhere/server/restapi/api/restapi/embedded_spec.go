@@ -135,6 +135,54 @@ func init() {
         }
       }
     },
+    "/v1/proxy/update": {
+      "post": {
+        "parameters": [
+          {
+            "type": "string",
+            "description": "agent id",
+            "name": "agent_id",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "localAddress",
+            "name": "local_addr",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "boolean",
+            "description": "white_list_enable",
+            "name": "white_list_enable",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "string",
+            "default": "",
+            "description": "white_list_ips",
+            "name": "white_list_ips",
+            "in": "formData"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A JSON array of user names",
+            "schema": {
+              "$ref": "#/definitions/ProxyConfigInfo"
+            }
+          },
+          "default": {
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
+          }
+        }
+      }
+    },
     "/v1/support/ip": {
       "get": {
         "summary": "Returns this server's public ip.",
@@ -316,6 +364,54 @@ func init() {
               "items": {
                 "$ref": "#/definitions/ProxyConfigInfo"
               }
+            }
+          },
+          "default": {
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
+          }
+        }
+      }
+    },
+    "/v1/proxy/update": {
+      "post": {
+        "parameters": [
+          {
+            "type": "string",
+            "description": "agent id",
+            "name": "agent_id",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "localAddress",
+            "name": "local_addr",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "boolean",
+            "description": "white_list_enable",
+            "name": "white_list_enable",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "string",
+            "default": "",
+            "description": "white_list_ips",
+            "name": "white_list_ips",
+            "in": "formData"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A JSON array of user names",
+            "schema": {
+              "$ref": "#/definitions/ProxyConfigInfo"
             }
           },
           "default": {

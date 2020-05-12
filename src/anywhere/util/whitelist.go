@@ -6,8 +6,9 @@ import (
 	"sync"
 )
 
-type whiteList struct {
-	cidrs []*net.IPNet
+type WhiteList struct {
+	enable bool
+	cidrs  []*net.IPNet
 	//any r/w to cidrs should hold mutex by caller
 	mutex sync.RWMutex
 }
@@ -21,14 +22,17 @@ func getPrivateCidrs() []*net.IPNet {
 
 }
 
-func (l *whiteList) AddrInWhiteList(addr string) bool {
+func (l *WhiteList) AddrInWhiteList(addr string) bool {
 	ip := strings.Split(addr, ":")[0]
 	return l.IpInWhiteList(ip)
 }
 
-func (l *whiteList) AddCidrToList(cidrString string) error {
+func (l *WhiteList) AddCidrToList(cidrString string, reset bool) error {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
+	if reset {
+		l.cidrs = make([]*net.IPNet, 0)
+	}
 	_, cidr, err := net.ParseCIDR(cidrString)
 	if err != nil {
 		return err
@@ -37,10 +41,17 @@ func (l *whiteList) AddCidrToList(cidrString string) error {
 	return nil
 }
 
-func NewWhiteList(cidrList string) (*whiteList, error) {
-	l := &whiteList{
-		cidrs: make([]*net.IPNet, 0),
-		mutex: sync.RWMutex{},
+func (l *WhiteList) SetEnable(enable bool) {
+	l.mutex.Lock()
+	l.enable = enable
+	l.mutex.Unlock()
+}
+
+func NewWhiteList(cidrList string, enable bool) (*WhiteList, error) {
+	l := &WhiteList{
+		enable: enable,
+		cidrs:  make([]*net.IPNet, 0),
+		mutex:  sync.RWMutex{},
 	}
 
 	//add private to start of cidrs
@@ -59,8 +70,11 @@ func NewWhiteList(cidrList string) (*whiteList, error) {
 	return l, nil
 }
 
-func (l *whiteList) IpInWhiteList(ip string) bool {
+func (l *WhiteList) IpInWhiteList(ip string) bool {
 	l.mutex.RLock()
+	if !l.enable {
+		return true
+	}
 	defer l.mutex.RUnlock()
 	for _, cidr := range l.cidrs {
 		if cidr.Contains(net.ParseIP(ip)) {

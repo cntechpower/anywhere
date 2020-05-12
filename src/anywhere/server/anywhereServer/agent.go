@@ -37,6 +37,7 @@ type Agent struct {
 }
 type proxyConfig struct {
 	*model.ProxyConfig
+	acl       *util.WhiteList
 	closeChan chan struct{}
 }
 
@@ -44,7 +45,7 @@ func NewAgentInfo(agentId string, c net.Conn, errChan chan error) *Agent {
 
 	a := &Agent{
 		Id:              agentId,
-		version:         "0.0.1",
+		version:         model.AnywhereVersion,
 		RemoteAddr:      c.RemoteAddr(),
 		AdminConn:       conn.NewBaseConn(c),
 		ProxyConfigs:    make(map[string]*proxyConfig, 0),
@@ -87,7 +88,7 @@ func (a *Agent) proxyConfigHandler(config *proxyConfig, h *log.Header) {
 		a.errChan <- errMsg
 		return
 	}
-	go a.handelTunnelConnection(ln, config.LocalAddr, config.closeChan, config.ProxyConfig.IsWhiteListOn, config.ProxyConfig.WhiteCidrList)
+	go a.handelTunnelConnection(ln, config)
 }
 
 func (a *Agent) AddProxyConfig(config *model.ProxyConfig) error {
@@ -156,21 +157,22 @@ func (a *Agent) PutProxyConn(proxyAddr string, c *conn.BaseConn) error {
 	}
 }
 
-func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, closeChan chan struct{}, isWhiteListOn bool, whiteListIps string) {
-	h := log.NewHeader(fmt.Sprintf("tunnel_%v_handler", localAddr))
+func (a *Agent) handelTunnelConnection(ln *net.TCPListener, config *proxyConfig) {
+	h := log.NewHeader(fmt.Sprintf("tunnel_%v_handler", config.LocalAddr))
 	closeFlag := false
 	go func() {
-		<-closeChan
+		<-config.closeChan
 		_ = ln.Close()
 		closeFlag = true
 	}()
 
 	//always try to get a whitelist
-	whiteList, err := util.NewWhiteList(whiteListIps)
+	whiteList, err := util.NewWhiteList(config.WhiteCidrList, config.IsWhiteListOn)
 	if err != nil {
 		log.Errorf(h, "init white list error: %v", err)
 		return
 	}
+	config.acl = whiteList
 	for {
 		waitTime := time.Millisecond //default error wait time 1ms
 		c, err := ln.AcceptTCP()
@@ -186,12 +188,12 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, localAddr string, cl
 			continue
 		}
 		waitTime = time.Millisecond
-		if isWhiteListOn && !whiteList.AddrInWhiteList(c.RemoteAddr().String()) {
+		if !whiteList.AddrInWhiteList(c.RemoteAddr().String()) {
 			_ = c.Close()
 			log.Infof(h, "refused %v connection because it is not in white list", c.RemoteAddr())
 			continue
 		}
-		go a.handelProxyConnection(c, localAddr)
+		go a.handelProxyConnection(c, config.LocalAddr)
 
 	}
 }
@@ -258,4 +260,28 @@ func (a *Agent) KillJoinedConnById(id int) error {
 
 func (a *Agent) FlushJoinedConns() {
 	a.joinedConns.Flush()
+}
+
+func (a *Agent) UpdateProxyConfigWhiteListConfig(localAddr, whiteCidrs string, whiteListEnable bool) error {
+	config, ok := a.ProxyConfigs[localAddr]
+	if !ok {
+		return fmt.Errorf("no such proxy config %v in agent %v", localAddr, a.Id)
+	}
+	config.acl.SetEnable(whiteListEnable)
+	err := config.acl.AddCidrToList(whiteCidrs, true)
+	if err == nil {
+		config.IsWhiteListOn = whiteListEnable
+		config.WhiteCidrList = whiteCidrs
+	}
+	return err
+
+}
+
+func (a *Agent) AddProxyConfigWhiteListConfig(localAddr, whiteCidrs string) error {
+	config, ok := a.ProxyConfigs[localAddr]
+	if !ok {
+		return fmt.Errorf("no such proxy config %v in agent %v", localAddr, a.Id)
+	}
+	return config.acl.AddCidrToList(whiteCidrs, false)
+
 }

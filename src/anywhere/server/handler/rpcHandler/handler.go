@@ -156,3 +156,9 @@ func (h *rpcHandlers) KillAllConns(ctx context.Context, empty *pb.Empty) (*pb.Em
 	h.s.FlushJoinedConns()
 	return &pb.Empty{}, nil
 }
+
+func (h *rpcHandlers) UpdateProxyConfigWhiteList(ctx context.Context, input *pb.UpdateProxyConfigWhiteListInput) (*pb.Empty, error) {
+	log.Infof(h.logHeader, "calling update proxy config with params: %v", input)
+	defer log.Infof(h.logHeader, "called update proxy config")
+	return &pb.Empty{}, h.s.UpdateProxyConfigWhiteList(input.AgentId, input.LocalAddr, input.WhiteCidrs, input.WhiteListEnable)
+}

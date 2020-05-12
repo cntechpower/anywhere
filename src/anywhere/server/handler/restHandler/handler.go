@@ -88,3 +88,24 @@ func GetV1SupportIP(params v1.GetV1SupportIPParams) (string, error) {
 	}
 	return addr.IP.String(), nil
 }
+
+func PostV1ProxyUpdateParams(params v1.PostV1ProxyUpdateParams) (*models.ProxyConfigInfo, error) {
+	c, err := rpcHandler.NewClient()
+	if err != nil {
+		return nil, err
+	}
+	if _, err := c.UpdateProxyConfigWhiteList(context.Background(), &pb.UpdateProxyConfigWhiteListInput{
+		AgentId:         params.AgentID,
+		LocalAddr:       params.LocalAddr,
+		WhiteCidrs:      util.StringNvl(params.WhiteListIps),
+		WhiteListEnable: params.WhiteListEnable,
+	}); err != nil {
+		return nil, err
+	}
+	return &models.ProxyConfigInfo{
+		AgentID:       params.AgentID,
+		IsWhitelistOn: params.WhiteListEnable,
+		LocalAddr:     params.LocalAddr,
+		WhitelistIps:  util.StringNvl(params.WhiteListIps),
+	}, nil
+}

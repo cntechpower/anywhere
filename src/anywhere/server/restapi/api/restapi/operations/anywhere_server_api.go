@@ -53,6 +53,9 @@ func NewAnywhereServerAPI(spec *loads.Document) *AnywhereServerAPI {
 		PostV1ProxyAddHandler: PostV1ProxyAddHandlerFunc(func(params PostV1ProxyAddParams) middleware.Responder {
 			return middleware.NotImplemented("operation PostV1ProxyAdd has not yet been implemented")
 		}),
+		PostV1ProxyUpdateHandler: PostV1ProxyUpdateHandlerFunc(func(params PostV1ProxyUpdateParams) middleware.Responder {
+			return middleware.NotImplemented("operation PostV1ProxyUpdate has not yet been implemented")
+		}),
 	}
 }
 
@@ -94,6 +97,8 @@ type AnywhereServerAPI struct {
 	GetV1SupportIPHandler GetV1SupportIPHandler
 	// PostV1ProxyAddHandler sets the operation handler for the post v1 proxy add operation
 	PostV1ProxyAddHandler PostV1ProxyAddHandler
+	// PostV1ProxyUpdateHandler sets the operation handler for the post v1 proxy update operation
+	PostV1ProxyUpdateHandler PostV1ProxyUpdateHandler
 	// ServeError is called when an error is received, there is a default handler
 	// but you can set your own with this
 	ServeError func(http.ResponseWriter, *http.Request, error)
@@ -171,6 +176,9 @@ func (o *AnywhereServerAPI) Validate() error {
 	}
 	if o.PostV1ProxyAddHandler == nil {
 		unregistered = append(unregistered, "PostV1ProxyAddHandler")
+	}
+	if o.PostV1ProxyUpdateHandler == nil {
+		unregistered = append(unregistered, "PostV1ProxyUpdateHandler")
 	}
 
 	if len(unregistered) > 0 {
@@ -276,6 +284,10 @@ func (o *AnywhereServerAPI) initHandlerCache() {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}
 	o.handlers["POST"]["/v1/proxy/add"] = NewPostV1ProxyAdd(o.context, o.PostV1ProxyAddHandler)
+	if o.handlers["POST"] == nil {
+		o.handlers["POST"] = make(map[string]http.Handler)
+	}
+	o.handlers["POST"]["/v1/proxy/update"] = NewPostV1ProxyUpdate(o.context, o.PostV1ProxyUpdateHandler)
 }
 
 // Serve creates a http handler to serve the API over HTTP

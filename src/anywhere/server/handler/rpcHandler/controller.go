@@ -141,6 +141,20 @@ func SaveProxyConfigToFile() error {
 	return err
 }
 
+func UpdateProxyConfigWhiteList(agentId, localAddr, whiteCidrs string, whiteListEnable bool) error {
+	client, err := NewClient()
+	if err != nil {
+		return err
+	}
+	_, err = client.UpdateProxyConfigWhiteList(context.Background(), &pb.UpdateProxyConfigWhiteListInput{
+		AgentId:         agentId,
+		LocalAddr:       localAddr,
+		WhiteCidrs:      whiteCidrs,
+		WhiteListEnable: whiteListEnable,
+	})
+	return err
+}
+
 func ListConns(agentId string) error {
 	client, err := NewClient()
 	if err != nil {
