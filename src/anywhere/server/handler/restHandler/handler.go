@@ -6,8 +6,8 @@ import (
 	v1 "anywhere/server/restapi/api/restapi/operations"
 	pb "anywhere/server/rpc/definitions"
 	"anywhere/util"
-
 	"context"
+	"net"
 )
 
 func ListAgentV1() ([]*models.AgentListInfo, error) {
@@ -80,4 +80,32 @@ func AddProxyConfigV1(params v1.PostV1ProxyAddParams) (*models.ProxyConfigInfo, 
 		WhitelistIps:  util.StringNvl(params.WhiteListIps),
 	}, nil
 
+}
+func GetV1SupportIP(params v1.GetV1SupportIPParams) (string, error) {
+	addr, err := net.ResolveTCPAddr("tcp", params.HTTPRequest.RemoteAddr)
+	if err != nil {
+		return "", err
+	}
+	return addr.IP.String(), nil
+}
+
+func PostV1ProxyUpdateParams(params v1.PostV1ProxyUpdateParams) (*models.ProxyConfigInfo, error) {
+	c, err := rpcHandler.NewClient()
+	if err != nil {
+		return nil, err
+	}
+	if _, err := c.UpdateProxyConfigWhiteList(context.Background(), &pb.UpdateProxyConfigWhiteListInput{
+		AgentId:         params.AgentID,
+		LocalAddr:       params.LocalAddr,
+		WhiteCidrs:      util.StringNvl(params.WhiteListIps),
+		WhiteListEnable: params.WhiteListEnable,
+	}); err != nil {
+		return nil, err
+	}
+	return &models.ProxyConfigInfo{
+		AgentID:       params.AgentID,
+		IsWhitelistOn: params.WhiteListEnable,
+		LocalAddr:     params.LocalAddr,
+		WhitelistIps:  util.StringNvl(params.WhiteListIps),
+	}, nil
 }

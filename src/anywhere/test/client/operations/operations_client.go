@@ -29,7 +29,11 @@ type ClientService interface {
 
 	GetV1ProxyList(params *GetV1ProxyListParams) (*GetV1ProxyListOK, error)
 
+	GetV1SupportIP(params *GetV1SupportIPParams) (*GetV1SupportIPOK, error)
+
 	PostV1ProxyAdd(params *PostV1ProxyAddParams) (*PostV1ProxyAddOK, error)
+
+	PostV1ProxyUpdate(params *PostV1ProxyUpdateParams) (*PostV1ProxyUpdateOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -101,6 +105,39 @@ func (a *Client) GetV1ProxyList(params *GetV1ProxyListParams) (*GetV1ProxyListOK
 }
 
 /*
+  GetV1SupportIP returns this server s public ip
+*/
+func (a *Client) GetV1SupportIP(params *GetV1SupportIPParams) (*GetV1SupportIPOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetV1SupportIPParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "GetV1SupportIP",
+		Method:             "GET",
+		PathPattern:        "/v1/support/ip",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/x-www-form-urlencoded"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetV1SupportIPReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetV1SupportIPOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetV1SupportIPDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   PostV1ProxyAdd post v1 proxy add API
 */
 func (a *Client) PostV1ProxyAdd(params *PostV1ProxyAddParams) (*PostV1ProxyAddOK, error) {
@@ -130,6 +167,39 @@ func (a *Client) PostV1ProxyAdd(params *PostV1ProxyAddParams) (*PostV1ProxyAddOK
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*PostV1ProxyAddDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  PostV1ProxyUpdate post v1 proxy update API
+*/
+func (a *Client) PostV1ProxyUpdate(params *PostV1ProxyUpdateParams) (*PostV1ProxyUpdateOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPostV1ProxyUpdateParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "PostV1ProxyUpdate",
+		Method:             "POST",
+		PathPattern:        "/v1/proxy/update",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/x-www-form-urlencoded"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &PostV1ProxyUpdateReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*PostV1ProxyUpdateOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PostV1ProxyUpdateDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

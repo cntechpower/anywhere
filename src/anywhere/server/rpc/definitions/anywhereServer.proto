@@ -13,6 +13,7 @@ service AnywhereServer {
     rpc ListConns(ListConnsInput)returns(Conns){}
     rpc KillConnById(KillConnByIdInput)returns(Empty){}
     rpc KillAllConns(Empty)returns(Empty){}
+    rpc UpdateProxyConfigWhiteList(UpdateProxyConfigWhiteListInput)returns(Empty){}
 }
 
 message Empty{}
@@ -72,4 +73,11 @@ message Conns{
 message KillConnByIdInput {
     string agentId = 1;
     int64 connId = 2;
+}
+
+message UpdateProxyConfigWhiteListInput {
+    string agentId = 1;
+    string localAddr = 2;
+    string whiteCidrs = 3;
+    bool whiteListEnable = 4;
 }

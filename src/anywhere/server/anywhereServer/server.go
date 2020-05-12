@@ -178,3 +178,13 @@ func (s *Server) FlushJoinedConns() {
 		agent.joinedConns.Flush()
 	}
 }
+
+func (s *Server) UpdateProxyConfigWhiteList(agentId, localAddr, whiteCidrs string, whiteListEnable bool) error {
+	if agentId == "" {
+		return fmt.Errorf("agent id is empty")
+	}
+	if !s.isAgentExist(agentId) {
+		return fmt.Errorf("no such agent id %v", agentId)
+	}
+	return s.agents[agentId].UpdateProxyConfigWhiteListConfig(localAddr, whiteCidrs, whiteListEnable)
+}

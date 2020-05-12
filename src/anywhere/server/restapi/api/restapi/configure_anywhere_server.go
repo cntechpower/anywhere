@@ -62,6 +62,20 @@ func configureAPI(api *operations.AnywhereServerAPI) http.Handler {
 			return operations.NewPostV1ProxyAddOK().WithPayload(res)
 		}
 	})
+	api.GetV1SupportIPHandler = operations.GetV1SupportIPHandlerFunc(func(params operations.GetV1SupportIPParams) middleware.Responder {
+		res, err := handler.GetV1SupportIP(params)
+		if err != nil {
+			return operations.NewGetV1SupportIPDefault(500).WithPayload(models.GenericErrors(err.Error()))
+		}
+		return operations.NewGetV1SupportIPOK().WithPayload(res)
+	})
+	api.PostV1ProxyUpdateHandler = operations.PostV1ProxyUpdateHandlerFunc(func(params operations.PostV1ProxyUpdateParams) middleware.Responder {
+		res, err := handler.PostV1ProxyUpdateParams(params)
+		if err != nil {
+			return operations.NewPostV1ProxyAddDefault(500).WithPayload(models.GenericErrors(err.Error()))
+		}
+		return operations.NewPostV1ProxyAddOK().WithPayload(res)
+	})
 
 	api.ServerShutdown = func() {}
 

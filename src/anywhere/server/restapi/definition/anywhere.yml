@@ -13,6 +13,18 @@ info:
 basePath: /api
 
 paths:
+  /v1/support/ip:
+    get:
+      summary: Returns this server's public ip.
+      responses:
+        200:
+          description: A JSON array of user names
+          schema:
+            type: string
+        default:
+          description: 'generic errors'
+          schema:
+            $ref: '#/definitions/GenericErrors'
   /v1/agent/list:
     get:
       summary: Returns a list of all agent.
@@ -55,6 +67,39 @@ paths:
           name: remote_port
           description: "anywhered server listen port"
           type: integer
+          required: true
+        - in: formData
+          name: local_addr
+          description: "localAddress"
+          type: string
+          required: true
+        - in: formData
+          name: white_list_enable
+          description: "white_list_enable"
+          type: boolean
+          required: true
+        - in: formData
+          name: white_list_ips
+          description: "white_list_ips"
+          default: ""
+          type: string
+      responses:
+        200:
+          description: A JSON array of user names
+          schema:
+            $ref: '#/definitions/ProxyConfigInfo'
+        default:
+          description: 'generic errors'
+          schema:
+            $ref: '#/definitions/GenericErrors'
+
+  /v1/proxy/update:
+    post:
+      parameters:
+        - in: formData
+          name: agent_id
+          description: "agent id"
+          type: string
           required: true
         - in: formData
           name: local_addr
