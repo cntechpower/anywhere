@@ -109,3 +109,20 @@ func PostV1ProxyUpdateParams(params v1.PostV1ProxyUpdateParams) (*models.ProxyCo
 		WhitelistIps:  util.StringNvl(params.WhiteListIps),
 	}, nil
 }
+
+func PostV1ProxyDeleteHandler(params v1.PostV1ProxyDeleteParams) (*models.ProxyConfigInfo, error) {
+	c, err := rpcHandler.NewClient()
+	if err != nil {
+		return nil, err
+	}
+	if _, err := c.RemoveProxyConfig(context.Background(), &pb.RemoveProxyConfigInput{
+		AgentId:   params.AgentID,
+		LocalAddr: params.LocalAddr,
+	}); err != nil {
+		return nil, err
+	}
+	return &models.ProxyConfigInfo{
+		AgentID:   params.AgentID,
+		LocalAddr: params.LocalAddr,
+	}, nil
+}
