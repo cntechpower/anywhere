@@ -33,6 +33,8 @@ type ClientService interface {
 
 	PostV1ProxyAdd(params *PostV1ProxyAddParams) (*PostV1ProxyAddOK, error)
 
+	PostV1ProxyDelete(params *PostV1ProxyDeleteParams) (*PostV1ProxyDeleteOK, error)
+
 	PostV1ProxyUpdate(params *PostV1ProxyUpdateParams) (*PostV1ProxyUpdateOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
@@ -167,6 +169,39 @@ func (a *Client) PostV1ProxyAdd(params *PostV1ProxyAddParams) (*PostV1ProxyAddOK
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*PostV1ProxyAddDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  PostV1ProxyDelete post v1 proxy delete API
+*/
+func (a *Client) PostV1ProxyDelete(params *PostV1ProxyDeleteParams) (*PostV1ProxyDeleteOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPostV1ProxyDeleteParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "PostV1ProxyDelete",
+		Method:             "POST",
+		PathPattern:        "/v1/proxy/delete",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/x-www-form-urlencoded"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &PostV1ProxyDeleteReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*PostV1ProxyDeleteOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PostV1ProxyDeleteDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

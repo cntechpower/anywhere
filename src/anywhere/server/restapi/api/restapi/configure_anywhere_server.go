@@ -76,6 +76,13 @@ func configureAPI(api *operations.AnywhereServerAPI) http.Handler {
 		}
 		return operations.NewPostV1ProxyAddOK().WithPayload(res)
 	})
+	api.PostV1ProxyDeleteHandler = operations.PostV1ProxyDeleteHandlerFunc(func(params operations.PostV1ProxyDeleteParams) middleware.Responder {
+		res, err := handler.PostV1ProxyDeleteHandler(params)
+		if err != nil {
+			return operations.NewPostV1ProxyDeleteDefault(500).WithPayload(models.GenericErrors(err.Error()))
+		}
+		return operations.NewPostV1ProxyDeleteOK().WithPayload(res)
+	})
 
 	api.ServerShutdown = func() {}
 

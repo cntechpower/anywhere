@@ -113,6 +113,40 @@ func init() {
         }
       }
     },
+    "/v1/proxy/delete": {
+      "post": {
+        "parameters": [
+          {
+            "type": "string",
+            "description": "agent id",
+            "name": "agent_id",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "localAddress",
+            "name": "local_addr",
+            "in": "formData",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A JSON array of user names",
+            "schema": {
+              "$ref": "#/definitions/ProxyConfigInfo"
+            }
+          },
+          "default": {
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
+          }
+        }
+      }
+    },
     "/v1/proxy/list": {
       "get": {
         "summary": "Returns a list of all proxy config.",
@@ -335,6 +369,40 @@ func init() {
             "description": "white_list_ips",
             "name": "white_list_ips",
             "in": "formData"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A JSON array of user names",
+            "schema": {
+              "$ref": "#/definitions/ProxyConfigInfo"
+            }
+          },
+          "default": {
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
+          }
+        }
+      }
+    },
+    "/v1/proxy/delete": {
+      "post": {
+        "parameters": [
+          {
+            "type": "string",
+            "description": "agent id",
+            "name": "agent_id",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "localAddress",
+            "name": "local_addr",
+            "in": "formData",
+            "required": true
           }
         ],
         "responses": {
