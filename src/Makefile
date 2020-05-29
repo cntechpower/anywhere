@@ -92,7 +92,7 @@ upload_rpm:
 
 ui:
 	rm -rf static
-	wget ftp://ftp:ftp@10.0.0.2/ci/react/react-latest.tar.gz
-	tar -xf react-latest.tar.gz
+	wget ftp://ftp:ftp@10.0.0.2/ci/anywhere-fe/anywhere-fe-latest.tar.gz
+	tar -xf anywhere-fe-latest.tar.gz
 	mv build static
-	rm -rf react-latest.tar.gz
+	rm -rf anywhere-fe-latest.tar.gz
