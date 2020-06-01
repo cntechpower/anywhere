@@ -217,6 +217,24 @@ func init() {
         }
       }
     },
+    "/v1/summary": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "get anywhere statistic summary",
+            "schema": {
+              "$ref": "#/definitions/SummaryStatistic"
+            }
+          },
+          "default": {
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
+          }
+        }
+      }
+    },
     "/v1/support/ip": {
       "get": {
         "summary": "Returns this server's public ip.",
@@ -279,6 +297,15 @@ func init() {
           "description": "localAddress",
           "type": "string"
         },
+        "network_flow_in_mb": {
+          "type": "integer"
+        },
+        "proxy_connect_count": {
+          "type": "integer"
+        },
+        "proxy_connect_reject_count": {
+          "type": "integer"
+        },
         "remote_port": {
           "description": "anywhered server listen addr",
           "type": "integer"
@@ -286,6 +313,39 @@ func init() {
         "whitelist_ips": {
           "description": "whitelist ips",
           "type": "string"
+        }
+      }
+    },
+    "SummaryStatistic": {
+      "description": "SummaryOutput struct",
+      "type": "object",
+      "properties": {
+        "agent_total_count": {
+          "type": "integer"
+        },
+        "current_proxy_connection_count": {
+          "type": "integer"
+        },
+        "network_flow_total_count_in_mb": {
+          "type": "integer"
+        },
+        "proxy_config_total_count": {
+          "type": "integer"
+        },
+        "proxy_connect_reject_count_top10": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProxyConfigInfo"
+          }
+        },
+        "proxy_connect_total_count": {
+          "type": "integer"
+        },
+        "proxy_network_flow_top10": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProxyConfigInfo"
+          }
         }
       }
     }
@@ -491,6 +551,24 @@ func init() {
         }
       }
     },
+    "/v1/summary": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "get anywhere statistic summary",
+            "schema": {
+              "$ref": "#/definitions/SummaryStatistic"
+            }
+          },
+          "default": {
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
+          }
+        }
+      }
+    },
     "/v1/support/ip": {
       "get": {
         "summary": "Returns this server's public ip.",
@@ -553,6 +631,15 @@ func init() {
           "description": "localAddress",
           "type": "string"
         },
+        "network_flow_in_mb": {
+          "type": "integer"
+        },
+        "proxy_connect_count": {
+          "type": "integer"
+        },
+        "proxy_connect_reject_count": {
+          "type": "integer"
+        },
         "remote_port": {
           "description": "anywhered server listen addr",
           "type": "integer"
@@ -560,6 +647,39 @@ func init() {
         "whitelist_ips": {
           "description": "whitelist ips",
           "type": "string"
+        }
+      }
+    },
+    "SummaryStatistic": {
+      "description": "SummaryOutput struct",
+      "type": "object",
+      "properties": {
+        "agent_total_count": {
+          "type": "integer"
+        },
+        "current_proxy_connection_count": {
+          "type": "integer"
+        },
+        "network_flow_total_count_in_mb": {
+          "type": "integer"
+        },
+        "proxy_config_total_count": {
+          "type": "integer"
+        },
+        "proxy_connect_reject_count_top10": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProxyConfigInfo"
+          }
+        },
+        "proxy_connect_total_count": {
+          "type": "integer"
+        },
+        "proxy_network_flow_top10": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProxyConfigInfo"
+          }
         }
       }
     }

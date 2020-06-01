@@ -188,3 +188,25 @@ func (s *Server) UpdateProxyConfigWhiteList(agentId, localAddr, whiteCidrs strin
 	}
 	return s.agents[agentId].UpdateProxyConfigWhiteListConfig(localAddr, whiteCidrs, whiteListEnable)
 }
+
+func (s *Server) GetSummary() model.ServerSummary {
+	res := model.ServerSummary{
+		AgentTotalCount:              0,
+		CurrentProxyConnectionCount:  0,
+		NetworkFlowTotalCountInMb:    0, //TODO
+		ProxyConfigTotalCount:        0,
+		ProxyConnectRejectCountTop10: nil, //TODO
+		ProxyConnectTotalCount:       0,   //TODO
+		ProxyNetworkFlowTop10:        nil, //TODO
+	}
+
+	s.agentsRwMutex.Lock()
+	for _, agent := range s.agents {
+		agent.proxyConfigMutex.Lock()
+		res.ProxyConfigTotalCount += len(agent.ProxyConfigs)
+		agent.proxyConfigMutex.Unlock()
+		res.AgentTotalCount++
+	}
+	s.agentsRwMutex.Unlock()
+	return res
+}

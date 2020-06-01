@@ -22,11 +22,14 @@ type AgentInfoInAgent struct {
 }
 
 type ProxyConfig struct {
-	AgentId       string `json:"agent_id"`
-	RemotePort    int    `json:"remote_port"`
-	LocalAddr     string `json:"local_addr"`
-	IsWhiteListOn bool   `json:"is_white_list_enable"`
-	WhiteCidrList string `json:"white_cidr_list"`
+	AgentId                 string `json:"agent_id"`
+	RemotePort              int    `json:"remote_port"`
+	LocalAddr               string `json:"local_addr"`
+	IsWhiteListOn           bool   `json:"is_white_list_enable"`
+	WhiteCidrList           string `json:"white_cidr_list"`
+	NetworkFlowInMb         int    `json:"-"`
+	ProxyConnectCount       int    `json:"-"`
+	ProxyConnectRejectCount int    `json:"-"`
 }
 
 type GlobalConfig struct {
@@ -60,6 +63,16 @@ type SystemConfig struct {
 	Ssl      *SslConfig  `json:"ssl_config"`
 	UiConfig *UiConfig   `json:"ui_config"`
 	User     *UserConfig `json:"user_config"`
+}
+
+type ServerSummary struct {
+	AgentTotalCount              int
+	CurrentProxyConnectionCount  int
+	NetworkFlowTotalCountInMb    int
+	ProxyConfigTotalCount        int
+	ProxyConnectRejectCountTop10 []*ProxyConfig
+	ProxyConnectTotalCount       int
+	ProxyNetworkFlowTop10        []*ProxyConfig
 }
 
 func NewProxyConfig(agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) (*ProxyConfig, error) {

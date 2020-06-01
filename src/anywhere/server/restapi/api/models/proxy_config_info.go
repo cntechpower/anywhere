@@ -24,6 +24,15 @@ type ProxyConfigInfo struct {
 	// localAddress
 	LocalAddr string `json:"local_addr,omitempty"`
 
+	// network flow in mb
+	NetworkFlowInMb int64 `json:"network_flow_in_mb,omitempty"`
+
+	// proxy connect count
+	ProxyConnectCount int64 `json:"proxy_connect_count,omitempty"`
+
+	// proxy connect reject count
+	ProxyConnectRejectCount int64 `json:"proxy_connect_reject_count,omitempty"`
+
 	// anywhered server listen addr
 	RemotePort int64 `json:"remote_port,omitempty"`
 

@@ -29,6 +29,8 @@ type ClientService interface {
 
 	GetV1ProxyList(params *GetV1ProxyListParams) (*GetV1ProxyListOK, error)
 
+	GetV1Summary(params *GetV1SummaryParams) (*GetV1SummaryOK, error)
+
 	GetV1SupportIP(params *GetV1SupportIPParams) (*GetV1SupportIPOK, error)
 
 	PostV1ProxyAdd(params *PostV1ProxyAddParams) (*PostV1ProxyAddOK, error)
@@ -103,6 +105,39 @@ func (a *Client) GetV1ProxyList(params *GetV1ProxyListParams) (*GetV1ProxyListOK
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*GetV1ProxyListDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  GetV1Summary get v1 summary API
+*/
+func (a *Client) GetV1Summary(params *GetV1SummaryParams) (*GetV1SummaryOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetV1SummaryParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "GetV1Summary",
+		Method:             "GET",
+		PathPattern:        "/v1/summary",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/x-www-form-urlencoded"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetV1SummaryReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetV1SummaryOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetV1SummaryDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

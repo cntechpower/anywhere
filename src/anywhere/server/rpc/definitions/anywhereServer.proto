@@ -14,6 +14,7 @@ service AnywhereServer {
     rpc KillConnById(KillConnByIdInput)returns(Empty){}
     rpc KillAllConns(Empty)returns(Empty){}
     rpc UpdateProxyConfigWhiteList(UpdateProxyConfigWhiteListInput)returns(Empty){}
+    rpc GetSummary(Empty)returns(GetSummaryOutput){}
 }
 
 message Empty{}
@@ -36,6 +37,9 @@ message ProxyConfig{
     string localAddr = 3;
     bool isWhiteListOn = 4;
     string WhiteCidrList = 5;
+    int64 NetworkFlowInMb = 6;
+	int64 ProxyConnectCount = 7;
+    int64 ProxyConnectRejectCount = 8;
 }
 
 message AddProxyConfigInput{
@@ -80,4 +84,14 @@ message UpdateProxyConfigWhiteListInput {
     string localAddr = 2;
     string whiteCidrs = 3;
     bool whiteListEnable = 4;
+}
+message GetSummaryOutput {
+    int64 agentCount = 1;
+    int64 proxyCount = 2;
+    int64 currentProxyConnectionCount = 3;
+    int64 proxyConnectCount = 4;
+    int64 proxyNetFlowInMb = 5;
+    repeated ProxyConfig configNetFlowTop10  = 6;
+    repeated ProxyConfig configConnectFailTop10  = 7;
+    int64 adminWebUiAuthFailCount =8;
 }

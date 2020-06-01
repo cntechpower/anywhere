@@ -83,6 +83,13 @@ func configureAPI(api *operations.AnywhereServerAPI) http.Handler {
 		}
 		return operations.NewPostV1ProxyDeleteOK().WithPayload(res)
 	})
+	api.GetV1SummaryHandler = operations.GetV1SummaryHandlerFunc(func(params operations.GetV1SummaryParams) middleware.Responder {
+		res, err := handler.GetSummaryV1()
+		if err != nil {
+			return operations.NewGetV1SummaryDefault(500).WithPayload(models.GenericErrors(err.Error()))
+		}
+		return operations.NewGetV1SummaryOK().WithPayload(res)
+	})
 
 	api.ServerShutdown = func() {}
 

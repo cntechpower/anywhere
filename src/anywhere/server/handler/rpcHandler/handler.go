@@ -117,8 +117,6 @@ func (h *rpcHandlers) SaveProxyConfigToFile(ctx context.Context, input *pb.Empty
 }
 
 func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (*pb.Conns, error) {
-	log.Infof(h.logHeader, "calling list conns")
-	defer log.Infof(h.logHeader, "called list conns")
 	agentConnsMap, err := h.s.ListJoinedConns(input.AgentId)
 	if err != nil {
 		return nil, err
@@ -145,20 +143,29 @@ func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (
 }
 
 func (h *rpcHandlers) KillConnById(ctx context.Context, input *pb.KillConnByIdInput) (*pb.Empty, error) {
-	log.Infof(h.logHeader, "calling kill conn %v on agent %v", input.ConnId, input.AgentId)
-	defer log.Infof(h.logHeader, "called kill conn %v on agent %v", input.ConnId, input.AgentId)
 	return &pb.Empty{}, h.s.KillJoinedConnById(input.AgentId, int(input.ConnId))
 }
 
 func (h *rpcHandlers) KillAllConns(ctx context.Context, empty *pb.Empty) (*pb.Empty, error) {
-	log.Infof(h.logHeader, "calling flush conns")
-	defer log.Infof(h.logHeader, "called flush conns")
 	h.s.FlushJoinedConns()
 	return &pb.Empty{}, nil
 }
 
 func (h *rpcHandlers) UpdateProxyConfigWhiteList(ctx context.Context, input *pb.UpdateProxyConfigWhiteListInput) (*pb.Empty, error) {
-	log.Infof(h.logHeader, "calling update proxy config with params: %v", input)
-	defer log.Infof(h.logHeader, "called update proxy config")
 	return &pb.Empty{}, h.s.UpdateProxyConfigWhiteList(input.AgentId, input.LocalAddr, input.WhiteCidrs, input.WhiteListEnable)
+}
+
+func (h *rpcHandlers) GetSummary(ctx context.Context, empty *pb.Empty) (*pb.GetSummaryOutput, error) {
+	s := h.s.GetSummary()
+	return &pb.GetSummaryOutput{
+		AgentCount: int64(s.AgentTotalCount),
+		ProxyCount: int64(s.ProxyConfigTotalCount),
+		//BELOW is TODO
+		CurrentProxyConnectionCount: 0,
+		ProxyConnectCount:           0,
+		ProxyNetFlowInMb:            0,
+		ConfigNetFlowTop10:          nil,
+		ConfigConnectFailTop10:      nil,
+		AdminWebUiAuthFailCount:     0,
+	}, nil
 }

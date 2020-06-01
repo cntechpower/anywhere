@@ -126,3 +126,50 @@ func PostV1ProxyDeleteHandler(params v1.PostV1ProxyDeleteParams) (*models.ProxyC
 		LocalAddr: params.LocalAddr,
 	}, nil
 }
+
+func GetSummaryV1() (*models.SummaryStatistic, error) {
+	c, err := rpcHandler.NewClient()
+	if err != nil {
+		return &models.SummaryStatistic{}, err
+	}
+	s, err := c.GetSummary(context.Background(), &pb.Empty{})
+	if err != nil {
+		return &models.SummaryStatistic{}, err
+	}
+
+	res := &models.SummaryStatistic{
+		AgentTotalCount:              s.AgentCount,
+		CurrentProxyConnectionCount:  s.CurrentProxyConnectionCount,
+		NetworkFlowTotalCountInMb:    s.ProxyNetFlowInMb,
+		ProxyConfigTotalCount:        s.ProxyCount,
+		ProxyConnectRejectCountTop10: make([]*models.ProxyConfigInfo, 0),
+		ProxyConnectTotalCount:       s.ProxyConnectCount,
+		ProxyNetworkFlowTop10:        make([]*models.ProxyConfigInfo, 0),
+	}
+	for _, p := range s.ConfigConnectFailTop10 {
+		res.ProxyConnectRejectCountTop10 = append(res.ProxyConnectRejectCountTop10, &models.ProxyConfigInfo{
+			AgentID:                 p.AgentId,
+			IsWhitelistOn:           p.IsWhiteListOn,
+			LocalAddr:               p.LocalAddr,
+			NetworkFlowInMb:         p.NetworkFlowInMb,
+			ProxyConnectCount:       p.ProxyConnectCount,
+			ProxyConnectRejectCount: p.ProxyConnectRejectCount,
+			RemotePort:              p.RemotePort,
+			WhitelistIps:            p.WhiteCidrList,
+		})
+	}
+
+	for _, p := range s.ConfigNetFlowTop10 {
+		res.ProxyNetworkFlowTop10 = append(res.ProxyNetworkFlowTop10, &models.ProxyConfigInfo{
+			AgentID:                 p.AgentId,
+			IsWhitelistOn:           p.IsWhiteListOn,
+			LocalAddr:               p.LocalAddr,
+			NetworkFlowInMb:         p.NetworkFlowInMb,
+			ProxyConnectCount:       p.ProxyConnectCount,
+			ProxyConnectRejectCount: p.ProxyConnectRejectCount,
+			RemotePort:              p.RemotePort,
+			WhitelistIps:            p.WhiteCidrList,
+		})
+	}
+	return res, nil
+}
