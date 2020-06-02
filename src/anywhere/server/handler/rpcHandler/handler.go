@@ -81,11 +81,13 @@ func (h *rpcHandlers) ListProxyConfigs(ctx context.Context, input *pb.Empty) (*p
 	configs := s.ListProxyConfigs()
 	for _, config := range configs {
 		res.Config = append(res.Config, &pb.ProxyConfig{
-			AgentId:       config.AgentId,
-			RemotePort:    int64(config.RemotePort),
-			LocalAddr:     config.LocalAddr,
-			IsWhiteListOn: config.IsWhiteListOn,
-			WhiteCidrList: config.WhiteCidrList,
+			AgentId:                      config.AgentId,
+			RemotePort:                   int64(config.RemotePort),
+			LocalAddr:                    config.LocalAddr,
+			IsWhiteListOn:                config.IsWhiteListOn,
+			WhiteCidrList:                config.WhiteCidrList,
+			NetworkFlowLocalToRemoteInMB: config.NetworkFlowLocalToRemoteInMB,
+			NetworkFlowRemoteToLocalInMB: config.NetworkFlowRemoteToLocalInMB,
 		})
 	}
 	return res, nil

@@ -51,20 +51,20 @@ func NewPostV1ProxyUpdateOK() *PostV1ProxyUpdateOK {
 A JSON array of user names
 */
 type PostV1ProxyUpdateOK struct {
-	Payload *models.ProxyConfigInfo
+	Payload *models.ProxyConfig
 }
 
 func (o *PostV1ProxyUpdateOK) Error() string {
 	return fmt.Sprintf("[POST /v1/proxy/update][%d] postV1ProxyUpdateOK  %+v", 200, o.Payload)
 }
 
-func (o *PostV1ProxyUpdateOK) GetPayload() *models.ProxyConfigInfo {
+func (o *PostV1ProxyUpdateOK) GetPayload() *models.ProxyConfig {
 	return o.Payload
 }
 
 func (o *PostV1ProxyUpdateOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.ProxyConfigInfo)
+	o.Payload = new(models.ProxyConfig)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

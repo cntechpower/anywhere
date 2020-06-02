@@ -31,13 +31,13 @@ type SummaryStatistic struct {
 	ProxyConfigTotalCount int64 `json:"proxy_config_total_count,omitempty"`
 
 	// proxy connect reject count top10
-	ProxyConnectRejectCountTop10 []*ProxyConfigInfo `json:"proxy_connect_reject_count_top10"`
+	ProxyConnectRejectCountTop10 []*ProxyConfig `json:"proxy_connect_reject_count_top10"`
 
 	// proxy connect total count
 	ProxyConnectTotalCount int64 `json:"proxy_connect_total_count,omitempty"`
 
 	// proxy network flow top10
-	ProxyNetworkFlowTop10 []*ProxyConfigInfo `json:"proxy_network_flow_top10"`
+	ProxyNetworkFlowTop10 []*ProxyConfig `json:"proxy_network_flow_top10"`
 }
 
 // Validate validates this summary statistic

@@ -7,21 +7,25 @@ import (
 	"sync"
 )
 
-func JoinConn(remote, local net.Conn) {
+func JoinConn(remote, local net.Conn) (int64, int64) {
 	h := log.NewHeader("JoinConn")
 	var wg sync.WaitGroup
-	joinWithClose := func(dst, src net.Conn) {
+	joinWithClose := func(dst, src net.Conn, bytesCopied *int64) {
 		defer wg.Done()
 		defer src.Close()
 		defer dst.Close()
 
-		if _, err := io.Copy(dst, src); err != nil {
+		var err error
+		*bytesCopied, err = io.Copy(dst, src)
+		if err != nil {
 			return
 		}
 	}
 	wg.Add(2)
-	go joinWithClose(remote, local)
-	go joinWithClose(local, remote)
+	var localToRemoteBytes, remoteToLocalBytes int64
+	go joinWithClose(remote, local, &localToRemoteBytes)
+	go joinWithClose(local, remote, &remoteToLocalBytes)
 	log.Infof(h, "joined conn %v and %v", remote.LocalAddr(), local.RemoteAddr())
 	wg.Wait()
+	return localToRemoteBytes, remoteToLocalBytes
 }

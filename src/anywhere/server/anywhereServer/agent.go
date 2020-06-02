@@ -173,6 +173,10 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, config *proxyConfig)
 		return
 	}
 	config.acl = whiteList
+	netFlowAdder := func(localToRemoteBytes, remoteToLocalBytes int64) {
+		config.NetworkFlowRemoteToLocalInMB = config.NetworkFlowRemoteToLocalInMB + remoteToLocalBytes/1024/1024
+		config.NetworkFlowLocalToRemoteInMB = config.NetworkFlowLocalToRemoteInMB + localToRemoteBytes/1024/1024
+	}
 	for {
 		waitTime := time.Millisecond //default error wait time 1ms
 		c, err := ln.AcceptTCP()
@@ -193,12 +197,12 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, config *proxyConfig)
 			log.Infof(h, "refused %v connection because it is not in white list", c.RemoteAddr())
 			continue
 		}
-		go a.handelProxyConnection(c, config.LocalAddr)
+		go a.handelProxyConnection(c, config.LocalAddr, netFlowAdder)
 
 	}
 }
 
-func (a *Agent) handelProxyConnection(c net.Conn, localAddr string) {
+func (a *Agent) handelProxyConnection(c net.Conn, localAddr string, fnOnEnd func(localToRemoteBytes, remoteToLocalBytes int64)) {
 	h := log.NewHeader(fmt.Sprintf("proxy: %v->%v", c.RemoteAddr().String(), localAddr))
 	dst, err := a.GetProxyConn(localAddr)
 	if err != nil {
@@ -207,7 +211,8 @@ func (a *Agent) handelProxyConnection(c net.Conn, localAddr string) {
 		return
 	}
 	idx := a.joinedConns.Add(conn.NewBaseConn(c), dst)
-	conn.JoinConn(dst.Conn, c)
+	localToRemoteBytes, remoteToLocalBytes := conn.JoinConn(dst.Conn, c)
+	fnOnEnd(localToRemoteBytes, remoteToLocalBytes)
 	if err := a.joinedConns.Remove(idx); err != nil {
 		log.Errorf(h, "remove conn from list error: %v", err)
 	}

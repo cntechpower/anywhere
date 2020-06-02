@@ -37,9 +37,10 @@ message ProxyConfig{
     string localAddr = 3;
     bool isWhiteListOn = 4;
     string WhiteCidrList = 5;
-    int64 NetworkFlowInMb = 6;
-	int64 ProxyConnectCount = 7;
-    int64 ProxyConnectRejectCount = 8;
+    int64 NetworkFlowRemoteToLocalInMB = 6;
+    int64 NetworkFlowLocalToRemoteInMB = 7;
+	int64 ProxyConnectCount = 8;
+    int64 ProxyConnectRejectCount = 9;
 }
 
 message AddProxyConfigInput{

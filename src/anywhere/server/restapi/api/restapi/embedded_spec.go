@@ -101,7 +101,7 @@ func init() {
           "200": {
             "description": "A JSON array of user names",
             "schema": {
-              "$ref": "#/definitions/ProxyConfigInfo"
+              "$ref": "#/definitions/ProxyConfig"
             }
           },
           "default": {
@@ -135,7 +135,7 @@ func init() {
           "200": {
             "description": "A JSON array of user names",
             "schema": {
-              "$ref": "#/definitions/ProxyConfigInfo"
+              "$ref": "#/definitions/ProxyConfig"
             }
           },
           "default": {
@@ -156,7 +156,7 @@ func init() {
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/ProxyConfigInfo"
+                "$ref": "#/definitions/ProxyConfig"
               }
             }
           },
@@ -205,7 +205,7 @@ func init() {
           "200": {
             "description": "A JSON array of user names",
             "schema": {
-              "$ref": "#/definitions/ProxyConfigInfo"
+              "$ref": "#/definitions/ProxyConfig"
             }
           },
           "default": {
@@ -281,7 +281,7 @@ func init() {
       "description": "Error Template",
       "type": "string"
     },
-    "ProxyConfigInfo": {
+    "ProxyConfig": {
       "description": "proxy config information",
       "type": "object",
       "properties": {
@@ -297,7 +297,10 @@ func init() {
           "description": "localAddress",
           "type": "string"
         },
-        "network_flow_in_mb": {
+        "network_flow_local_to_remote_in_mb": {
+          "type": "integer"
+        },
+        "network_flow_remote_to_local_in_mb": {
           "type": "integer"
         },
         "proxy_connect_count": {
@@ -335,7 +338,7 @@ func init() {
         "proxy_connect_reject_count_top10": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ProxyConfigInfo"
+            "$ref": "#/definitions/ProxyConfig"
           }
         },
         "proxy_connect_total_count": {
@@ -344,7 +347,7 @@ func init() {
         "proxy_network_flow_top10": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ProxyConfigInfo"
+            "$ref": "#/definitions/ProxyConfig"
           }
         }
       }
@@ -435,7 +438,7 @@ func init() {
           "200": {
             "description": "A JSON array of user names",
             "schema": {
-              "$ref": "#/definitions/ProxyConfigInfo"
+              "$ref": "#/definitions/ProxyConfig"
             }
           },
           "default": {
@@ -469,7 +472,7 @@ func init() {
           "200": {
             "description": "A JSON array of user names",
             "schema": {
-              "$ref": "#/definitions/ProxyConfigInfo"
+              "$ref": "#/definitions/ProxyConfig"
             }
           },
           "default": {
@@ -490,7 +493,7 @@ func init() {
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/ProxyConfigInfo"
+                "$ref": "#/definitions/ProxyConfig"
               }
             }
           },
@@ -539,7 +542,7 @@ func init() {
           "200": {
             "description": "A JSON array of user names",
             "schema": {
-              "$ref": "#/definitions/ProxyConfigInfo"
+              "$ref": "#/definitions/ProxyConfig"
             }
           },
           "default": {
@@ -615,7 +618,7 @@ func init() {
       "description": "Error Template",
       "type": "string"
     },
-    "ProxyConfigInfo": {
+    "ProxyConfig": {
       "description": "proxy config information",
       "type": "object",
       "properties": {
@@ -631,7 +634,10 @@ func init() {
           "description": "localAddress",
           "type": "string"
         },
-        "network_flow_in_mb": {
+        "network_flow_local_to_remote_in_mb": {
+          "type": "integer"
+        },
+        "network_flow_remote_to_local_in_mb": {
           "type": "integer"
         },
         "proxy_connect_count": {
@@ -669,7 +675,7 @@ func init() {
         "proxy_connect_reject_count_top10": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ProxyConfigInfo"
+            "$ref": "#/definitions/ProxyConfig"
           }
         },
         "proxy_connect_total_count": {
@@ -678,7 +684,7 @@ func init() {
         "proxy_network_flow_top10": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ProxyConfigInfo"
+            "$ref": "#/definitions/ProxyConfig"
           }
         }
       }

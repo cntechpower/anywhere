@@ -25,7 +25,7 @@ type PostV1ProxyDeleteOK struct {
 	/*
 	  In: Body
 	*/
-	Payload *models.ProxyConfigInfo `json:"body,omitempty"`
+	Payload *models.ProxyConfig `json:"body,omitempty"`
 }
 
 // NewPostV1ProxyDeleteOK creates PostV1ProxyDeleteOK with default headers values
@@ -35,13 +35,13 @@ func NewPostV1ProxyDeleteOK() *PostV1ProxyDeleteOK {
 }
 
 // WithPayload adds the payload to the post v1 proxy delete o k response
-func (o *PostV1ProxyDeleteOK) WithPayload(payload *models.ProxyConfigInfo) *PostV1ProxyDeleteOK {
+func (o *PostV1ProxyDeleteOK) WithPayload(payload *models.ProxyConfig) *PostV1ProxyDeleteOK {
 	o.Payload = payload
 	return o
 }
 
 // SetPayload sets the payload to the post v1 proxy delete o k response
-func (o *PostV1ProxyDeleteOK) SetPayload(payload *models.ProxyConfigInfo) {
+func (o *PostV1ProxyDeleteOK) SetPayload(payload *models.ProxyConfig) {
 	o.Payload = payload
 }
 

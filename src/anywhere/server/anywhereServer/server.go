@@ -122,11 +122,13 @@ func (s *Server) ListProxyConfigs() []*model.ProxyConfig {
 	for _, agent := range s.agents {
 		for _, config := range agent.ProxyConfigs {
 			res = append(res, &model.ProxyConfig{
-				AgentId:       agent.Id,
-				RemotePort:    config.RemotePort,
-				LocalAddr:     config.LocalAddr,
-				IsWhiteListOn: config.IsWhiteListOn,
-				WhiteCidrList: config.WhiteCidrList,
+				AgentId:                      agent.Id,
+				RemotePort:                   config.RemotePort,
+				LocalAddr:                    config.LocalAddr,
+				IsWhiteListOn:                config.IsWhiteListOn,
+				WhiteCidrList:                config.WhiteCidrList,
+				NetworkFlowLocalToRemoteInMB: config.NetworkFlowLocalToRemoteInMB,
+				NetworkFlowRemoteToLocalInMB: config.NetworkFlowRemoteToLocalInMB,
 			})
 		}
 	}
