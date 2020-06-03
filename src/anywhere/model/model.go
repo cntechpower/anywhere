@@ -22,15 +22,15 @@ type AgentInfoInAgent struct {
 }
 
 type ProxyConfig struct {
-	AgentId                      string `json:"agent_id"`
-	RemotePort                   int    `json:"remote_port"`
-	LocalAddr                    string `json:"local_addr"`
-	IsWhiteListOn                bool   `json:"is_white_list_enable"`
-	WhiteCidrList                string `json:"white_cidr_list"`
-	NetworkFlowRemoteToLocalInMB int64  `json:"-"`
-	NetworkFlowLocalToRemoteInMB int64  `json:"-"`
-	ProxyConnectCount            int    `json:"-"`
-	ProxyConnectRejectCount      int    `json:"-"`
+	AgentId                         string `json:"agent_id"`
+	RemotePort                      int    `json:"remote_port"`
+	LocalAddr                       string `json:"local_addr"`
+	IsWhiteListOn                   bool   `json:"is_white_list_enable"`
+	WhiteCidrList                   string `json:"white_cidr_list"`
+	NetworkFlowRemoteToLocalInBytes uint64 `json:"-"`
+	NetworkFlowLocalToRemoteInBytes uint64 `json:"-"`
+	ProxyConnectCount               uint64 `json:"-"`
+	ProxyConnectRejectCount         uint64 `json:"-"`
 }
 
 type GlobalConfig struct {
@@ -43,6 +43,7 @@ type UiConfig struct {
 	IsWebEnable bool   `json:"is_web_enable"`
 	RestAddr    string `json:"rest_api_listen_addr"`
 	WebAddr     string `json:"web_ui_listen_addr"`
+	DebugMode   bool   `json:"debug"`
 }
 
 type SslConfig struct {
@@ -67,12 +68,13 @@ type SystemConfig struct {
 }
 
 type ServerSummary struct {
-	AgentTotalCount              int
-	CurrentProxyConnectionCount  int
-	NetworkFlowTotalCountInMb    int
-	ProxyConfigTotalCount        int
+	AgentTotalCount              uint64
+	CurrentProxyConnectionCount  uint64
+	NetworkFlowTotalCountInBytes uint64
+	ProxyConfigTotalCount        uint64
 	ProxyConnectRejectCountTop10 []*ProxyConfig
-	ProxyConnectTotalCount       int
+	ProxyConnectTotalCount       uint64
+	ProxyConnectRejectCount      uint64
 	ProxyNetworkFlowTop10        []*ProxyConfig
 }
 

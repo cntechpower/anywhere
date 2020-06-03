@@ -81,13 +81,13 @@ func (h *rpcHandlers) ListProxyConfigs(ctx context.Context, input *pb.Empty) (*p
 	configs := s.ListProxyConfigs()
 	for _, config := range configs {
 		res.Config = append(res.Config, &pb.ProxyConfig{
-			AgentId:                      config.AgentId,
-			RemotePort:                   int64(config.RemotePort),
-			LocalAddr:                    config.LocalAddr,
-			IsWhiteListOn:                config.IsWhiteListOn,
-			WhiteCidrList:                config.WhiteCidrList,
-			NetworkFlowLocalToRemoteInMB: config.NetworkFlowLocalToRemoteInMB,
-			NetworkFlowRemoteToLocalInMB: config.NetworkFlowRemoteToLocalInMB,
+			AgentId:                         config.AgentId,
+			RemotePort:                      int64(config.RemotePort),
+			LocalAddr:                       config.LocalAddr,
+			IsWhiteListOn:                   config.IsWhiteListOn,
+			WhiteCidrList:                   config.WhiteCidrList,
+			NetworkFlowLocalToRemoteInBytes: int64(config.NetworkFlowLocalToRemoteInBytes),
+			NetworkFlowRemoteToLocalInBytes: int64(config.NetworkFlowRemoteToLocalInBytes),
 		})
 	}
 	return res, nil
@@ -164,8 +164,8 @@ func (h *rpcHandlers) GetSummary(ctx context.Context, empty *pb.Empty) (*pb.GetS
 		ProxyCount: int64(s.ProxyConfigTotalCount),
 		//BELOW is TODO
 		CurrentProxyConnectionCount: 0,
-		ProxyConnectCount:           0,
-		ProxyNetFlowInMb:            0,
+		ProxyConnectCount:           int64(s.ProxyConnectTotalCount),
+		ProxyNetFlowInBytes:         int64(s.NetworkFlowTotalCountInBytes),
 		ConfigNetFlowTop10:          nil,
 		ConfigConnectFailTop10:      nil,
 		AdminWebUiAuthFailCount:     0,

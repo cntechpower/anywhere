@@ -122,13 +122,13 @@ func (s *Server) ListProxyConfigs() []*model.ProxyConfig {
 	for _, agent := range s.agents {
 		for _, config := range agent.ProxyConfigs {
 			res = append(res, &model.ProxyConfig{
-				AgentId:                      agent.Id,
-				RemotePort:                   config.RemotePort,
-				LocalAddr:                    config.LocalAddr,
-				IsWhiteListOn:                config.IsWhiteListOn,
-				WhiteCidrList:                config.WhiteCidrList,
-				NetworkFlowLocalToRemoteInMB: config.NetworkFlowLocalToRemoteInMB,
-				NetworkFlowRemoteToLocalInMB: config.NetworkFlowRemoteToLocalInMB,
+				AgentId:                         agent.Id,
+				RemotePort:                      config.RemotePort,
+				LocalAddr:                       config.LocalAddr,
+				IsWhiteListOn:                   config.IsWhiteListOn,
+				WhiteCidrList:                   config.WhiteCidrList,
+				NetworkFlowLocalToRemoteInBytes: config.NetworkFlowLocalToRemoteInBytes,
+				NetworkFlowRemoteToLocalInBytes: config.NetworkFlowRemoteToLocalInBytes,
 			})
 		}
 	}
@@ -195,19 +195,26 @@ func (s *Server) GetSummary() model.ServerSummary {
 	res := model.ServerSummary{
 		AgentTotalCount:              0,
 		CurrentProxyConnectionCount:  0,
-		NetworkFlowTotalCountInMb:    0, //TODO
+		NetworkFlowTotalCountInBytes: 0,
 		ProxyConfigTotalCount:        0,
 		ProxyConnectRejectCountTop10: nil, //TODO
-		ProxyConnectTotalCount:       0,   //TODO
+		ProxyConnectTotalCount:       0,
+		ProxyConnectRejectCount:      0,
 		ProxyNetworkFlowTop10:        nil, //TODO
 	}
 
 	s.agentsRwMutex.Lock()
 	for _, agent := range s.agents {
 		agent.proxyConfigMutex.Lock()
-		res.ProxyConfigTotalCount += len(agent.ProxyConfigs)
+		res.ProxyConfigTotalCount += uint64(len(agent.ProxyConfigs))
 		agent.proxyConfigMutex.Unlock()
 		res.AgentTotalCount++
+		for _, config := range agent.ProxyConfigs {
+			res.NetworkFlowTotalCountInBytes += config.NetworkFlowRemoteToLocalInBytes
+			res.NetworkFlowTotalCountInBytes += config.NetworkFlowLocalToRemoteInBytes
+			res.ProxyConnectRejectCount += config.ProxyConnectRejectCount
+			res.ProxyConnectTotalCount += config.ProxyConnectCount
+		}
 	}
 	s.agentsRwMutex.Unlock()
 	return res

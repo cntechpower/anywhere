@@ -24,11 +24,14 @@ type SummaryStatistic struct {
 	// current proxy connection count
 	CurrentProxyConnectionCount int64 `json:"current_proxy_connection_count,omitempty"`
 
-	// network flow total count in mb
-	NetworkFlowTotalCountInMb int64 `json:"network_flow_total_count_in_mb,omitempty"`
+	// network flow total count in bytes
+	NetworkFlowTotalCountInBytes int64 `json:"network_flow_total_count_in_bytes,omitempty"`
 
 	// proxy config total count
 	ProxyConfigTotalCount int64 `json:"proxy_config_total_count,omitempty"`
+
+	// proxy connect reject count
+	ProxyConnectRejectCount int64 `json:"proxy_connect_reject_count,omitempty"`
 
 	// proxy connect reject count top10
 	ProxyConnectRejectCountTop10 []*ProxyConfig `json:"proxy_connect_reject_count_top10"`

@@ -37,8 +37,8 @@ message ProxyConfig{
     string localAddr = 3;
     bool isWhiteListOn = 4;
     string WhiteCidrList = 5;
-    int64 NetworkFlowRemoteToLocalInMB = 6;
-    int64 NetworkFlowLocalToRemoteInMB = 7;
+    int64 NetworkFlowRemoteToLocalInBytes = 6;
+    int64 NetworkFlowLocalToRemoteInBytes = 7;
 	int64 ProxyConnectCount = 8;
     int64 ProxyConnectRejectCount = 9;
 }
@@ -91,7 +91,7 @@ message GetSummaryOutput {
     int64 proxyCount = 2;
     int64 currentProxyConnectionCount = 3;
     int64 proxyConnectCount = 4;
-    int64 proxyNetFlowInMb = 5;
+    int64 proxyNetFlowInBytes = 5;
     repeated ProxyConfig configNetFlowTop10  = 6;
     repeated ProxyConfig configConnectFailTop10  = 7;
     int64 adminWebUiAuthFailCount =8;

@@ -297,10 +297,10 @@ func init() {
           "description": "localAddress",
           "type": "string"
         },
-        "network_flow_local_to_remote_in_mb": {
+        "network_flow_local_to_remote_in_bytes": {
           "type": "integer"
         },
-        "network_flow_remote_to_local_in_mb": {
+        "network_flow_remote_to_local_in_bytes": {
           "type": "integer"
         },
         "proxy_connect_count": {
@@ -329,10 +329,13 @@ func init() {
         "current_proxy_connection_count": {
           "type": "integer"
         },
-        "network_flow_total_count_in_mb": {
+        "network_flow_total_count_in_bytes": {
           "type": "integer"
         },
         "proxy_config_total_count": {
+          "type": "integer"
+        },
+        "proxy_connect_reject_count": {
           "type": "integer"
         },
         "proxy_connect_reject_count_top10": {
@@ -634,10 +637,10 @@ func init() {
           "description": "localAddress",
           "type": "string"
         },
-        "network_flow_local_to_remote_in_mb": {
+        "network_flow_local_to_remote_in_bytes": {
           "type": "integer"
         },
-        "network_flow_remote_to_local_in_mb": {
+        "network_flow_remote_to_local_in_bytes": {
           "type": "integer"
         },
         "proxy_connect_count": {
@@ -666,10 +669,13 @@ func init() {
         "current_proxy_connection_count": {
           "type": "integer"
         },
-        "network_flow_total_count_in_mb": {
+        "network_flow_total_count_in_bytes": {
           "type": "integer"
         },
         "proxy_config_total_count": {
+          "type": "integer"
+        },
+        "proxy_connect_reject_count": {
           "type": "integer"
         },
         "proxy_connect_reject_count_top10": {

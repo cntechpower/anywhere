@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-func JoinConn(remote, local net.Conn) (int64, int64) {
+func JoinConn(remote, local net.Conn) (uint64, uint64) {
 	h := log.NewHeader("JoinConn")
 	var wg sync.WaitGroup
 	joinWithClose := func(dst, src net.Conn, bytesCopied *int64) {
@@ -27,5 +27,5 @@ func JoinConn(remote, local net.Conn) (int64, int64) {
 	go joinWithClose(local, remote, &remoteToLocalBytes)
 	log.Infof(h, "joined conn %v and %v", remote.LocalAddr(), local.RemoteAddr())
 	wg.Wait()
-	return localToRemoteBytes, remoteToLocalBytes
+	return uint64(localToRemoteBytes), uint64(remoteToLocalBytes)
 }

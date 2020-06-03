@@ -24,11 +24,11 @@ type ProxyConfig struct {
 	// localAddress
 	LocalAddr string `json:"local_addr,omitempty"`
 
-	// network flow local to remote in mb
-	NetworkFlowLocalToRemoteInMb int64 `json:"network_flow_local_to_remote_in_mb,omitempty"`
+	// network flow local to remote in bytes
+	NetworkFlowLocalToRemoteInBytes int64 `json:"network_flow_local_to_remote_in_bytes,omitempty"`
 
-	// network flow remote to local in mb
-	NetworkFlowRemoteToLocalInMb int64 `json:"network_flow_remote_to_local_in_mb,omitempty"`
+	// network flow remote to local in bytes
+	NetworkFlowRemoteToLocalInBytes int64 `json:"network_flow_remote_to_local_in_bytes,omitempty"`
 
 	// proxy connect count
 	ProxyConnectCount int64 `json:"proxy_connect_count,omitempty"`

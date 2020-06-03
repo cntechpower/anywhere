@@ -46,13 +46,13 @@ func ListProxyV1() ([]*models.ProxyConfig, error) {
 	}
 	for _, config := range configs.Config {
 		res = append(res, &models.ProxyConfig{
-			AgentID:                      config.AgentId,
-			LocalAddr:                    config.LocalAddr,
-			RemotePort:                   config.RemotePort,
-			IsWhitelistOn:                config.IsWhiteListOn,
-			WhitelistIps:                 config.WhiteCidrList,
-			NetworkFlowLocalToRemoteInMb: config.NetworkFlowLocalToRemoteInMB,
-			NetworkFlowRemoteToLocalInMb: config.NetworkFlowRemoteToLocalInMB,
+			AgentID:                         config.AgentId,
+			LocalAddr:                       config.LocalAddr,
+			RemotePort:                      config.RemotePort,
+			IsWhitelistOn:                   config.IsWhiteListOn,
+			WhitelistIps:                    config.WhiteCidrList,
+			NetworkFlowLocalToRemoteInBytes: config.NetworkFlowLocalToRemoteInBytes,
+			NetworkFlowRemoteToLocalInBytes: config.NetworkFlowRemoteToLocalInBytes,
 		})
 	}
 	return res, nil
@@ -142,7 +142,7 @@ func GetSummaryV1() (*models.SummaryStatistic, error) {
 	res := &models.SummaryStatistic{
 		AgentTotalCount:              s.AgentCount,
 		CurrentProxyConnectionCount:  s.CurrentProxyConnectionCount,
-		NetworkFlowTotalCountInMb:    s.ProxyNetFlowInMb,
+		NetworkFlowTotalCountInBytes: s.ProxyNetFlowInBytes,
 		ProxyConfigTotalCount:        s.ProxyCount,
 		ProxyConnectRejectCountTop10: make([]*models.ProxyConfig, 0),
 		ProxyConnectTotalCount:       s.ProxyConnectCount,
@@ -150,29 +150,29 @@ func GetSummaryV1() (*models.SummaryStatistic, error) {
 	}
 	for _, p := range s.ConfigConnectFailTop10 {
 		res.ProxyConnectRejectCountTop10 = append(res.ProxyConnectRejectCountTop10, &models.ProxyConfig{
-			AgentID:                      p.AgentId,
-			IsWhitelistOn:                p.IsWhiteListOn,
-			LocalAddr:                    p.LocalAddr,
-			NetworkFlowLocalToRemoteInMb: p.NetworkFlowLocalToRemoteInMB,
-			NetworkFlowRemoteToLocalInMb: p.NetworkFlowRemoteToLocalInMB,
-			ProxyConnectCount:            p.ProxyConnectCount,
-			ProxyConnectRejectCount:      p.ProxyConnectRejectCount,
-			RemotePort:                   p.RemotePort,
-			WhitelistIps:                 p.WhiteCidrList,
+			AgentID:                         p.AgentId,
+			IsWhitelistOn:                   p.IsWhiteListOn,
+			LocalAddr:                       p.LocalAddr,
+			NetworkFlowLocalToRemoteInBytes: p.NetworkFlowLocalToRemoteInBytes,
+			NetworkFlowRemoteToLocalInBytes: p.NetworkFlowRemoteToLocalInBytes,
+			ProxyConnectCount:               p.ProxyConnectCount,
+			ProxyConnectRejectCount:         p.ProxyConnectRejectCount,
+			RemotePort:                      p.RemotePort,
+			WhitelistIps:                    p.WhiteCidrList,
 		})
 	}
 
 	for _, p := range s.ConfigNetFlowTop10 {
 		res.ProxyNetworkFlowTop10 = append(res.ProxyNetworkFlowTop10, &models.ProxyConfig{
-			AgentID:                      p.AgentId,
-			IsWhitelistOn:                p.IsWhiteListOn,
-			LocalAddr:                    p.LocalAddr,
-			NetworkFlowLocalToRemoteInMb: p.NetworkFlowLocalToRemoteInMB,
-			NetworkFlowRemoteToLocalInMb: p.NetworkFlowRemoteToLocalInMB,
-			ProxyConnectCount:            p.ProxyConnectCount,
-			ProxyConnectRejectCount:      p.ProxyConnectRejectCount,
-			RemotePort:                   p.RemotePort,
-			WhitelistIps:                 p.WhiteCidrList,
+			AgentID:                         p.AgentId,
+			IsWhitelistOn:                   p.IsWhiteListOn,
+			LocalAddr:                       p.LocalAddr,
+			NetworkFlowLocalToRemoteInBytes: p.NetworkFlowLocalToRemoteInBytes,
+			NetworkFlowRemoteToLocalInBytes: p.NetworkFlowRemoteToLocalInBytes,
+			ProxyConnectCount:               p.ProxyConnectCount,
+			ProxyConnectRejectCount:         p.ProxyConnectRejectCount,
+			RemotePort:                      p.RemotePort,
+			WhitelistIps:                    p.WhiteCidrList,
 		})
 	}
 	return res, nil
