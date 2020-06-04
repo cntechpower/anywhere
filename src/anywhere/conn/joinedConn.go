@@ -92,6 +92,8 @@ func (l *JoinedConnList) Flush() {
 }
 
 func (l *JoinedConnList) List() []*JoinedConnListItem {
+	l.listMu.Lock()
+	defer l.listMu.Unlock()
 	res := make([]*JoinedConnListItem, 0)
 	for idx, conn := range l.list {
 		res = append(res, &JoinedConnListItem{
@@ -103,4 +105,10 @@ func (l *JoinedConnList) List() []*JoinedConnListItem {
 		})
 	}
 	return res
+}
+
+func (l *JoinedConnList) Count() int {
+	l.listMu.Lock()
+	defer l.listMu.Unlock()
+	return len(l.list)
 }

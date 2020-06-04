@@ -95,3 +95,15 @@ func NewProxyConfig(agentId string, remotePort int, localAddr string, isWhiteLis
 	}, nil
 
 }
+
+//TODO: sort
+func NewSortedProxyConfigList(list []*ProxyConfig, less func(i, j int) bool) []*ProxyConfig {
+	if len(list) <= 1 {
+		return list
+	}
+	res := make([]*ProxyConfig, len(list))
+	for _, c := range list {
+		res = append(res, c)
+	}
+	return res
+}

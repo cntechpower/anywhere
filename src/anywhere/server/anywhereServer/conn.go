@@ -22,7 +22,7 @@ func (s *Server) handleNewConnection(c net.Conn) {
 	case model.PkgControlConnRegister:
 		m, _ := model.ParseControlRegisterPkg(msg.Message)
 		agent := NewAgentInfo(m.AgentId, c, make(chan error, 1000))
-		if isUpdate := s.RegisterAgent(agent); isUpdate {
+		if isUpdate := s.RegisterAgent(m.AgentId, c); isUpdate {
 			log.Errorf(h, "rebuild control connection for agent: %v", agent.Id)
 		} else {
 			log.Infof(h, "accept control connection from agent: %v", agent.Id)

@@ -12,17 +12,17 @@ import (
 )
 
 type Server struct {
-	serverId      string
-	serverAddr    *net.TCPAddr
-	credential    *_tls.Config
-	listener      net.Listener
-	proxyListener []net.Listener
-	proxyMutex    sync.Mutex
-	httpMutex     sync.Mutex
-	agents        map[string]*Agent
-	agentsRwMutex sync.RWMutex
-	ExitChan      chan error
-	ErrChan       chan error
+	serverId                         string
+	serverAddr                       *net.TCPAddr
+	credential                       *_tls.Config
+	listener                         net.Listener
+	agents                           map[string]AgentInterface
+	agentsRwMutex                    sync.RWMutex
+	ExitChan                         chan error
+	ErrChan                          chan error
+	statusCache                      model.ServerSummary
+	networkFlowSortedProxyConfigList []*proxyConfig
+	rejectCountSortedProxyConfigList []*proxyConfig
 }
 
 var serverInstance *Server
@@ -39,12 +39,11 @@ func InitServerInstance(serverId string, port int) *Server {
 	serverInstance = &Server{
 		serverId:      serverId,
 		serverAddr:    addr,
-		proxyMutex:    sync.Mutex{},
-		httpMutex:     sync.Mutex{},
-		agents:        make(map[string]*Agent, 0),
+		agents:        make(map[string]AgentInterface, 0),
 		agentsRwMutex: sync.RWMutex{},
 		ExitChan:      make(chan error, 1),
 		ErrChan:       make(chan error, 10000),
+		statusCache:   model.ServerSummary{},
 	}
 	return serverInstance
 }
@@ -104,13 +103,7 @@ func (s *Server) ListAgentInfo() []*model.AgentInfoInServer {
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
 	for _, agent := range s.agents {
-		res = append(res, &model.AgentInfoInServer{
-			Id:               agent.Id,
-			RemoteAddr:       agent.RemoteAddr.String(),
-			LastAckRcv:       agent.AdminConn.LastAckRcvTime.Format("2006-01-02 15:04:05"),
-			LastAckSend:      agent.AdminConn.LastAckSendTime.Format("2006-01-02 15:04:05"),
-			ProxyConfigCount: len(agent.ProxyConfigs),
-		})
+		res = append(res, agent.Info())
 	}
 	return res
 }
@@ -120,31 +113,20 @@ func (s *Server) ListProxyConfigs() []*model.ProxyConfig {
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
 	for _, agent := range s.agents {
-		for _, config := range agent.ProxyConfigs {
-			res = append(res, &model.ProxyConfig{
-				AgentId:                         agent.Id,
-				RemotePort:                      config.RemotePort,
-				LocalAddr:                       config.LocalAddr,
-				IsWhiteListOn:                   config.IsWhiteListOn,
-				WhiteCidrList:                   config.WhiteCidrList,
-				NetworkFlowLocalToRemoteInBytes: config.NetworkFlowLocalToRemoteInBytes,
-				NetworkFlowRemoteToLocalInBytes: config.NetworkFlowRemoteToLocalInBytes,
-			})
-		}
+		res = append(res, agent.ListProxyConfigs()...)
 	}
 	return res
 }
 
-func (s *Server) RegisterAgent(info *Agent) (isUpdate bool) {
+func (s *Server) RegisterAgent(agentId string, c net.Conn) (isUpdate bool) {
 	s.agentsRwMutex.Lock()
 	defer s.agentsRwMutex.Unlock()
-	isUpdate = s.isAgentExist(info.Id)
+	isUpdate = s.isAgentExist(agentId)
 	if isUpdate {
 		//close(s.agents[info.Id].CloseChan)
-		s.agents[info.Id].AdminConn = info.AdminConn
+		s.agents[agentId].ResetAdminConn(c)
 	} else {
-		s.agents[info.Id] = info
-		go s.agents[info.Id].ProxyConfigHandleLoop()
+		s.agents[agentId] = NewAgentInfo(agentId, c, make(chan error, 99))
 	}
 
 	return isUpdate
@@ -156,11 +138,11 @@ func (s *Server) ListJoinedConns(agentId string) (map[string][]*conn.JoinedConnL
 		if !s.isAgentExist(agentId) {
 			return nil, fmt.Errorf("no such agent id %v", agentId)
 		}
-		res[agentId] = s.agents[agentId].joinedConns.List()
+		res[agentId] = s.agents[agentId].ListJoinedConns()
 		return res, nil
 	}
 	for agentId, agent := range s.agents {
-		res[agentId] = agent.joinedConns.List()
+		res[agentId] = agent.ListJoinedConns()
 	}
 	return res, nil
 }
@@ -172,12 +154,12 @@ func (s *Server) KillJoinedConnById(agentId string, id int) error {
 	if !s.isAgentExist(agentId) {
 		return fmt.Errorf("no such agent id %v", agentId)
 	}
-	return s.agents[agentId].joinedConns.KillById(id)
+	return s.agents[agentId].KillJoinedConnById(id)
 }
 
 func (s *Server) FlushJoinedConns() {
 	for _, agent := range s.agents {
-		agent.joinedConns.Flush()
+		agent.FlushJoinedConns()
 	}
 }
 
@@ -191,31 +173,22 @@ func (s *Server) UpdateProxyConfigWhiteList(agentId, localAddr, whiteCidrs strin
 	return s.agents[agentId].UpdateProxyConfigWhiteListConfig(localAddr, whiteCidrs, whiteListEnable)
 }
 
-func (s *Server) GetSummary() model.ServerSummary {
-	res := model.ServerSummary{
-		AgentTotalCount:              0,
-		CurrentProxyConnectionCount:  0,
-		NetworkFlowTotalCountInBytes: 0,
-		ProxyConfigTotalCount:        0,
-		ProxyConnectRejectCountTop10: nil, //TODO
-		ProxyConnectTotalCount:       0,
-		ProxyConnectRejectCount:      0,
-		ProxyNetworkFlowTop10:        nil, //TODO
-	}
-
+func (s *Server) RefreshSummary() {
 	s.agentsRwMutex.Lock()
 	for _, agent := range s.agents {
-		agent.proxyConfigMutex.Lock()
-		res.ProxyConfigTotalCount += uint64(len(agent.ProxyConfigs))
-		agent.proxyConfigMutex.Unlock()
-		res.AgentTotalCount++
-		for _, config := range agent.ProxyConfigs {
-			res.NetworkFlowTotalCountInBytes += config.NetworkFlowRemoteToLocalInBytes
-			res.NetworkFlowTotalCountInBytes += config.NetworkFlowLocalToRemoteInBytes
-			res.ProxyConnectRejectCount += config.ProxyConnectRejectCount
-			res.ProxyConnectTotalCount += config.ProxyConnectCount
+		configs := agent.ListProxyConfigs()
+		s.statusCache.ProxyConfigTotalCount += uint64(len(configs))
+		s.statusCache.AgentTotalCount++
+		for _, config := range configs {
+			s.statusCache.NetworkFlowTotalCountInBytes += config.NetworkFlowRemoteToLocalInBytes
+			s.statusCache.NetworkFlowTotalCountInBytes += config.NetworkFlowLocalToRemoteInBytes
+			s.statusCache.ProxyConnectRejectCount += config.ProxyConnectRejectCount
+			s.statusCache.ProxyConnectTotalCount += config.ProxyConnectCount
 		}
 	}
 	s.agentsRwMutex.Unlock()
-	return res
+}
+
+func (s *Server) GetSummary() model.ServerSummary {
+	return s.statusCache
 }

@@ -23,24 +23,29 @@ func newErrTimeoutWaitingProxyConn(s string) error {
 
 var ErrProxyConnBufferFull = fmt.Errorf("proxy conn buffer is full")
 
-type Agent struct {
-	Id               string
-	version          string
-	RemoteAddr       net.Addr
-	AdminConn        *conn.BaseConn
-	ProxyConfigs     map[string]*proxyConfig
-	proxyConfigMutex sync.Mutex
-	proxyConfigChan  chan *proxyConfig
-	chanProxyConns   map[string]chan *conn.BaseConn
-	errChan          chan error
-	CloseChan        chan struct{}
-	joinedConns      *conn.JoinedConnList
-	connectCount     uint64
+type AgentInterface interface {
+	ResetAdminConn(c net.Conn)
+	AddProxyConfig(config *model.ProxyConfig) error
+	RemoveProxyConfig(localAddr string) error
+	PutProxyConn(proxyAddr string, c *conn.BaseConn) error
+	GetProxyConn(proxyAddr string) (*conn.BaseConn, error)
+	ListJoinedConns() []*conn.JoinedConnListItem
+	KillJoinedConnById(id int) error
+	FlushJoinedConns()
+	GetCurrentConnectionCount() int
+	UpdateProxyConfigWhiteListConfig(localAddr, whiteCidrs string, whiteListEnable bool) error
+	AddProxyConfigWhiteListConfig(localAddr, whiteCidrs string) error
+	//status
+	Info() *model.AgentInfoInServer
+	GetProxyConfigCount() int
+	ListProxyConfigs() []*model.ProxyConfig
 }
+
 type proxyConfig struct {
 	*model.ProxyConfig
-	acl       *util.WhiteList
-	closeChan chan struct{}
+	acl         *util.WhiteList
+	joinedConns *conn.JoinedConnList
+	closeChan   chan struct{}
 }
 
 func (c *proxyConfig) AddNetworkFlow(remoteToLocalBytes, localToRemoteBytes uint64) {
@@ -56,8 +61,27 @@ func (c *proxyConfig) AddConnectRejectedCount(nums uint64) {
 	atomic.AddUint64(&c.ProxyConnectRejectCount, nums)
 }
 
-func NewAgentInfo(agentId string, c net.Conn, errChan chan error) *Agent {
+func (c *proxyConfig) GetCurrentConnectionCount() int {
+	return c.joinedConns.Count()
 
+}
+
+type Agent struct {
+	Id               string
+	version          string
+	RemoteAddr       net.Addr
+	AdminConn        *conn.BaseConn
+	ProxyConfigs     map[string]*proxyConfig
+	proxyConfigMutex sync.Mutex
+	proxyConfigChan  chan *proxyConfig
+	chanProxyConns   map[string]chan *conn.BaseConn
+	errChan          chan error
+	CloseChan        chan struct{}
+	joinedConns      *conn.JoinedConnList
+	connectCount     uint64
+}
+
+func NewAgentInfo(agentId string, c net.Conn, errChan chan error) *Agent {
 	a := &Agent{
 		Id:              agentId,
 		version:         model.AnywhereVersion,
@@ -70,7 +94,159 @@ func NewAgentInfo(agentId string, c net.Conn, errChan chan error) *Agent {
 		CloseChan:       make(chan struct{}, 0),
 		joinedConns:     conn.NewJoinedConnList(),
 	}
+	go a.ProxyConfigHandleLoop()
 	return a
+}
+func (a *Agent) Info() *model.AgentInfoInServer {
+	return &model.AgentInfoInServer{
+		Id:               a.Id,
+		RemoteAddr:       a.RemoteAddr.String(),
+		LastAckRcv:       a.AdminConn.LastAckRcvTime.Format("2006-01-02 15:04:05"),
+		LastAckSend:      a.AdminConn.LastAckSendTime.Format("2006-01-02 15:04:05"),
+		ProxyConfigCount: a.GetProxyConfigCount(),
+	}
+}
+func (a *Agent) GetProxyConfigCount() int {
+	a.proxyConfigMutex.Lock()
+	defer a.proxyConfigMutex.Unlock()
+	return len(a.ProxyConfigs)
+}
+
+func (a *Agent) ListProxyConfigs() []*model.ProxyConfig {
+	a.proxyConfigMutex.Lock()
+	defer a.proxyConfigMutex.Unlock()
+	if len(a.ProxyConfigs) == 0 {
+		return nil
+	}
+
+	res := make([]*model.ProxyConfig, len(a.ProxyConfigs))
+	for _, config := range a.ProxyConfigs {
+		res = append(res, &model.ProxyConfig{
+			AgentId:                         config.AgentId,
+			RemotePort:                      config.RemotePort,
+			LocalAddr:                       config.LocalAddr,
+			IsWhiteListOn:                   config.IsWhiteListOn,
+			WhiteCidrList:                   config.WhiteCidrList,
+			NetworkFlowRemoteToLocalInBytes: config.NetworkFlowRemoteToLocalInBytes,
+			NetworkFlowLocalToRemoteInBytes: config.NetworkFlowLocalToRemoteInBytes,
+			ProxyConnectCount:               config.ProxyConnectCount,
+			ProxyConnectRejectCount:         config.ProxyConnectRejectCount,
+		})
+	}
+	return res
+}
+
+func (a *Agent) ResetAdminConn(c net.Conn) {
+	a.AdminConn = conn.NewBaseConn(c)
+}
+func (a *Agent) AddProxyConfig(config *model.ProxyConfig) error {
+	h := log.NewHeader("AddProxyConfig")
+	if _, exist := a.ProxyConfigs[config.LocalAddr]; exist {
+		return fmt.Errorf("proxy config %v is already exist in %v", config.LocalAddr, a.Id)
+	}
+	a.proxyConfigMutex.Lock()
+	defer a.proxyConfigMutex.Unlock()
+	log.Infof(h, "adding proxy config: %v", config)
+	closeChan := make(chan struct{}, 0)
+	pConfig := &proxyConfig{
+		ProxyConfig: config,
+		closeChan:   closeChan,
+	}
+	a.proxyConfigChan <- pConfig
+	log.Infof(h, "add %v done", config)
+	a.ProxyConfigs[config.LocalAddr] = pConfig
+	return nil
+}
+
+func (a *Agent) RemoveProxyConfig(localAddr string) error {
+	c, ok := a.ProxyConfigs[localAddr]
+	if !ok {
+		return fmt.Errorf("no such proxy config")
+	}
+	close(c.closeChan)
+	a.proxyConfigMutex.Lock()
+	defer a.proxyConfigMutex.Unlock()
+	delete(a.ProxyConfigs, localAddr)
+	return nil
+}
+
+func (a *Agent) PutProxyConn(proxyAddr string, c *conn.BaseConn) error {
+	if _, ok := a.chanProxyConns[proxyAddr]; !ok {
+		a.chanProxyConns[proxyAddr] = make(chan *conn.BaseConn, AGENTPROXYCONNBUFFER)
+	}
+	select {
+	case a.chanProxyConns[proxyAddr] <- c:
+		return nil
+	case <-time.After(TIMEOUTSECFORCONNPOOL * time.Second):
+		a.errChan <- ErrProxyConnBufferFull
+		_ = c.Close()
+		return ErrProxyConnBufferFull
+	}
+}
+
+func (a *Agent) GetProxyConn(proxyAddr string) (*conn.BaseConn, error) {
+	h := log.NewHeader("GetProxyConn")
+	if _, ok := a.chanProxyConns[proxyAddr]; !ok {
+		a.chanProxyConns[proxyAddr] = make(chan *conn.BaseConn, AGENTPROXYCONNBUFFER)
+	}
+	for i := 0; i < OPERATIONRETRYCOUNT; i++ {
+
+		//request a new proxy conn
+		a.requestNewProxyConn(proxyAddr)
+		select {
+		case c := <-a.chanProxyConns[proxyAddr]:
+			return c, nil
+		case <-time.After(200 * time.Millisecond):
+			continue
+		}
+	}
+	log.Infof(h, "get conn from agent %v proxy addr %v failed, maybe proxy address is down or agent is dead", a.Id, proxyAddr)
+
+	return nil, newErrTimeoutWaitingProxyConn(proxyAddr)
+}
+
+func (a *Agent) ListJoinedConns() []*conn.JoinedConnListItem {
+	return a.joinedConns.List()
+}
+
+func (a *Agent) KillJoinedConnById(id int) error {
+	return a.joinedConns.KillById(id)
+}
+
+func (a *Agent) FlushJoinedConns() {
+	a.joinedConns.Flush()
+}
+
+func (a *Agent) GetCurrentConnectionCount() int {
+	count := 0
+	for _, c := range a.ProxyConfigs {
+		count += c.GetCurrentConnectionCount()
+	}
+	return count
+}
+
+func (a *Agent) UpdateProxyConfigWhiteListConfig(localAddr, whiteCidrs string, whiteListEnable bool) error {
+	config, ok := a.ProxyConfigs[localAddr]
+	if !ok {
+		return fmt.Errorf("no such proxy config %v in agent %v", localAddr, a.Id)
+	}
+	config.acl.SetEnable(whiteListEnable)
+	err := config.acl.AddCidrToList(whiteCidrs, true)
+	if err == nil {
+		config.IsWhiteListOn = whiteListEnable
+		config.WhiteCidrList = whiteCidrs
+	}
+	return err
+
+}
+
+func (a *Agent) AddProxyConfigWhiteListConfig(localAddr, whiteCidrs string) error {
+	config, ok := a.ProxyConfigs[localAddr]
+	if !ok {
+		return fmt.Errorf("no such proxy config %v in agent %v", localAddr, a.Id)
+	}
+	return config.acl.AddCidrToList(whiteCidrs, false)
+
 }
 
 func (a *Agent) requestNewProxyConn(localAddr string) {
@@ -104,72 +280,6 @@ func (a *Agent) proxyConfigHandler(config *proxyConfig, h *log.Header) {
 		return
 	}
 	go a.handelTunnelConnection(ln, config)
-}
-
-func (a *Agent) AddProxyConfig(config *model.ProxyConfig) error {
-	h := log.NewHeader("AddProxyConfig")
-	if _, exist := a.ProxyConfigs[config.LocalAddr]; exist {
-		return fmt.Errorf("proxy config %v is already exist in %v", config.LocalAddr, a.Id)
-	}
-	a.proxyConfigMutex.Lock()
-	defer a.proxyConfigMutex.Unlock()
-	log.Infof(h, "adding proxy config: %v", config)
-	closeChan := make(chan struct{}, 0)
-	pConfig := &proxyConfig{
-		ProxyConfig: config,
-		closeChan:   closeChan,
-	}
-	a.proxyConfigChan <- pConfig
-	log.Infof(h, "add %v done", config)
-	a.ProxyConfigs[config.LocalAddr] = pConfig
-	return nil
-}
-
-func (a *Agent) RemoveProxyConfig(localAddr string) error {
-	c, ok := a.ProxyConfigs[localAddr]
-	if !ok {
-		return fmt.Errorf("no such proxy config")
-	}
-	close(c.closeChan)
-	a.proxyConfigMutex.Lock()
-	defer a.proxyConfigMutex.Unlock()
-	delete(a.ProxyConfigs, localAddr)
-	return nil
-}
-
-func (a *Agent) GetProxyConn(proxyAddr string) (*conn.BaseConn, error) {
-	h := log.NewHeader("GetProxyConn")
-	if _, ok := a.chanProxyConns[proxyAddr]; !ok {
-		a.chanProxyConns[proxyAddr] = make(chan *conn.BaseConn, AGENTPROXYCONNBUFFER)
-	}
-	for i := 0; i < OPERATIONRETRYCOUNT; i++ {
-
-		//request a new proxy conn
-		a.requestNewProxyConn(proxyAddr)
-		select {
-		case c := <-a.chanProxyConns[proxyAddr]:
-			return c, nil
-		case <-time.After(200 * time.Millisecond):
-			continue
-		}
-	}
-	log.Infof(h, "get conn from agent %v proxy addr %v failed, maybe proxy address is down or agent is dead", a.Id, proxyAddr)
-
-	return nil, newErrTimeoutWaitingProxyConn(proxyAddr)
-}
-
-func (a *Agent) PutProxyConn(proxyAddr string, c *conn.BaseConn) error {
-	if _, ok := a.chanProxyConns[proxyAddr]; !ok {
-		a.chanProxyConns[proxyAddr] = make(chan *conn.BaseConn, AGENTPROXYCONNBUFFER)
-	}
-	select {
-	case a.chanProxyConns[proxyAddr] <- c:
-		return nil
-	case <-time.After(TIMEOUTSECFORCONNPOOL * time.Second):
-		a.errChan <- ErrProxyConnBufferFull
-		_ = c.Close()
-		return ErrProxyConnBufferFull
-	}
 }
 
 func (a *Agent) handelTunnelConnection(ln *net.TCPListener, config *proxyConfig) {
@@ -269,40 +379,4 @@ func (a *Agent) handleAdminConnection() {
 			return
 		}
 	}
-}
-
-func (a *Agent) ListJoinedConns() []*conn.JoinedConnListItem {
-	return a.joinedConns.List()
-}
-
-func (a *Agent) KillJoinedConnById(id int) error {
-	return a.joinedConns.KillById(id)
-}
-
-func (a *Agent) FlushJoinedConns() {
-	a.joinedConns.Flush()
-}
-
-func (a *Agent) UpdateProxyConfigWhiteListConfig(localAddr, whiteCidrs string, whiteListEnable bool) error {
-	config, ok := a.ProxyConfigs[localAddr]
-	if !ok {
-		return fmt.Errorf("no such proxy config %v in agent %v", localAddr, a.Id)
-	}
-	config.acl.SetEnable(whiteListEnable)
-	err := config.acl.AddCidrToList(whiteCidrs, true)
-	if err == nil {
-		config.IsWhiteListOn = whiteListEnable
-		config.WhiteCidrList = whiteCidrs
-	}
-	return err
-
-}
-
-func (a *Agent) AddProxyConfigWhiteListConfig(localAddr, whiteCidrs string) error {
-	config, ok := a.ProxyConfigs[localAddr]
-	if !ok {
-		return fmt.Errorf("no such proxy config %v in agent %v", localAddr, a.Id)
-	}
-	return config.acl.AddCidrToList(whiteCidrs, false)
-
 }
