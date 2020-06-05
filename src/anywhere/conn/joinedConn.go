@@ -7,8 +7,8 @@ import (
 )
 
 type joinedConn struct {
-	src *BaseConn
-	dst *BaseConn
+	src *WrappedConn
+	dst *WrappedConn
 }
 
 type JoinedConnListItem struct {
@@ -30,7 +30,7 @@ func NewJoinedConnList() *JoinedConnList {
 	}
 }
 
-func (l *JoinedConnList) Add(src, dst *BaseConn) int {
+func (l *JoinedConnList) Add(src, dst *WrappedConn) int {
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
 	if l.list == nil {

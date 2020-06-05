@@ -1,4 +1,4 @@
-package anywhereServer
+package agent
 
 import (
 	"anywhere/conn"
@@ -23,12 +23,12 @@ func newErrTimeoutWaitingProxyConn(s string) error {
 
 var ErrProxyConnBufferFull = fmt.Errorf("proxy conn buffer is full")
 
-type AgentInterface interface {
+type Interface interface {
 	ResetAdminConn(c net.Conn)
 	AddProxyConfig(config *model.ProxyConfig) error
 	RemoveProxyConfig(localAddr string) error
-	PutProxyConn(proxyAddr string, c *conn.BaseConn) error
-	GetProxyConn(proxyAddr string) (*conn.BaseConn, error)
+	PutProxyConn(proxyAddr string, c *conn.WrappedConn) error
+	GetProxyConn(proxyAddr string) (*conn.WrappedConn, error)
 	ListJoinedConns() []*conn.JoinedConnListItem
 	KillJoinedConnById(id int) error
 	FlushJoinedConns()
@@ -41,27 +41,27 @@ type AgentInterface interface {
 	ListProxyConfigs() []*model.ProxyConfig
 }
 
-type proxyConfig struct {
+type ProxyConfig struct {
 	*model.ProxyConfig
 	acl         *util.WhiteList
 	joinedConns *conn.JoinedConnList
 	closeChan   chan struct{}
 }
 
-func (c *proxyConfig) AddNetworkFlow(remoteToLocalBytes, localToRemoteBytes uint64) {
+func (c *ProxyConfig) AddNetworkFlow(remoteToLocalBytes, localToRemoteBytes uint64) {
 	atomic.AddUint64(&c.NetworkFlowLocalToRemoteInBytes, localToRemoteBytes)
 	atomic.AddUint64(&c.NetworkFlowRemoteToLocalInBytes, remoteToLocalBytes)
 }
 
-func (c *proxyConfig) AddConnectCount(nums uint64) {
+func (c *ProxyConfig) AddConnectCount(nums uint64) {
 	atomic.AddUint64(&c.ProxyConnectCount, nums)
 }
 
-func (c *proxyConfig) AddConnectRejectedCount(nums uint64) {
+func (c *ProxyConfig) AddConnectRejectedCount(nums uint64) {
 	atomic.AddUint64(&c.ProxyConnectRejectCount, nums)
 }
 
-func (c *proxyConfig) GetCurrentConnectionCount() int {
+func (c *ProxyConfig) GetCurrentConnectionCount() int {
 	return c.joinedConns.Count()
 
 }
@@ -70,11 +70,11 @@ type Agent struct {
 	Id               string
 	version          string
 	RemoteAddr       net.Addr
-	AdminConn        *conn.BaseConn
-	ProxyConfigs     map[string]*proxyConfig
+	adminConn        *conn.WrappedConn
+	ProxyConfigs     map[string]*ProxyConfig
 	proxyConfigMutex sync.Mutex
-	proxyConfigChan  chan *proxyConfig
-	chanProxyConns   map[string]chan *conn.BaseConn
+	proxyConfigChan  chan *ProxyConfig
+	chanProxyConns   map[string]chan *conn.WrappedConn
 	errChan          chan error
 	CloseChan        chan struct{}
 	joinedConns      *conn.JoinedConnList
@@ -86,26 +86,29 @@ func NewAgentInfo(agentId string, c net.Conn, errChan chan error) *Agent {
 		Id:              agentId,
 		version:         model.AnywhereVersion,
 		RemoteAddr:      c.RemoteAddr(),
-		AdminConn:       conn.NewBaseConn(c),
-		ProxyConfigs:    make(map[string]*proxyConfig, 0),
-		chanProxyConns:  make(map[string]chan *conn.BaseConn, 5),
-		proxyConfigChan: make(chan *proxyConfig, 0),
+		adminConn:       conn.NewBaseConn(c),
+		ProxyConfigs:    make(map[string]*ProxyConfig, 0),
+		chanProxyConns:  make(map[string]chan *conn.WrappedConn, 5),
+		proxyConfigChan: make(chan *ProxyConfig, 0),
 		errChan:         errChan,
 		CloseChan:       make(chan struct{}, 0),
 		joinedConns:     conn.NewJoinedConnList(),
 	}
-	go a.ProxyConfigHandleLoop()
+	go a.proxyConfigHandleLoop()
+	go a.handleAdminConnection()
 	return a
 }
+
 func (a *Agent) Info() *model.AgentInfoInServer {
 	return &model.AgentInfoInServer{
 		Id:               a.Id,
 		RemoteAddr:       a.RemoteAddr.String(),
-		LastAckRcv:       a.AdminConn.LastAckRcvTime.Format("2006-01-02 15:04:05"),
-		LastAckSend:      a.AdminConn.LastAckSendTime.Format("2006-01-02 15:04:05"),
+		LastAckRcv:       a.adminConn.LastAckRcvTime.Format("2006-01-02 15:04:05"),
+		LastAckSend:      a.adminConn.LastAckSendTime.Format("2006-01-02 15:04:05"),
 		ProxyConfigCount: a.GetProxyConfigCount(),
 	}
 }
+
 func (a *Agent) GetProxyConfigCount() int {
 	a.proxyConfigMutex.Lock()
 	defer a.proxyConfigMutex.Unlock()
@@ -137,8 +140,10 @@ func (a *Agent) ListProxyConfigs() []*model.ProxyConfig {
 }
 
 func (a *Agent) ResetAdminConn(c net.Conn) {
-	a.AdminConn = conn.NewBaseConn(c)
+	a.adminConn.ResetConn(c)
+	go a.handleAdminConnection()
 }
+
 func (a *Agent) AddProxyConfig(config *model.ProxyConfig) error {
 	h := log.NewHeader("AddProxyConfig")
 	if _, exist := a.ProxyConfigs[config.LocalAddr]; exist {
@@ -148,7 +153,7 @@ func (a *Agent) AddProxyConfig(config *model.ProxyConfig) error {
 	defer a.proxyConfigMutex.Unlock()
 	log.Infof(h, "adding proxy config: %v", config)
 	closeChan := make(chan struct{}, 0)
-	pConfig := &proxyConfig{
+	pConfig := &ProxyConfig{
 		ProxyConfig: config,
 		closeChan:   closeChan,
 	}
@@ -170,9 +175,9 @@ func (a *Agent) RemoveProxyConfig(localAddr string) error {
 	return nil
 }
 
-func (a *Agent) PutProxyConn(proxyAddr string, c *conn.BaseConn) error {
+func (a *Agent) PutProxyConn(proxyAddr string, c *conn.WrappedConn) error {
 	if _, ok := a.chanProxyConns[proxyAddr]; !ok {
-		a.chanProxyConns[proxyAddr] = make(chan *conn.BaseConn, AGENTPROXYCONNBUFFER)
+		a.chanProxyConns[proxyAddr] = make(chan *conn.WrappedConn, AGENTPROXYCONNBUFFER)
 	}
 	select {
 	case a.chanProxyConns[proxyAddr] <- c:
@@ -184,10 +189,10 @@ func (a *Agent) PutProxyConn(proxyAddr string, c *conn.BaseConn) error {
 	}
 }
 
-func (a *Agent) GetProxyConn(proxyAddr string) (*conn.BaseConn, error) {
+func (a *Agent) GetProxyConn(proxyAddr string) (*conn.WrappedConn, error) {
 	h := log.NewHeader("GetProxyConn")
 	if _, ok := a.chanProxyConns[proxyAddr]; !ok {
-		a.chanProxyConns[proxyAddr] = make(chan *conn.BaseConn, AGENTPROXYCONNBUFFER)
+		a.chanProxyConns[proxyAddr] = make(chan *conn.WrappedConn, AGENTPROXYCONNBUFFER)
 	}
 	for i := 0; i < OPERATIONRETRYCOUNT; i++ {
 
@@ -251,27 +256,27 @@ func (a *Agent) AddProxyConfigWhiteListConfig(localAddr, whiteCidrs string) erro
 
 func (a *Agent) requestNewProxyConn(localAddr string) {
 	h := log.NewHeader("requestNewProxyConn")
-	if err := a.AdminConn.Send(model.NewTunnelBeginMsg(a.Id, localAddr)); err != nil {
+	if err := a.adminConn.Send(model.NewTunnelBeginMsg(a.Id, localAddr)); err != nil {
 		errMsg := fmt.Errorf("agent %v request for new proxy conn error %v", a.Id, err)
 		log.Errorf(h, "%v", err)
 		a.errChan <- errMsg
 	}
 }
 
-func (a *Agent) ProxyConfigHandleLoop() {
+func (a *Agent) proxyConfigHandleLoop() {
 	h := log.NewHeader("proxyConfigHandleLoop")
-	log.Infof(h, "started loop for agent %v, addr %v", a.Id, a.AdminConn.RemoteAddr())
+	log.Infof(h, "started loop for agent %v, addr %v", a.Id, a.adminConn.GetRemoteAddr())
 	go func() {
 		<-a.CloseChan
 		close(a.proxyConfigChan)
 	}()
-	defer log.Infof(h, "stopped loop for agent %v, %v", a.Id, a.AdminConn.RemoteAddr())
+	defer log.Infof(h, "stopped loop for agent %v, %v", a.Id, a.adminConn.GetRemoteAddr())
 	for p := range a.proxyConfigChan {
 		go a.proxyConfigHandler(p, h)
 	}
 }
 
-func (a *Agent) proxyConfigHandler(config *proxyConfig, h *log.Header) {
+func (a *Agent) proxyConfigHandler(config *ProxyConfig, h *log.Header) {
 	ln, err := util.ListenTcp("0.0.0.0:" + strconv.Itoa(config.RemotePort))
 	if err != nil {
 		errMsg := fmt.Errorf("agent %v proxyConfigHandler got error %v", a.Id, err)
@@ -282,7 +287,7 @@ func (a *Agent) proxyConfigHandler(config *proxyConfig, h *log.Header) {
 	go a.handelTunnelConnection(ln, config)
 }
 
-func (a *Agent) handelTunnelConnection(ln *net.TCPListener, config *proxyConfig) {
+func (a *Agent) handelTunnelConnection(ln *net.TCPListener, config *ProxyConfig) {
 	h := log.NewHeader(fmt.Sprintf("tunnel_%v_handler", config.LocalAddr))
 	closeFlag := false
 	go func() {
@@ -337,7 +342,7 @@ func (a *Agent) handelProxyConnection(c net.Conn, localAddr string, fnOnEnd func
 		return
 	}
 	idx := a.joinedConns.Add(conn.NewBaseConn(c), dst)
-	localToRemoteBytes, remoteToLocalBytes := conn.JoinConn(dst.Conn, c)
+	localToRemoteBytes, remoteToLocalBytes := conn.JoinConn(dst.GetConn(), c)
 	fnOnEnd(localToRemoteBytes, remoteToLocalBytes)
 	if err := a.joinedConns.Remove(idx); err != nil {
 		log.Errorf(h, "remove conn from list error: %v", err)
@@ -348,35 +353,43 @@ func (a *Agent) handelProxyConnection(c net.Conn, localAddr string, fnOnEnd func
 
 func (a *Agent) handleAdminConnection() {
 	h := log.NewHeader("handleAdminConnection")
-	if a.AdminConn == nil {
-		log.Errorf(h, "agent %v admin connection is nil, skip handle loop", a.Id)
+	if !a.adminConn.IsValid() {
+		log.Errorf(h, "agent %v admin connection is invalid, skip handle loop", a.Id)
 		return
 	}
+	defer func() {
+		// handleAdminConnection will not exit in normal
+		// when handleAdminConnection there is always error happen.
+		// so we need close adminConn and wait client reconnect.
+		a.adminConn.Close()
+	}()
 	msg := &model.RequestMsg{}
 	for {
-		if err := a.AdminConn.Receive(&msg); err != nil {
-			log.Errorf(h, "receive from agent %v admin conn error: %v, wait client reconnecting", a.Id, err)
-			_ = a.AdminConn.Close()
-			return
+		if err := a.adminConn.Receive(&msg); err != nil {
+			if err == conn.ErrNilConn {
+				log.Errorf(h, "receive from agent %v admin conn error: %v, wait client reconnecting", a.Id, err)
+			} else {
+				log.Errorf(h, "receive from agent %v admin conn error: %v, will close this connection.", a.Id, err)
+				_ = a.adminConn.Close()
+			}
+			//TODO: make this configurable
+			time.Sleep(5 * time.Second)
 		}
 		switch msg.ReqType {
 		case model.PkgReqHeartBeatPing:
 			m, err := model.ParseHeartBeatPkg(msg.Message)
 			if err != nil {
 				log.Errorf(h, "got corrupted heartbeat ping packet from agent %v admin conn, will close it", a.Id)
-				_ = a.AdminConn.Close()
 				return
 			}
-			if err := a.AdminConn.Send(model.NewHeartBeatPongMsg(a.AdminConn, a.Id)); err != nil {
+			if err := a.adminConn.Send(model.NewHeartBeatPongMsg(a.adminConn.GetConn(), a.Id)); err != nil {
 				log.Errorf(h, "send pong msg to %v admin conn error, will close it", a.Id)
-				_ = a.AdminConn.Close()
-				return
+			} else {
+				a.adminConn.SetAck(m.SendTime, time.Now())
 			}
-			a.AdminConn.SetAck(m.SendTime, time.Now())
+
 		default:
 			log.Errorf(h, "got unknown ReqType: %v ,body: %v, will close admin conn", msg.ReqType, msg.Message)
-			_ = a.AdminConn.Close()
-			return
 		}
 	}
 }

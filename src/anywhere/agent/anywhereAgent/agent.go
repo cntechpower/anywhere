@@ -15,7 +15,7 @@ type Agent struct {
 	id              string
 	addr            *net.TCPAddr
 	credential      *_tls.Config
-	adminConn       *conn.BaseConn
+	adminConn       *conn.WrappedConn
 	joinedConns     *conn.JoinedConnList
 	version         string
 	status          string
@@ -87,8 +87,8 @@ func (a *Agent) FlushJoinedConns() {
 func (a *Agent) GetStatus() model.AgentInfoInAgent {
 	return model.AgentInfoInAgent{
 		Id:          a.id,
-		LocalAddr:   a.adminConn.LocalAddr().String(),
-		ServerAddr:  a.adminConn.RemoteAddr().String(),
+		LocalAddr:   a.adminConn.GetLocalAddr(),
+		ServerAddr:  a.adminConn.GetRemoteAddr(),
 		LastAckSend: a.lastAckSendTime.Format("2006-01-02 15:04:05"),
 		LastAckRcv:  a.lastAckRcvTime.Format("2006-01-02 15:04:05"),
 	}

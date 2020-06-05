@@ -4,8 +4,10 @@ import (
 	"anywhere/conn"
 	"anywhere/log"
 	"anywhere/model"
+	"anywhere/server/agent"
 	"anywhere/util"
 	_tls "crypto/tls"
+	"encoding/json"
 	"fmt"
 	"net"
 	"sync"
@@ -16,13 +18,13 @@ type Server struct {
 	serverAddr                       *net.TCPAddr
 	credential                       *_tls.Config
 	listener                         net.Listener
-	agents                           map[string]AgentInterface
+	agents                           map[string]agent.Interface
 	agentsRwMutex                    sync.RWMutex
 	ExitChan                         chan error
 	ErrChan                          chan error
 	statusCache                      model.ServerSummary
-	networkFlowSortedProxyConfigList []*proxyConfig
-	rejectCountSortedProxyConfigList []*proxyConfig
+	networkFlowSortedProxyConfigList []*agent.ProxyConfig
+	rejectCountSortedProxyConfigList []*agent.ProxyConfig
 }
 
 var serverInstance *Server
@@ -39,7 +41,7 @@ func InitServerInstance(serverId string, port int) *Server {
 	serverInstance = &Server{
 		serverId:      serverId,
 		serverAddr:    addr,
-		agents:        make(map[string]AgentInterface, 0),
+		agents:        make(map[string]agent.Interface, 0),
 		agentsRwMutex: sync.RWMutex{},
 		ExitChan:      make(chan error, 1),
 		ErrChan:       make(chan error, 10000),
@@ -91,6 +93,48 @@ func (s *Server) Start() {
 
 }
 
+func (s *Server) handleNewConnection(c net.Conn) {
+	h := log.NewHeader("handleNewAgentConn")
+	var msg model.RequestMsg
+	d := json.NewDecoder(c)
+
+	if err := d.Decode(&msg); err != nil {
+		log.Errorf(h, "unmarshal init pkg from %s error: %v", c.RemoteAddr(), err)
+		_ = c.Close()
+		return
+	}
+	switch msg.ReqType {
+	case model.PkgControlConnRegister:
+		m, _ := model.ParseControlRegisterPkg(msg.Message)
+		if isUpdate := s.RegisterAgent(m.AgentId, c); isUpdate {
+			log.Errorf(h, "rebuild control connection for agent: %v", m.AgentId)
+		} else {
+			log.Infof(h, "accept control connection from agent: %v", m.AgentId)
+		}
+	case model.PkgTunnelBegin:
+		m, err := model.ParseTunnelBeginPkg(msg.Message)
+		if err != nil {
+			log.Errorf(h, "get corrupted PkgTunnelBegin packet from %v", c.RemoteAddr())
+			_ = c.Close()
+			return
+		}
+		if !s.isAgentExist(m.AgentId) {
+			log.Errorf(h, "got data conn register pkg from unknown agent %v", m.AgentId)
+			_ = c.Close()
+		} else {
+			log.Infof(h, "add data conn for %v from agent %v", m.LocalAddr, m.AgentId)
+			if err := s.agents[m.AgentId].PutProxyConn(m.LocalAddr, conn.NewBaseConn(c)); err != nil {
+				log.Errorf(h, "put proxy conn to agent error: %v", err)
+			}
+		}
+	default:
+		log.Errorf(h, "unknown msg type %v from %v", msg.ReqType, c.RemoteAddr())
+		_ = c.Close()
+
+	}
+
+}
+
 func (s *Server) isAgentExist(id string) bool {
 	if _, ok := s.agents[id]; ok {
 		return true
@@ -126,7 +170,7 @@ func (s *Server) RegisterAgent(agentId string, c net.Conn) (isUpdate bool) {
 		//close(s.agents[info.Id].CloseChan)
 		s.agents[agentId].ResetAdminConn(c)
 	} else {
-		s.agents[agentId] = NewAgentInfo(agentId, c, make(chan error, 99))
+		s.agents[agentId] = agent.NewAgentInfo(agentId, c, make(chan error, 99))
 	}
 
 	return isUpdate
