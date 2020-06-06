@@ -122,7 +122,7 @@ func (a *Agent) ListProxyConfigs() []*model.ProxyConfig {
 		return nil
 	}
 
-	res := make([]*model.ProxyConfig, len(a.ProxyConfigs))
+	res := make([]*model.ProxyConfig, 0)
 	for _, config := range a.ProxyConfigs {
 		res = append(res, &model.ProxyConfig{
 			AgentId:                         config.AgentId,
