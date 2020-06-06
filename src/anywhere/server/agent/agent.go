@@ -385,6 +385,7 @@ func (a *Agent) handleAdminConnection() {
 			if err := a.adminConn.Send(model.NewHeartBeatPongMsg(a.adminConn.GetConn(), a.Id)); err != nil {
 				log.Errorf(h, "send pong msg to %v admin conn error, will close it", a.Id)
 			} else {
+
 				a.adminConn.SetAck(m.SendTime, time.Now())
 			}
 

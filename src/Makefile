@@ -58,6 +58,10 @@ docker_test_clean:
 
 vet:
 	GOPATH=${GOPATH} go vet ./anywhere/...
+
+unittest:
+	GOPATH=${GOPATH} go test -count=1 -v  ./anywhere/...
+
 sonar:
 	sonar-scanner \
 		  -Dsonar.projectKey=anywhere \

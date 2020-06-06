@@ -23,8 +23,9 @@ type Server struct {
 	ExitChan                         chan error
 	ErrChan                          chan error
 	statusCache                      model.ServerSummary
-	networkFlowSortedProxyConfigList []*agent.ProxyConfig
-	rejectCountSortedProxyConfigList []*agent.ProxyConfig
+	allProxyConfigList               []*model.ProxyConfig
+	networkFlowSortedProxyConfigList []*model.ProxyConfig
+	rejectCountSortedProxyConfigList []*model.ProxyConfig
 }
 
 var serverInstance *Server
@@ -215,24 +216,4 @@ func (s *Server) UpdateProxyConfigWhiteList(agentId, localAddr, whiteCidrs strin
 		return fmt.Errorf("no such agent id %v", agentId)
 	}
 	return s.agents[agentId].UpdateProxyConfigWhiteListConfig(localAddr, whiteCidrs, whiteListEnable)
-}
-
-func (s *Server) RefreshSummary() {
-	s.agentsRwMutex.Lock()
-	for _, agent := range s.agents {
-		configs := agent.ListProxyConfigs()
-		s.statusCache.ProxyConfigTotalCount += uint64(len(configs))
-		s.statusCache.AgentTotalCount++
-		for _, config := range configs {
-			s.statusCache.NetworkFlowTotalCountInBytes += config.NetworkFlowRemoteToLocalInBytes
-			s.statusCache.NetworkFlowTotalCountInBytes += config.NetworkFlowLocalToRemoteInBytes
-			s.statusCache.ProxyConnectRejectCount += config.ProxyConnectRejectCount
-			s.statusCache.ProxyConnectTotalCount += config.ProxyConnectCount
-		}
-	}
-	s.agentsRwMutex.Unlock()
-}
-
-func (s *Server) GetSummary() model.ServerSummary {
-	return s.statusCache
 }
