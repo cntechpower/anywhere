@@ -25,7 +25,7 @@ type PostV1ProxyAddOK struct {
 	/*
 	  In: Body
 	*/
-	Payload *models.ProxyConfigInfo `json:"body,omitempty"`
+	Payload *models.ProxyConfig `json:"body,omitempty"`
 }
 
 // NewPostV1ProxyAddOK creates PostV1ProxyAddOK with default headers values
@@ -35,13 +35,13 @@ func NewPostV1ProxyAddOK() *PostV1ProxyAddOK {
 }
 
 // WithPayload adds the payload to the post v1 proxy add o k response
-func (o *PostV1ProxyAddOK) WithPayload(payload *models.ProxyConfigInfo) *PostV1ProxyAddOK {
+func (o *PostV1ProxyAddOK) WithPayload(payload *models.ProxyConfig) *PostV1ProxyAddOK {
 	o.Payload = payload
 	return o
 }
 
 // SetPayload sets the payload to the post v1 proxy add o k response
-func (o *PostV1ProxyAddOK) SetPayload(payload *models.ProxyConfigInfo) {
+func (o *PostV1ProxyAddOK) SetPayload(payload *models.ProxyConfig) {
 	o.Payload = payload
 }
 

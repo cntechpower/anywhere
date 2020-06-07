@@ -2,55 +2,92 @@ package conn
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
 	"sync"
 	"time"
 )
 
-type BaseConn struct {
-	net.Conn
+var ErrNilConn = fmt.Errorf("empty net.Conn")
+
+type WrappedConn struct {
+	conn            net.Conn
 	statusMutex     sync.RWMutex
 	LastAckSendTime time.Time
 	LastAckRcvTime  time.Time
 }
 
-func (c *BaseConn) SetAck(sendTime, rcvTime time.Time) {
+func (c *WrappedConn) SetAck(sendTime, rcvTime time.Time) {
 	c.statusMutex.Lock()
 	defer c.statusMutex.Unlock()
 	c.LastAckSendTime = sendTime
 	c.LastAckRcvTime = rcvTime
 }
 
-func (c *BaseConn) Send(m interface{}) error {
+func (c *WrappedConn) Send(m interface{}) error {
 	p, err := json.Marshal(m)
 	if err != nil {
 		return err
 	}
-	if _, err := c.Write(p); err != nil {
+	if _, err := c.conn.Write(p); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *BaseConn) Receive(rsp interface{}) error {
-	d := json.NewDecoder(c)
+func (c *WrappedConn) Receive(rsp interface{}) error {
+	if c.conn == nil {
+		return ErrNilConn
+	}
+	d := json.NewDecoder(c.conn)
 	if err := d.Decode(&rsp); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *BaseConn) GetRemoteAddr() string {
-	return c.RemoteAddr().String()
+func (c *WrappedConn) Close() error {
+	if c.conn == nil {
+		return nil
+	}
+	err := c.conn.Close()
+	c.conn.Close()
+
+	// set conn to nil because net.Conn do not have a isClose flag.
+	// we used conn == nil to validate conn
+	c.conn = nil
+	return err
 }
 
-func (c *BaseConn) GetLocalAddr() string {
-	return c.LocalAddr().String()
+func (c *WrappedConn) GetRemoteAddr() string {
+	if c.conn == nil {
+		return ""
+	}
+	return c.conn.RemoteAddr().String()
 }
 
-func NewBaseConn(c net.Conn) *BaseConn {
-	return &BaseConn{
-		Conn:            c,
+func (c *WrappedConn) GetLocalAddr() string {
+	if c.conn == nil {
+		return ""
+	}
+	return c.conn.LocalAddr().String()
+}
+
+func (c *WrappedConn) IsValid() bool {
+	return c.conn != nil
+}
+
+func (c *WrappedConn) ResetConn(conn net.Conn) {
+	c.conn = conn
+}
+
+func (c *WrappedConn) GetConn() net.Conn {
+	return c.conn
+}
+
+func NewBaseConn(c net.Conn) *WrappedConn {
+	return &WrappedConn{
+		conn:            c,
 		statusMutex:     sync.RWMutex{},
 		LastAckSendTime: time.Time{},
 		LastAckRcvTime:  time.Time{},

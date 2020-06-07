@@ -23,8 +23,8 @@ rpc:
 	protoc --go_out=plugins=grpc:. anywhere/server/rpc/definitions/*.proto
 	protoc --go_out=plugins=grpc:. anywhere/agent/rpc/definitions/*.proto
 api:
-	GOPATH=${GOPATH} swagger generate server -t anywhere/server/restapi/api --exclude-main -f anywhere/server/restapi/definition/anywhere.yml
-	GOPATH=${GOPATH} swagger generate client -t anywhere/test  -f anywhere/server/restapi/definition/anywhere.yml
+	GOPATH=${GOPATH} swagger23 generate server -t anywhere/server/restapi/api --exclude-main -f anywhere/server/restapi/definition/anywhere.yml
+	GOPATH=${GOPATH} swagger23 generate client -t anywhere/test  -f anywhere/server/restapi/definition/anywhere.yml
 build_server:
 	mkdir -p bin/
 	GOPATH=${GOPATH} go build ${LDFLAGS} -o bin/anywhered anywhere/server/*.go
@@ -58,6 +58,10 @@ docker_test_clean:
 
 vet:
 	GOPATH=${GOPATH} go vet ./anywhere/...
+
+unittest:
+	GOPATH=${GOPATH} go test -count=1 -v  ./anywhere/...
+
 sonar:
 	sonar-scanner \
 		  -Dsonar.projectKey=anywhere \

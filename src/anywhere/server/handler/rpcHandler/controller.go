@@ -1,6 +1,7 @@
 package rpcHandler
 
 import (
+	"anywhere/log"
 	"anywhere/server/anywhereServer"
 	pb "anywhere/server/rpc/definitions"
 	"anywhere/util"
@@ -40,7 +41,15 @@ func StartRpcServer(s *anywhereServer.Server, addr string, errChan chan error) {
 }
 
 func NewClient() (pb.AnywhereServerClient, error) {
-	cc, err := grpc.Dial(grpcAddress, grpc.WithInsecure())
+	h := log.NewHeader("grpc")
+	cc, err := grpc.Dial(grpcAddress, grpc.WithInsecure(),
+		grpc.WithUnaryInterceptor(func(ctx context.Context, method string, req, reply interface{},
+			cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+			log.Infof(h, "calling %v", method)
+			err := invoker(ctx, method, req, reply, cc, opts...)
+			log.Infof(h, "called %v, error: %v", method, err)
+			return err
+		}))
 	if err != nil {
 		return nil, err
 	}

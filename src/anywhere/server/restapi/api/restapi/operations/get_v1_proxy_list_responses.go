@@ -25,7 +25,7 @@ type GetV1ProxyListOK struct {
 	/*
 	  In: Body
 	*/
-	Payload []*models.ProxyConfigInfo `json:"body,omitempty"`
+	Payload []*models.ProxyConfig `json:"body,omitempty"`
 }
 
 // NewGetV1ProxyListOK creates GetV1ProxyListOK with default headers values
@@ -35,13 +35,13 @@ func NewGetV1ProxyListOK() *GetV1ProxyListOK {
 }
 
 // WithPayload adds the payload to the get v1 proxy list o k response
-func (o *GetV1ProxyListOK) WithPayload(payload []*models.ProxyConfigInfo) *GetV1ProxyListOK {
+func (o *GetV1ProxyListOK) WithPayload(payload []*models.ProxyConfig) *GetV1ProxyListOK {
 	o.Payload = payload
 	return o
 }
 
 // SetPayload sets the payload to the get v1 proxy list o k response
-func (o *GetV1ProxyListOK) SetPayload(payload []*models.ProxyConfigInfo) {
+func (o *GetV1ProxyListOK) SetPayload(payload []*models.ProxyConfig) {
 	o.Payload = payload
 }
 
@@ -52,7 +52,7 @@ func (o *GetV1ProxyListOK) WriteResponse(rw http.ResponseWriter, producer runtim
 	payload := o.Payload
 	if payload == nil {
 		// return empty array
-		payload = make([]*models.ProxyConfigInfo, 0, 50)
+		payload = make([]*models.ProxyConfig, 0, 50)
 	}
 
 	if err := producer.Produce(rw, payload); err != nil {

@@ -4,25 +4,29 @@ import (
 	"anywhere/conn"
 	"anywhere/log"
 	"anywhere/model"
+	"anywhere/server/agent"
 	"anywhere/util"
 	_tls "crypto/tls"
+	"encoding/json"
 	"fmt"
 	"net"
 	"sync"
 )
 
 type Server struct {
-	serverId      string
-	serverAddr    *net.TCPAddr
-	credential    *_tls.Config
-	listener      net.Listener
-	proxyListener []net.Listener
-	proxyMutex    sync.Mutex
-	httpMutex     sync.Mutex
-	agents        map[string]*Agent
-	agentsRwMutex sync.RWMutex
-	ExitChan      chan error
-	ErrChan       chan error
+	serverId                         string
+	serverAddr                       *net.TCPAddr
+	credential                       *_tls.Config
+	listener                         net.Listener
+	agents                           map[string]agent.Interface
+	agentsRwMutex                    sync.RWMutex
+	ExitChan                         chan error
+	ErrChan                          chan error
+	statusRwMutex                    sync.RWMutex
+	statusCache                      model.ServerSummary
+	allProxyConfigList               []*model.ProxyConfig
+	networkFlowSortedProxyConfigList []*model.ProxyConfig
+	rejectCountSortedProxyConfigList []*model.ProxyConfig
 }
 
 var serverInstance *Server
@@ -39,12 +43,11 @@ func InitServerInstance(serverId string, port int) *Server {
 	serverInstance = &Server{
 		serverId:      serverId,
 		serverAddr:    addr,
-		proxyMutex:    sync.Mutex{},
-		httpMutex:     sync.Mutex{},
-		agents:        make(map[string]*Agent, 0),
+		agents:        make(map[string]agent.Interface, 0),
 		agentsRwMutex: sync.RWMutex{},
 		ExitChan:      make(chan error, 1),
 		ErrChan:       make(chan error, 10000),
+		statusCache:   model.ServerSummary{},
 	}
 	return serverInstance
 }
@@ -77,6 +80,7 @@ func (s *Server) Start() {
 		panic(err)
 	}
 	s.listener = ln
+	go s.RefreshSummaryLoop()
 
 	go func() {
 		for {
@@ -92,6 +96,48 @@ func (s *Server) Start() {
 
 }
 
+func (s *Server) handleNewConnection(c net.Conn) {
+	h := log.NewHeader("handleNewAgentConn")
+	var msg model.RequestMsg
+	d := json.NewDecoder(c)
+
+	if err := d.Decode(&msg); err != nil {
+		log.Errorf(h, "unmarshal init pkg from %s error: %v", c.RemoteAddr(), err)
+		_ = c.Close()
+		return
+	}
+	switch msg.ReqType {
+	case model.PkgControlConnRegister:
+		m, _ := model.ParseControlRegisterPkg(msg.Message)
+		if isUpdate := s.RegisterAgent(m.AgentId, c); isUpdate {
+			log.Errorf(h, "rebuild control connection for agent: %v", m.AgentId)
+		} else {
+			log.Infof(h, "accept control connection from agent: %v", m.AgentId)
+		}
+	case model.PkgTunnelBegin:
+		m, err := model.ParseTunnelBeginPkg(msg.Message)
+		if err != nil {
+			log.Errorf(h, "get corrupted PkgTunnelBegin packet from %v", c.RemoteAddr())
+			_ = c.Close()
+			return
+		}
+		if !s.isAgentExist(m.AgentId) {
+			log.Errorf(h, "got data conn register pkg from unknown agent %v", m.AgentId)
+			_ = c.Close()
+		} else {
+			log.Infof(h, "add data conn for %v from agent %v", m.LocalAddr, m.AgentId)
+			if err := s.agents[m.AgentId].PutProxyConn(m.LocalAddr, conn.NewBaseConn(c)); err != nil {
+				log.Errorf(h, "put proxy conn to agent error: %v", err)
+			}
+		}
+	default:
+		log.Errorf(h, "unknown msg type %v from %v", msg.ReqType, c.RemoteAddr())
+		_ = c.Close()
+
+	}
+
+}
+
 func (s *Server) isAgentExist(id string) bool {
 	if _, ok := s.agents[id]; ok {
 		return true
@@ -104,45 +150,31 @@ func (s *Server) ListAgentInfo() []*model.AgentInfoInServer {
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
 	for _, agent := range s.agents {
-		res = append(res, &model.AgentInfoInServer{
-			Id:               agent.Id,
-			RemoteAddr:       agent.RemoteAddr.String(),
-			LastAckRcv:       agent.AdminConn.LastAckRcvTime.Format("2006-01-02 15:04:05"),
-			LastAckSend:      agent.AdminConn.LastAckSendTime.Format("2006-01-02 15:04:05"),
-			ProxyConfigCount: len(agent.ProxyConfigs),
-		})
+		res = append(res, agent.Info())
 	}
 	return res
 }
 
 func (s *Server) ListProxyConfigs() []*model.ProxyConfig {
-	res := make([]*model.ProxyConfig, 0)
+	// we assume that we had 100 proxy config.
+	res := make([]*model.ProxyConfig, 0, 100)
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
 	for _, agent := range s.agents {
-		for _, config := range agent.ProxyConfigs {
-			res = append(res, &model.ProxyConfig{
-				AgentId:       agent.Id,
-				RemotePort:    config.RemotePort,
-				LocalAddr:     config.LocalAddr,
-				IsWhiteListOn: config.IsWhiteListOn,
-				WhiteCidrList: config.WhiteCidrList,
-			})
-		}
+		res = append(res, agent.ListProxyConfigs()...)
 	}
 	return res
 }
 
-func (s *Server) RegisterAgent(info *Agent) (isUpdate bool) {
+func (s *Server) RegisterAgent(agentId string, c net.Conn) (isUpdate bool) {
 	s.agentsRwMutex.Lock()
 	defer s.agentsRwMutex.Unlock()
-	isUpdate = s.isAgentExist(info.Id)
+	isUpdate = s.isAgentExist(agentId)
 	if isUpdate {
-		//close(s.agents[info.Id].CloseChan)
-		s.agents[info.Id].AdminConn = info.AdminConn
+		//close(s.agents[info.id].CloseChan)
+		s.agents[agentId].ResetAdminConn(c)
 	} else {
-		s.agents[info.Id] = info
-		go s.agents[info.Id].ProxyConfigHandleLoop()
+		s.agents[agentId] = agent.NewAgentInfo(agentId, c, make(chan error, 99))
 	}
 
 	return isUpdate
@@ -154,11 +186,11 @@ func (s *Server) ListJoinedConns(agentId string) (map[string][]*conn.JoinedConnL
 		if !s.isAgentExist(agentId) {
 			return nil, fmt.Errorf("no such agent id %v", agentId)
 		}
-		res[agentId] = s.agents[agentId].joinedConns.List()
+		res[agentId] = s.agents[agentId].ListJoinedConns()
 		return res, nil
 	}
 	for agentId, agent := range s.agents {
-		res[agentId] = agent.joinedConns.List()
+		res[agentId] = agent.ListJoinedConns()
 	}
 	return res, nil
 }
@@ -170,21 +202,21 @@ func (s *Server) KillJoinedConnById(agentId string, id int) error {
 	if !s.isAgentExist(agentId) {
 		return fmt.Errorf("no such agent id %v", agentId)
 	}
-	return s.agents[agentId].joinedConns.KillById(id)
+	return s.agents[agentId].KillJoinedConnById(id)
 }
 
 func (s *Server) FlushJoinedConns() {
 	for _, agent := range s.agents {
-		agent.joinedConns.Flush()
+		agent.FlushJoinedConns()
 	}
 }
 
-func (s *Server) UpdateProxyConfigWhiteList(agentId, localAddr, whiteCidrs string, whiteListEnable bool) error {
+func (s *Server) UpdateProxyConfigWhiteList(remotePort int, agentId, localAddr, whiteCidrs string, whiteListEnable bool) error {
 	if agentId == "" {
 		return fmt.Errorf("agent id is empty")
 	}
 	if !s.isAgentExist(agentId) {
 		return fmt.Errorf("no such agent id %v", agentId)
 	}
-	return s.agents[agentId].UpdateProxyConfigWhiteListConfig(localAddr, whiteCidrs, whiteListEnable)
+	return s.agents[agentId].UpdateProxyConfigWhiteListConfig(remotePort, localAddr, whiteCidrs, whiteListEnable)
 }

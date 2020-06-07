@@ -51,14 +51,14 @@ func NewGetV1ProxyListOK() *GetV1ProxyListOK {
 A JSON array of user names
 */
 type GetV1ProxyListOK struct {
-	Payload []*models.ProxyConfigInfo
+	Payload []*models.ProxyConfig
 }
 
 func (o *GetV1ProxyListOK) Error() string {
 	return fmt.Sprintf("[GET /v1/proxy/list][%d] getV1ProxyListOK  %+v", 200, o.Payload)
 }
 
-func (o *GetV1ProxyListOK) GetPayload() []*models.ProxyConfigInfo {
+func (o *GetV1ProxyListOK) GetPayload() []*models.ProxyConfig {
 	return o.Payload
 }
 

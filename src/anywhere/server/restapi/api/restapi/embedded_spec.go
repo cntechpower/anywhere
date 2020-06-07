@@ -101,7 +101,7 @@ func init() {
           "200": {
             "description": "A JSON array of user names",
             "schema": {
-              "$ref": "#/definitions/ProxyConfigInfo"
+              "$ref": "#/definitions/ProxyConfig"
             }
           },
           "default": {
@@ -129,13 +129,20 @@ func init() {
             "name": "local_addr",
             "in": "formData",
             "required": true
+          },
+          {
+            "type": "string",
+            "description": "localAddress",
+            "name": "remote_port",
+            "in": "formData",
+            "required": true
           }
         ],
         "responses": {
           "200": {
             "description": "A JSON array of user names",
             "schema": {
-              "$ref": "#/definitions/ProxyConfigInfo"
+              "$ref": "#/definitions/ProxyConfig"
             }
           },
           "default": {
@@ -156,7 +163,7 @@ func init() {
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/ProxyConfigInfo"
+                "$ref": "#/definitions/ProxyConfig"
               }
             }
           },
@@ -205,7 +212,25 @@ func init() {
           "200": {
             "description": "A JSON array of user names",
             "schema": {
-              "$ref": "#/definitions/ProxyConfigInfo"
+              "$ref": "#/definitions/ProxyConfig"
+            }
+          },
+          "default": {
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
+          }
+        }
+      }
+    },
+    "/v1/summary": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "get anywhere statistic summary",
+            "schema": {
+              "$ref": "#/definitions/SummaryStatistic"
             }
           },
           "default": {
@@ -263,7 +288,7 @@ func init() {
       "description": "Error Template",
       "type": "string"
     },
-    "ProxyConfigInfo": {
+    "ProxyConfig": {
       "description": "proxy config information",
       "type": "object",
       "properties": {
@@ -279,6 +304,18 @@ func init() {
           "description": "localAddress",
           "type": "string"
         },
+        "network_flow_local_to_remote_in_bytes": {
+          "type": "integer"
+        },
+        "network_flow_remote_to_local_in_bytes": {
+          "type": "integer"
+        },
+        "proxy_connect_count": {
+          "type": "integer"
+        },
+        "proxy_connect_reject_count": {
+          "type": "integer"
+        },
         "remote_port": {
           "description": "anywhered server listen addr",
           "type": "integer"
@@ -286,6 +323,42 @@ func init() {
         "whitelist_ips": {
           "description": "whitelist ips",
           "type": "string"
+        }
+      }
+    },
+    "SummaryStatistic": {
+      "description": "SummaryOutput struct",
+      "type": "object",
+      "properties": {
+        "agent_total_count": {
+          "type": "integer"
+        },
+        "current_proxy_connection_count": {
+          "type": "integer"
+        },
+        "network_flow_total_count_in_bytes": {
+          "type": "integer"
+        },
+        "proxy_config_total_count": {
+          "type": "integer"
+        },
+        "proxy_connect_reject_count": {
+          "type": "integer"
+        },
+        "proxy_connect_reject_count_top10": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProxyConfig"
+          }
+        },
+        "proxy_connect_total_count": {
+          "type": "integer"
+        },
+        "proxy_network_flow_top10": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProxyConfig"
+          }
         }
       }
     }
@@ -375,7 +448,7 @@ func init() {
           "200": {
             "description": "A JSON array of user names",
             "schema": {
-              "$ref": "#/definitions/ProxyConfigInfo"
+              "$ref": "#/definitions/ProxyConfig"
             }
           },
           "default": {
@@ -403,13 +476,20 @@ func init() {
             "name": "local_addr",
             "in": "formData",
             "required": true
+          },
+          {
+            "type": "string",
+            "description": "localAddress",
+            "name": "remote_port",
+            "in": "formData",
+            "required": true
           }
         ],
         "responses": {
           "200": {
             "description": "A JSON array of user names",
             "schema": {
-              "$ref": "#/definitions/ProxyConfigInfo"
+              "$ref": "#/definitions/ProxyConfig"
             }
           },
           "default": {
@@ -430,7 +510,7 @@ func init() {
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/ProxyConfigInfo"
+                "$ref": "#/definitions/ProxyConfig"
               }
             }
           },
@@ -479,7 +559,25 @@ func init() {
           "200": {
             "description": "A JSON array of user names",
             "schema": {
-              "$ref": "#/definitions/ProxyConfigInfo"
+              "$ref": "#/definitions/ProxyConfig"
+            }
+          },
+          "default": {
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
+          }
+        }
+      }
+    },
+    "/v1/summary": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "get anywhere statistic summary",
+            "schema": {
+              "$ref": "#/definitions/SummaryStatistic"
             }
           },
           "default": {
@@ -537,7 +635,7 @@ func init() {
       "description": "Error Template",
       "type": "string"
     },
-    "ProxyConfigInfo": {
+    "ProxyConfig": {
       "description": "proxy config information",
       "type": "object",
       "properties": {
@@ -553,6 +651,18 @@ func init() {
           "description": "localAddress",
           "type": "string"
         },
+        "network_flow_local_to_remote_in_bytes": {
+          "type": "integer"
+        },
+        "network_flow_remote_to_local_in_bytes": {
+          "type": "integer"
+        },
+        "proxy_connect_count": {
+          "type": "integer"
+        },
+        "proxy_connect_reject_count": {
+          "type": "integer"
+        },
         "remote_port": {
           "description": "anywhered server listen addr",
           "type": "integer"
@@ -560,6 +670,42 @@ func init() {
         "whitelist_ips": {
           "description": "whitelist ips",
           "type": "string"
+        }
+      }
+    },
+    "SummaryStatistic": {
+      "description": "SummaryOutput struct",
+      "type": "object",
+      "properties": {
+        "agent_total_count": {
+          "type": "integer"
+        },
+        "current_proxy_connection_count": {
+          "type": "integer"
+        },
+        "network_flow_total_count_in_bytes": {
+          "type": "integer"
+        },
+        "proxy_config_total_count": {
+          "type": "integer"
+        },
+        "proxy_connect_reject_count": {
+          "type": "integer"
+        },
+        "proxy_connect_reject_count_top10": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProxyConfig"
+          }
+        },
+        "proxy_connect_total_count": {
+          "type": "integer"
+        },
+        "proxy_network_flow_top10": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProxyConfig"
+          }
         }
       }
     }

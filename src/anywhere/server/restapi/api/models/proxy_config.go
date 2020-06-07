@@ -10,10 +10,10 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ProxyConfigInfo proxy config information
+// ProxyConfig proxy config information
 //
-// swagger:model ProxyConfigInfo
-type ProxyConfigInfo struct {
+// swagger:model ProxyConfig
+type ProxyConfig struct {
 
 	// agent id
 	AgentID string `json:"agent_id,omitempty"`
@@ -24,8 +24,11 @@ type ProxyConfigInfo struct {
 	// localAddress
 	LocalAddr string `json:"local_addr,omitempty"`
 
-	// network flow in mb
-	NetworkFlowInMb int64 `json:"network_flow_in_mb,omitempty"`
+	// network flow local to remote in bytes
+	NetworkFlowLocalToRemoteInBytes int64 `json:"network_flow_local_to_remote_in_bytes,omitempty"`
+
+	// network flow remote to local in bytes
+	NetworkFlowRemoteToLocalInBytes int64 `json:"network_flow_remote_to_local_in_bytes,omitempty"`
 
 	// proxy connect count
 	ProxyConnectCount int64 `json:"proxy_connect_count,omitempty"`
@@ -40,13 +43,13 @@ type ProxyConfigInfo struct {
 	WhitelistIps string `json:"whitelist_ips,omitempty"`
 }
 
-// Validate validates this proxy config info
-func (m *ProxyConfigInfo) Validate(formats strfmt.Registry) error {
+// Validate validates this proxy config
+func (m *ProxyConfig) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *ProxyConfigInfo) MarshalBinary() ([]byte, error) {
+func (m *ProxyConfig) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -54,8 +57,8 @@ func (m *ProxyConfigInfo) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *ProxyConfigInfo) UnmarshalBinary(b []byte) error {
-	var res ProxyConfigInfo
+func (m *ProxyConfig) UnmarshalBinary(b []byte) error {
+	var res ProxyConfig
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

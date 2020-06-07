@@ -38,13 +38,13 @@ func (s *Server) AddProxyConfigToAgentByModel(config *model.ProxyConfig) error {
 	return s.agents[config.AgentId].AddProxyConfig(config)
 }
 
-func (s *Server) RemoveProxyConfigFromAgent(agentId, localAddr string) error {
+func (s *Server) RemoveProxyConfigFromAgent(remotePort int, agentId, localAddr string) error {
 	if !s.isAgentExist(agentId) {
 		return fmt.Errorf("agent %v not exist", agentId)
 	}
 	if err := util.CheckAddrValid(localAddr); err != nil {
 		return fmt.Errorf("invalid localAddr %v, error: %v", localAddr, err)
 	}
-	return s.agents[agentId].RemoveProxyConfig(localAddr)
+	return s.agents[agentId].RemoveProxyConfig(remotePort, localAddr)
 
 }

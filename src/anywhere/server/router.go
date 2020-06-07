@@ -132,28 +132,35 @@ func userLogin(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "login success"})
 }
 
-func startUIAndAPIService(addr, user, pass, totpSecret string, otpEnable bool, errChan chan error, skipLogin bool) {
+func startUIAndAPIService(addr, user, pass, totpSecret string, otpEnable bool, errChan chan error, skipLogin, debug bool) {
 	if err := util.CheckAddrValid(addr); err != nil {
 		errChan <- err
 	}
 	router := gin.New()
-	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
-		Formatter: func(param gin.LogFormatterParams) string {
-			return fmt.Sprintf("[%s] %s \"%s %s %s %d %s \"%s\" %s\"\n",
-				param.TimeStamp.Format(time.RFC3339),
-				param.ClientIP,
-				param.Method,
-				param.Path,
-				param.Request.Proto,
-				param.StatusCode,
-				param.Latency,
-				param.Request.UserAgent(),
-				param.ErrorMessage,
-			)
-		},
-		Output:    nil,
-		SkipPaths: []string{"/react/static"},
-	}))
+	if debug {
+		// running in debug mode, open access log
+		gin.SetMode(gin.DebugMode)
+		router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+			Formatter: func(param gin.LogFormatterParams) string {
+				return fmt.Sprintf("[%s] %s \"%s %s %s %d %s \"%s\" %s\"\n",
+					param.TimeStamp.Format(time.RFC3339),
+					param.ClientIP,
+					param.Method,
+					param.Path,
+					param.Request.Proto,
+					param.StatusCode,
+					param.Latency,
+					param.Request.UserAgent(),
+					param.ErrorMessage,
+				)
+			},
+			Output:    nil,
+			SkipPaths: []string{"/react/static"},
+		}))
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	userValidator = auth.NewUserValidator(user, pass)
 	jwtValidator = auth.NewJwtValidator()
 	totpValidator = auth.NewTOTPValidator(user, totpSecret, otpEnable)

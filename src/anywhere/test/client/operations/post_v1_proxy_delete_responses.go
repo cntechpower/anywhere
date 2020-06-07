@@ -51,20 +51,20 @@ func NewPostV1ProxyDeleteOK() *PostV1ProxyDeleteOK {
 A JSON array of user names
 */
 type PostV1ProxyDeleteOK struct {
-	Payload *models.ProxyConfigInfo
+	Payload *models.ProxyConfig
 }
 
 func (o *PostV1ProxyDeleteOK) Error() string {
 	return fmt.Sprintf("[POST /v1/proxy/delete][%d] postV1ProxyDeleteOK  %+v", 200, o.Payload)
 }
 
-func (o *PostV1ProxyDeleteOK) GetPayload() *models.ProxyConfigInfo {
+func (o *PostV1ProxyDeleteOK) GetPayload() *models.ProxyConfig {
 	return o.Payload
 }
 
 func (o *PostV1ProxyDeleteOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.ProxyConfigInfo)
+	o.Payload = new(models.ProxyConfig)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

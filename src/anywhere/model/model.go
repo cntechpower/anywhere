@@ -3,6 +3,7 @@ package model
 import (
 	"anywhere/util"
 	"fmt"
+	"time"
 )
 
 type AgentInfoInServer struct {
@@ -22,11 +23,15 @@ type AgentInfoInAgent struct {
 }
 
 type ProxyConfig struct {
-	AgentId       string `json:"agent_id"`
-	RemotePort    int    `json:"remote_port"`
-	LocalAddr     string `json:"local_addr"`
-	IsWhiteListOn bool   `json:"is_white_list_enable"`
-	WhiteCidrList string `json:"white_cidr_list"`
+	AgentId                         string `json:"agent_id"`
+	RemotePort                      int    `json:"remote_port"`
+	LocalAddr                       string `json:"local_addr"`
+	IsWhiteListOn                   bool   `json:"is_white_list_enable"`
+	WhiteCidrList                   string `json:"white_cidr_list"`
+	NetworkFlowRemoteToLocalInBytes uint64 `json:"-"`
+	NetworkFlowLocalToRemoteInBytes uint64 `json:"-"`
+	ProxyConnectCount               uint64 `json:"-"`
+	ProxyConnectRejectCount         uint64 `json:"-"`
 }
 
 type GlobalConfig struct {
@@ -39,6 +44,7 @@ type UiConfig struct {
 	IsWebEnable bool   `json:"is_web_enable"`
 	RestAddr    string `json:"rest_api_listen_addr"`
 	WebAddr     string `json:"web_ui_listen_addr"`
+	DebugMode   bool   `json:"debug"`
 }
 
 type SslConfig struct {
@@ -62,6 +68,18 @@ type SystemConfig struct {
 	User     *UserConfig `json:"user_config"`
 }
 
+type ServerSummary struct {
+	AgentTotalCount              uint64
+	CurrentProxyConnectionCount  uint64
+	NetworkFlowTotalCountInBytes uint64
+	ProxyConfigTotalCount        uint64
+	ProxyConnectRejectCountTop10 []*ProxyConfig
+	ProxyConnectTotalCount       uint64
+	ProxyConnectRejectCount      uint64
+	ProxyNetworkFlowTop10        []*ProxyConfig
+	RefreshTime                  time.Time
+}
+
 func NewProxyConfig(agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) (*ProxyConfig, error) {
 
 	if err := util.CheckPortValid(remotePort); err != nil {
@@ -78,4 +96,16 @@ func NewProxyConfig(agentId string, remotePort int, localAddr string, isWhiteLis
 		WhiteCidrList: whiteListIps,
 	}, nil
 
+}
+
+//TODO: sort
+func NewSortedProxyConfigList(list []*ProxyConfig, less func(i, j int) bool) []*ProxyConfig {
+	if len(list) <= 1 {
+		return list
+	}
+	res := make([]*ProxyConfig, len(list))
+	for _, c := range list {
+		res = append(res, c)
+	}
+	return res
 }
