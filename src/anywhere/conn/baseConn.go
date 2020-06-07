@@ -25,6 +25,9 @@ func (c *WrappedConn) SetAck(sendTime, rcvTime time.Time) {
 }
 
 func (c *WrappedConn) Send(m interface{}) error {
+	if c.conn == nil {
+		return ErrNilConn
+	}
 	p, err := json.Marshal(m)
 	if err != nil {
 		return err
@@ -51,7 +54,6 @@ func (c *WrappedConn) Close() error {
 		return nil
 	}
 	err := c.conn.Close()
-	c.conn.Close()
 
 	// set conn to nil because net.Conn do not have a isClose flag.
 	// we used conn == nil to validate conn
@@ -78,6 +80,9 @@ func (c *WrappedConn) IsValid() bool {
 }
 
 func (c *WrappedConn) ResetConn(conn net.Conn) {
+	//close old connection if exist, let old goroutine stop.
+	c.Close()
+
 	c.conn = conn
 }
 
