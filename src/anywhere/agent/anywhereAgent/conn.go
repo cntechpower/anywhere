@@ -58,6 +58,9 @@ func (a *Agent) getTlsConnToServer() (*_tls.Conn, error) {
 
 func (a *Agent) initControlConn(dur int) {
 	h := log.NewHeader("initControlConn")
+	if a.adminConn == nil {
+		a.adminConn = conn.NewBaseConn(nil)
+	}
 CONNECT:
 	c := a.mustGetTlsConnToServer()
 	a.status = "INIT"
