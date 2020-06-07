@@ -61,7 +61,7 @@ func (a *Agent) initControlConn(dur int) {
 CONNECT:
 	c := a.mustGetTlsConnToServer()
 	a.status = "INIT"
-	a.adminConn = conn.NewBaseConn(c)
+	a.adminConn.ResetConn(c)
 	if err := a.SendControlConnRegisterPkg(); err != nil {
 		log.Errorf(h, "can not send register pkg to server %v, error: %v", a.addr, err)
 		_ = c.Close()
@@ -93,8 +93,8 @@ func (a *Agent) ControlConnHeartBeatSendLoop(dur int, errChan chan error) {
 
 func (a *Agent) handleAdminConnection() {
 	h := log.NewHeader("handleAdminConnection")
-	if a.adminConn == nil {
-		log.Errorf(h, "handle on nil admin connection")
+	if !a.adminConn.IsValid() {
+		log.Errorf(h, "admin connection is invalid")
 		return
 	}
 	msg := &model.RequestMsg{}
