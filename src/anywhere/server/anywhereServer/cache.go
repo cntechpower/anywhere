@@ -7,7 +7,7 @@ import (
 )
 
 func SortDescAndLimit(a []*model.ProxyConfig, less func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool, limit int) []*model.ProxyConfig {
-	res := make([]*model.ProxyConfig, 0)
+	res := make([]*model.ProxyConfig, 0, limit+1)
 	for _, v := range a {
 		if len(res) == 0 {
 			res = append(res, v)

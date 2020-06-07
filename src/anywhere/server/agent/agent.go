@@ -121,7 +121,6 @@ func (a *Agent) ListProxyConfigs() []*model.ProxyConfig {
 	if len(a.proxyConfigs) == 0 {
 		return nil
 	}
-
 	res := make([]*model.ProxyConfig, 0, len(a.proxyConfigs))
 	for _, config := range a.proxyConfigs {
 		res = append(res, &model.ProxyConfig{
