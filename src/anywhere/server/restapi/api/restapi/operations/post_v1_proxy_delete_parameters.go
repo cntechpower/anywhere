@@ -41,6 +41,11 @@ type PostV1ProxyDeleteParams struct {
 	  In: formData
 	*/
 	LocalAddr string
+	/*localAddress
+	  Required: true
+	  In: formData
+	*/
+	RemotePort string
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
@@ -68,6 +73,11 @@ func (o *PostV1ProxyDeleteParams) BindRequest(r *http.Request, route *middleware
 
 	fdLocalAddr, fdhkLocalAddr, _ := fds.GetOK("local_addr")
 	if err := o.bindLocalAddr(fdLocalAddr, fdhkLocalAddr, route.Formats); err != nil {
+		res = append(res, err)
+	}
+
+	fdRemotePort, fdhkRemotePort, _ := fds.GetOK("remote_port")
+	if err := o.bindRemotePort(fdRemotePort, fdhkRemotePort, route.Formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -115,6 +125,27 @@ func (o *PostV1ProxyDeleteParams) bindLocalAddr(rawData []string, hasKey bool, f
 	}
 
 	o.LocalAddr = raw
+
+	return nil
+}
+
+// bindRemotePort binds and validates parameter RemotePort from formData.
+func (o *PostV1ProxyDeleteParams) bindRemotePort(rawData []string, hasKey bool, formats strfmt.Registry) error {
+	if !hasKey {
+		return errors.Required("remote_port", "formData")
+	}
+	var raw string
+	if len(rawData) > 0 {
+		raw = rawData[len(rawData)-1]
+	}
+
+	// Required: true
+
+	if err := validate.RequiredString("remote_port", "formData", raw); err != nil {
+		return err
+	}
+
+	o.RemotePort = raw
 
 	return nil
 }

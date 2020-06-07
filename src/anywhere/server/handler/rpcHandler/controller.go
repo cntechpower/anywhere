@@ -46,8 +46,9 @@ func NewClient() (pb.AnywhereServerClient, error) {
 		grpc.WithUnaryInterceptor(func(ctx context.Context, method string, req, reply interface{},
 			cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 			log.Infof(h, "calling %v", method)
-			defer log.Infof(h, "called %v", method)
-			return invoker(ctx, method, req, reply, cc, opts...)
+			err := invoker(ctx, method, req, reply, cc, opts...)
+			log.Infof(h, "called %v, error: %v", method, err)
+			return err
 		}))
 	if err != nil {
 		return nil, err

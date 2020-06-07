@@ -6,7 +6,7 @@ import (
 )
 
 func (a *Agent) sendHeartBeatPkg() error {
-	if a.adminConn == nil {
+	if !a.adminConn.IsValid() {
 		return fmt.Errorf("admin conn not init")
 	}
 	return a.adminConn.Send(model.NewHeartBeatPingMsg(a.adminConn.GetConn(), a.id))

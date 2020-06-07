@@ -3,6 +3,7 @@ package model
 import (
 	"anywhere/util"
 	"fmt"
+	"time"
 )
 
 type AgentInfoInServer struct {
@@ -76,6 +77,7 @@ type ServerSummary struct {
 	ProxyConnectTotalCount       uint64
 	ProxyConnectRejectCount      uint64
 	ProxyNetworkFlowTop10        []*ProxyConfig
+	RefreshTime                  time.Time
 }
 
 func NewProxyConfig(agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) (*ProxyConfig, error) {

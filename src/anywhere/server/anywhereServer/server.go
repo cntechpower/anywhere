@@ -22,6 +22,7 @@ type Server struct {
 	agentsRwMutex                    sync.RWMutex
 	ExitChan                         chan error
 	ErrChan                          chan error
+	statusRwMutex                    sync.RWMutex
 	statusCache                      model.ServerSummary
 	allProxyConfigList               []*model.ProxyConfig
 	networkFlowSortedProxyConfigList []*model.ProxyConfig
@@ -79,6 +80,7 @@ func (s *Server) Start() {
 		panic(err)
 	}
 	s.listener = ln
+	go s.RefreshSummaryLoop()
 
 	go func() {
 		for {
@@ -154,7 +156,8 @@ func (s *Server) ListAgentInfo() []*model.AgentInfoInServer {
 }
 
 func (s *Server) ListProxyConfigs() []*model.ProxyConfig {
-	res := make([]*model.ProxyConfig, 0)
+	// we assume that we had 100 proxy config.
+	res := make([]*model.ProxyConfig, 0, 100)
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
 	for _, agent := range s.agents {
@@ -168,7 +171,7 @@ func (s *Server) RegisterAgent(agentId string, c net.Conn) (isUpdate bool) {
 	defer s.agentsRwMutex.Unlock()
 	isUpdate = s.isAgentExist(agentId)
 	if isUpdate {
-		//close(s.agents[info.Id].CloseChan)
+		//close(s.agents[info.id].CloseChan)
 		s.agents[agentId].ResetAdminConn(c)
 	} else {
 		s.agents[agentId] = agent.NewAgentInfo(agentId, c, make(chan error, 99))
@@ -208,12 +211,12 @@ func (s *Server) FlushJoinedConns() {
 	}
 }
 
-func (s *Server) UpdateProxyConfigWhiteList(agentId, localAddr, whiteCidrs string, whiteListEnable bool) error {
+func (s *Server) UpdateProxyConfigWhiteList(remotePort int, agentId, localAddr, whiteCidrs string, whiteListEnable bool) error {
 	if agentId == "" {
 		return fmt.Errorf("agent id is empty")
 	}
 	if !s.isAgentExist(agentId) {
 		return fmt.Errorf("no such agent id %v", agentId)
 	}
-	return s.agents[agentId].UpdateProxyConfigWhiteListConfig(localAddr, whiteCidrs, whiteListEnable)
+	return s.agents[agentId].UpdateProxyConfigWhiteListConfig(remotePort, localAddr, whiteCidrs, whiteListEnable)
 }

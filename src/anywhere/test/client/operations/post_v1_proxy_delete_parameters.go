@@ -70,6 +70,11 @@ type PostV1ProxyDeleteParams struct {
 
 	*/
 	LocalAddr string
+	/*RemotePort
+	  localAddress
+
+	*/
+	RemotePort string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -131,6 +136,17 @@ func (o *PostV1ProxyDeleteParams) SetLocalAddr(localAddr string) {
 	o.LocalAddr = localAddr
 }
 
+// WithRemotePort adds the remotePort to the post v1 proxy delete params
+func (o *PostV1ProxyDeleteParams) WithRemotePort(remotePort string) *PostV1ProxyDeleteParams {
+	o.SetRemotePort(remotePort)
+	return o
+}
+
+// SetRemotePort adds the remotePort to the post v1 proxy delete params
+func (o *PostV1ProxyDeleteParams) SetRemotePort(remotePort string) {
+	o.RemotePort = remotePort
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *PostV1ProxyDeleteParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -153,6 +169,15 @@ func (o *PostV1ProxyDeleteParams) WriteToRequest(r runtime.ClientRequest, reg st
 	fLocalAddr := frLocalAddr
 	if fLocalAddr != "" {
 		if err := r.SetFormParam("local_addr", fLocalAddr); err != nil {
+			return err
+		}
+	}
+
+	// form param remote_port
+	frRemotePort := o.RemotePort
+	fRemotePort := frRemotePort
+	if fRemotePort != "" {
+		if err := r.SetFormParam("remote_port", fRemotePort); err != nil {
 			return err
 		}
 	}

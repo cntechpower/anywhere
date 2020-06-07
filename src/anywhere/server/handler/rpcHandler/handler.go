@@ -98,7 +98,7 @@ func (h *rpcHandlers) RemoveProxyConfig(ctx context.Context, input *pb.RemovePro
 	if s == nil {
 		return &pb.Empty{}, ErrServerNotInit
 	}
-	return &pb.Empty{}, s.RemoveProxyConfigFromAgent(input.AgentId, input.LocalAddr)
+	return &pb.Empty{}, s.RemoveProxyConfigFromAgent(int(input.RemotePort), input.AgentId, input.LocalAddr)
 }
 
 func (h *rpcHandlers) LoadProxyConfigFile(ctx context.Context, input *pb.Empty) (*pb.Empty, error) {
@@ -154,20 +154,44 @@ func (h *rpcHandlers) KillAllConns(ctx context.Context, empty *pb.Empty) (*pb.Em
 }
 
 func (h *rpcHandlers) UpdateProxyConfigWhiteList(ctx context.Context, input *pb.UpdateProxyConfigWhiteListInput) (*pb.Empty, error) {
-	return &pb.Empty{}, h.s.UpdateProxyConfigWhiteList(input.AgentId, input.LocalAddr, input.WhiteCidrs, input.WhiteListEnable)
+	return &pb.Empty{}, h.s.UpdateProxyConfigWhiteList(int(input.RemotePort), input.AgentId, input.LocalAddr, input.WhiteCidrs, input.WhiteListEnable)
 }
 
 func (h *rpcHandlers) GetSummary(ctx context.Context, empty *pb.Empty) (*pb.GetSummaryOutput, error) {
 	s := h.s.GetSummary()
-	return &pb.GetSummaryOutput{
-		AgentCount: int64(s.AgentTotalCount),
-		ProxyCount: int64(s.ProxyConfigTotalCount),
-		//BELOW is TODO
-		CurrentProxyConnectionCount: 0,
+	res := &pb.GetSummaryOutput{
+		AgentCount:                  int64(s.AgentTotalCount),
+		ProxyCount:                  int64(s.ProxyConfigTotalCount),
+		CurrentProxyConnectionCount: int64(s.CurrentProxyConnectionCount),
 		ProxyConnectCount:           int64(s.ProxyConnectTotalCount),
 		ProxyNetFlowInBytes:         int64(s.NetworkFlowTotalCountInBytes),
-		ConfigNetFlowTop10:          nil,
-		ConfigConnectFailTop10:      nil,
-		AdminWebUiAuthFailCount:     0,
-	}, nil
+	}
+	for _, c := range s.ProxyNetworkFlowTop10 {
+		res.ConfigNetFlowTop10 = append(res.ConfigNetFlowTop10, &pb.ProxyConfig{
+			AgentId:                         c.AgentId,
+			RemotePort:                      int64(c.RemotePort),
+			LocalAddr:                       c.LocalAddr,
+			IsWhiteListOn:                   c.IsWhiteListOn,
+			WhiteCidrList:                   c.WhiteCidrList,
+			NetworkFlowRemoteToLocalInBytes: int64(c.NetworkFlowRemoteToLocalInBytes),
+			NetworkFlowLocalToRemoteInBytes: int64(c.NetworkFlowLocalToRemoteInBytes),
+			ProxyConnectCount:               int64(c.ProxyConnectCount),
+			ProxyConnectRejectCount:         int64(c.ProxyConnectRejectCount),
+		})
+	}
+
+	for _, c := range s.ProxyConnectRejectCountTop10 {
+		res.ConfigConnectFailTop10 = append(res.ConfigConnectFailTop10, &pb.ProxyConfig{
+			AgentId:                         c.AgentId,
+			RemotePort:                      int64(c.RemotePort),
+			LocalAddr:                       c.LocalAddr,
+			IsWhiteListOn:                   c.IsWhiteListOn,
+			WhiteCidrList:                   c.WhiteCidrList,
+			NetworkFlowRemoteToLocalInBytes: int64(c.NetworkFlowRemoteToLocalInBytes),
+			NetworkFlowLocalToRemoteInBytes: int64(c.NetworkFlowLocalToRemoteInBytes),
+			ProxyConnectCount:               int64(c.ProxyConnectCount),
+			ProxyConnectRejectCount:         int64(c.ProxyConnectRejectCount),
+		})
+	}
+	return res, nil
 }

@@ -129,6 +129,13 @@ func init() {
             "name": "local_addr",
             "in": "formData",
             "required": true
+          },
+          {
+            "type": "string",
+            "description": "localAddress",
+            "name": "remote_port",
+            "in": "formData",
+            "required": true
           }
         ],
         "responses": {
@@ -467,6 +474,13 @@ func init() {
             "type": "string",
             "description": "localAddress",
             "name": "local_addr",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "localAddress",
+            "name": "remote_port",
             "in": "formData",
             "required": true
           }
