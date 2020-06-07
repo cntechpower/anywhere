@@ -18,6 +18,7 @@ var grpcAddress string
 var connIdToKill int
 
 func main() {
+	log.InitLogger("")
 	var rootCmd = &cobra.Command{
 		Use:   "anywhere --help",
 		Short: "This is A Proxy Agent ",
@@ -95,7 +96,6 @@ func main() {
 }
 
 func run(_ *cobra.Command, _ []string) error {
-	log.InitLogger("")
 	h := log.NewHeader("agentMain")
 	a := anywhereAgent.InitAnyWhereAgent(agentId, serverIp, serverPort)
 	if err := a.SetCredentials(certFile, keyFile, caFile); err != nil {

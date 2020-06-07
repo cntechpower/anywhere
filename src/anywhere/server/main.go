@@ -15,6 +15,7 @@ import (
 var version string
 
 func main() {
+	log.InitLogger("")
 	var rootCmd = &cobra.Command{
 		Use:   "anywhered",
 		Short: "This is A Proxy Server ",
@@ -51,7 +52,6 @@ func main() {
 }
 
 func run(_ *cobra.Command, _ []string) error {
-	log.InitLogger("")
 	h := log.NewHeader("serverMain")
 	c, err := anywhereServer.ParseSystemConfigFile()
 	if err != nil {
