@@ -9,7 +9,7 @@ func (a *Agent) sendHeartBeatPkg() error {
 	if !a.adminConn.IsValid() {
 		return fmt.Errorf("admin conn not init")
 	}
-	return a.adminConn.Send(model.NewHeartBeatPingMsg(a.adminConn.GetConn(), a.id))
+	return a.adminConn.Send(model.NewHeartBeatPingMsg(a.adminConn.GetLocalAddr(), a.adminConn.GetRemoteAddr(), a.id))
 }
 
 func (a *Agent) SendControlConnRegisterPkg() error {

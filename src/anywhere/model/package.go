@@ -2,7 +2,6 @@ package model
 
 import (
 	"encoding/json"
-	"net"
 	"time"
 )
 
@@ -69,18 +68,18 @@ type HeartBeatMsg struct {
 	SendTime   time.Time
 }
 
-func NewHeartBeatPingMsg(c net.Conn, id string) *RequestMsg {
+func NewHeartBeatPingMsg(localAddr, remoteAddr, id string) *RequestMsg {
 	return newRequestMsg(PkgReqHeartBeatPing, id, "", &HeartBeatMsg{
-		LocalAddr:  c.LocalAddr().String(),
-		RemoteAddr: c.RemoteAddr().String(),
+		LocalAddr:  localAddr,
+		RemoteAddr: remoteAddr,
 		SendTime:   time.Now(),
 	})
 }
 
-func NewHeartBeatPongMsg(c net.Conn, id string) *RequestMsg {
+func NewHeartBeatPongMsg(localAddr, remoteAddr, id string) *RequestMsg {
 	return newRequestMsg(PkgReqHeartBeatPong, id, "", &HeartBeatMsg{
-		LocalAddr:  c.LocalAddr().String(),
-		RemoteAddr: c.RemoteAddr().String(),
+		LocalAddr:  localAddr,
+		RemoteAddr: remoteAddr,
 		SendTime:   time.Now(),
 	})
 }

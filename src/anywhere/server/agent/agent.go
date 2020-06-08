@@ -367,6 +367,7 @@ func (a *Agent) handleAdminConnection() {
 		// handleAdminConnection will not exit in normal
 		// when handleAdminConnection there is always error happen.
 		// so we need close adminConn and wait client reconnect.
+		log.Warnf(h, "handleAdminConnection for %v closed", a.id)
 		a.adminConn.Close()
 	}()
 	msg := &model.RequestMsg{}
@@ -388,15 +389,16 @@ func (a *Agent) handleAdminConnection() {
 				log.Errorf(h, "got corrupted heartbeat ping packet from agent %v admin conn, will close it", a.id)
 				return
 			}
-			if err := a.adminConn.Send(model.NewHeartBeatPongMsg(a.adminConn.GetConn(), a.id)); err != nil {
+			if err := a.adminConn.Send(model.NewHeartBeatPongMsg(a.adminConn.GetLocalAddr(), a.adminConn.GetRemoteAddr(), a.id)); err != nil {
 				log.Errorf(h, "send pong msg to %v admin conn error, will close it", a.id)
+				return
 			} else {
-
 				a.adminConn.SetAck(m.SendTime, time.Now())
 			}
 
 		default:
 			log.Errorf(h, "got unknown ReqType: %v ,body: %v, will close admin conn", msg.ReqType, msg.Message)
+			return
 		}
 	}
 }
