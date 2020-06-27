@@ -6,6 +6,15 @@ import (
 	"time"
 )
 
+func SortDescAndLimitUsingHeap(a []*model.ProxyConfig, less func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool, limit int) []*model.ProxyConfig {
+	res := make([]*model.ProxyConfig, 0, limit)
+	ph := model.InitProxyConfigHeap(a, less, limit)
+	for !ph.IsEmpty() {
+		res = append(res, ph.Pop())
+	}
+	return res
+}
+
 func SortDescAndLimit(a []*model.ProxyConfig, less func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool, limit int) []*model.ProxyConfig {
 	res := make([]*model.ProxyConfig, 0, limit+1)
 	for _, v := range a {
@@ -56,13 +65,13 @@ func (s *Server) RefreshSummaryLoop() {
 			}
 		}
 		s.agentsRwMutex.Unlock()
-		newCache.ProxyConnectRejectCountTop10 = SortDescAndLimit(allConfigList,
+		newCache.ProxyConnectRejectCountTop10 = SortDescAndLimitUsingHeap(allConfigList,
 			func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool {
-				return p1.ProxyConnectRejectCount < p2.ProxyConnectRejectCount
+				return p1.ProxyConnectRejectCount > p2.ProxyConnectRejectCount
 			}, 10)
-		newCache.ProxyNetworkFlowTop10 = SortDescAndLimit(allConfigList,
+		newCache.ProxyNetworkFlowTop10 = SortDescAndLimitUsingHeap(allConfigList,
 			func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool {
-				return (p1.NetworkFlowRemoteToLocalInBytes + p1.NetworkFlowLocalToRemoteInBytes) <
+				return (p1.NetworkFlowRemoteToLocalInBytes + p1.NetworkFlowLocalToRemoteInBytes) >
 					(p2.NetworkFlowRemoteToLocalInBytes + p2.NetworkFlowLocalToRemoteInBytes)
 			}, 10)
 		endTime := time.Now()

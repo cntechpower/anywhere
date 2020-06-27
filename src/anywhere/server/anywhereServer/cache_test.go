@@ -7,7 +7,13 @@ import (
 	"time"
 )
 
+const proxyConfigLength = 1000000
+const silence = true
+
 func printProxyConfig(t *testing.T, list []*model.ProxyConfig) {
+	if silence {
+		return
+	}
 	t.Log("-------------------------------------")
 	for _, p := range list {
 		t.Log(p.NetworkFlowRemoteToLocalInBytes)
@@ -24,7 +30,7 @@ func checkSort(t *testing.T, list []*model.ProxyConfig) {
 }
 func TestServer_Cache(t *testing.T) {
 	origin := make([]*model.ProxyConfig, 0)
-	for i := 15; i > 0; i-- {
+	for i := proxyConfigLength; i > 0; i-- {
 		origin = append(origin, &model.ProxyConfig{
 			NetworkFlowRemoteToLocalInBytes: rand.New(rand.NewSource(time.Now().UnixNano())).Uint64(),
 		})
@@ -33,6 +39,23 @@ func TestServer_Cache(t *testing.T) {
 	printProxyConfig(t, origin)
 	after := SortDescAndLimit(origin, func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool {
 		return p1.NetworkFlowRemoteToLocalInBytes < p2.NetworkFlowRemoteToLocalInBytes
+	}, 10)
+	t.Logf("After sorting, len is %v", len(after))
+	printProxyConfig(t, after)
+	checkSort(t, after)
+}
+
+func TestServer_Cache_Heap(t *testing.T) {
+	origin := make([]*model.ProxyConfig, 0)
+	for i := proxyConfigLength; i > 0; i-- {
+		origin = append(origin, &model.ProxyConfig{
+			NetworkFlowRemoteToLocalInBytes: rand.New(rand.NewSource(time.Now().UnixNano())).Uint64(),
+		})
+	}
+	t.Logf("Before sorting, len is %v", len(origin))
+	printProxyConfig(t, origin)
+	after := SortDescAndLimitUsingHeap(origin, func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool {
+		return p1.NetworkFlowRemoteToLocalInBytes > p2.NetworkFlowRemoteToLocalInBytes
 	}, 10)
 	t.Logf("After sorting, len is %v", len(after))
 	printProxyConfig(t, after)
