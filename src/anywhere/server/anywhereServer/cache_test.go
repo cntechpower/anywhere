@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const proxyConfigLength = 10000
+const proxyConfigLength = 100000
 const silence = true
 
 func printProxyConfig(t *testing.T, list []*model.ProxyConfig) {
