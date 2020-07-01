@@ -38,10 +38,11 @@ func SortDescAndLimit(a []*model.ProxyConfig, less func(p1 *model.ProxyConfig, p
 		if !inserted && len(res) < limit {
 			res = append(res, v)
 		}
+		if len(res) > limit {
+			res = res[:limit]
+		}
 	}
-	if len(res) > limit {
-		res = res[:limit]
-	}
+
 	return res
 }
 
