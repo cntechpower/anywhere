@@ -2,6 +2,7 @@ package anywhereAgent
 
 import (
 	"anywhere/conn"
+	"anywhere/constants"
 	"anywhere/log"
 	"anywhere/model"
 	"anywhere/tls"
@@ -37,7 +38,7 @@ func InitAnyWhereAgent(id, ip string, port int) *Agent {
 		id:          id,
 		addr:        addr,
 		joinedConns: conn.NewJoinedConnList(),
-		version:     model.AnywhereVersion,
+		version:     constants.AnywhereVersion,
 		status:      "INIT",
 	}
 	return agentInstance
@@ -89,7 +90,7 @@ func (a *Agent) GetStatus() model.AgentInfoInAgent {
 		Id:          a.id,
 		LocalAddr:   a.adminConn.GetLocalAddr(),
 		ServerAddr:  a.adminConn.GetRemoteAddr(),
-		LastAckSend: a.lastAckSendTime.Format("2006-01-02 15:04:05"),
-		LastAckRcv:  a.lastAckRcvTime.Format("2006-01-02 15:04:05"),
+		LastAckSend: a.lastAckSendTime.Format(constants.DefaultTimeFormat),
+		LastAckRcv:  a.lastAckRcvTime.Format(constants.DefaultTimeFormat),
 	}
 }

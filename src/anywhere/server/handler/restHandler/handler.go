@@ -11,7 +11,7 @@ import (
 )
 
 func ListAgentV1() ([]*models.AgentListInfo, error) {
-	c, err := rpcHandler.NewClient()
+	c, err := rpcHandler.NewClient(false)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func ListAgentV1() ([]*models.AgentListInfo, error) {
 }
 
 func ListProxyV1() ([]*models.ProxyConfig, error) {
-	c, err := rpcHandler.NewClient()
+	c, err := rpcHandler.NewClient(false)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func ListProxyV1() ([]*models.ProxyConfig, error) {
 }
 
 func AddProxyConfigV1(params v1.PostV1ProxyAddParams) (*models.ProxyConfig, error) {
-	c, err := rpcHandler.NewClient()
+	c, err := rpcHandler.NewClient(false)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func GetV1SupportIP(params v1.GetV1SupportIPParams) (string, error) {
 }
 
 func PostV1ProxyUpdateParams(params v1.PostV1ProxyUpdateParams) (*models.ProxyConfig, error) {
-	c, err := rpcHandler.NewClient()
+	c, err := rpcHandler.NewClient(false)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func PostV1ProxyUpdateParams(params v1.PostV1ProxyUpdateParams) (*models.ProxyCo
 }
 
 func PostV1ProxyDeleteHandler(params v1.PostV1ProxyDeleteParams) (*models.ProxyConfig, error) {
-	c, err := rpcHandler.NewClient()
+	c, err := rpcHandler.NewClient(false)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +130,7 @@ func PostV1ProxyDeleteHandler(params v1.PostV1ProxyDeleteParams) (*models.ProxyC
 }
 
 func GetSummaryV1() (*models.SummaryStatistic, error) {
-	c, err := rpcHandler.NewClient()
+	c, err := rpcHandler.NewClient(false)
 	if err != nil {
 		return &models.SummaryStatistic{}, err
 	}

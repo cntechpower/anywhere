@@ -14,8 +14,6 @@ type anywhereAgentRpcHandler struct {
 }
 
 func (h *anywhereAgentRpcHandler) ListConns(ctx context.Context, empty *pb.Empty) (*pb.Conns, error) {
-	log.Infof(h.logHeader, "calling list conns")
-	defer log.Infof(h.logHeader, "called list conns")
 	conns := h.a.ListJoinedConns()
 	res := &pb.Conns{
 		Conn: make([]*pb.Conn, 0),
@@ -35,8 +33,6 @@ func (h *anywhereAgentRpcHandler) ListConns(ctx context.Context, empty *pb.Empty
 }
 
 func (h *anywhereAgentRpcHandler) KillConnById(ctx context.Context, input *pb.KillConnByIdInput) (*pb.Empty, error) {
-	log.Infof(h.logHeader, "calling kill conn %v", input.ConnId)
-	defer log.Infof(h.logHeader, "called kill conn %v", input.ConnId)
 	return &pb.Empty{}, h.a.KillJoinedConnById(int(input.ConnId))
 }
 
@@ -48,8 +44,6 @@ func (h *anywhereAgentRpcHandler) KillAllConns(ctx context.Context, empty *pb.Em
 }
 
 func (h *anywhereAgentRpcHandler) ShowStatus(ctx context.Context, empty *pb.Empty) (*pb.ShowStatusOutput, error) {
-	log.Infof(h.logHeader, "calling show status")
-	defer log.Infof(h.logHeader, "called show status")
 	s := h.a.GetStatus()
 	return &pb.ShowStatusOutput{
 		AgentId:         s.Id,

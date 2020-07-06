@@ -26,8 +26,6 @@ func GetRpcHandlers(s *anywhereServer.Server) *rpcHandlers {
 }
 
 func (h *rpcHandlers) ListAgent(ctx context.Context, empty *pb.Empty) (*pb.Agents, error) {
-	log.Infof(h.logHeader, "calling list agents")
-	defer log.Infof(h.logHeader, "called list agents")
 	s := anywhereServer.GetServerInstance()
 	if s == nil {
 		return &pb.Agents{}, ErrServerNotInit
