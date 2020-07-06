@@ -1,6 +1,7 @@
 package log
 
 import (
+	"anywhere/constants"
 	"fmt"
 	_log "log"
 	"os"
@@ -27,7 +28,7 @@ func InitLogger(fileName string) {
 		}
 	} else {
 		globalLogger.SetOutput(os.Stderr)
-		globalLogger.Println("log to default stderr output")
+		//globalLogger.Println("log to default stderr output")
 	}
 }
 
@@ -51,7 +52,7 @@ func getCaller(skip int) (string, int) {
 func log(skip int, h *Header, level Level, format string, a ...interface{}) {
 	file, line := getCaller(skip)
 
-	globalLogger.Println(fmt.Sprintf("[%s] <%s> |%s| (%s:%v) %s", time.Now().Format("2006-01-02 15:04:05"), level, h, file, line, fmt.Sprintf(format, a...)))
+	globalLogger.Println(fmt.Sprintf("[%s] <%s> |%s| (%s:%v) %s", time.Now().Format(constants.DefaultTimeFormat), level, h, file, line, fmt.Sprintf(format, a...)))
 }
 
 type Header struct {

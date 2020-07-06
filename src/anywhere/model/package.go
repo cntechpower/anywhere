@@ -1,13 +1,12 @@
 package model
 
 import (
+	"anywhere/constants"
 	"encoding/json"
 	"time"
 )
 
 type ReqType string
-
-const AnywhereVersion = "0.0.2"
 
 const (
 	PkgReqHeartBeatPing    ReqType = "1"
@@ -41,7 +40,7 @@ type RequestMsg struct {
 func newRequestMsg(t ReqType, from, to string, msg interface{}) *RequestMsg {
 	j, _ := json.Marshal(msg)
 	return &RequestMsg{
-		Version: AnywhereVersion,
+		Version: constants.AnywhereVersion,
 		ReqType: t,
 		From:    from,
 		To:      to,

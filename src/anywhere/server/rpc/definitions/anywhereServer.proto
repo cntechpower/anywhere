@@ -39,7 +39,7 @@ message ProxyConfig{
     string WhiteCidrList = 5;
     int64 NetworkFlowRemoteToLocalInBytes = 6;
     int64 NetworkFlowLocalToRemoteInBytes = 7;
-	int64 ProxyConnectCount = 8;
+	  int64 ProxyConnectCount = 8;
     int64 ProxyConnectRejectCount = 9;
 }
 

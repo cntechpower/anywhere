@@ -31,13 +31,14 @@ var proxyAddCmd = &cobra.Command{
 
 //args for del proxy config command
 var delProxyAgentId, delProxyLocalAddr string
+var delProxyRemotePort int
 
 var proxyDelCmd = &cobra.Command{
 	Use:   "del",
 	Short: "delete proxy config",
 	Long:  `delete a proxy config.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := rpcHandler.RemoveProxyConfig(delProxyAgentId, delProxyLocalAddr); err != nil {
+		if err := rpcHandler.RemoveProxyConfig(delProxyAgentId, delProxyRemotePort, delProxyLocalAddr); err != nil {
 			fmt.Printf("error deleting proxy config : %v\n", err)
 		}
 	},
@@ -98,6 +99,7 @@ func GetProxyCmd() *cobra.Command {
 	proxyAddCmd.PersistentFlags().StringVar(&addProxyWhiteListIps, "white-list", "", "local port")
 	proxyAddCmd.PersistentFlags().BoolVar(&addProxyIsWhiteListOn, "enable-wl", false, "enable white list or not")
 	proxyDelCmd.PersistentFlags().StringVar(&delProxyAgentId, "agent-id", "", "del from which agent")
+	proxyDelCmd.PersistentFlags().IntVar(&delProxyRemotePort, "remote-port", 0, "del from which remotePort")
 	proxyDelCmd.PersistentFlags().StringVar(&delProxyLocalAddr, "local-addr", "", "del from which localAddr")
 	proxyUpdateCmd.PersistentFlags().StringVar(&updateProxyAgentId, "agent-id", "", "belong to which agent")
 	proxyUpdateCmd.PersistentFlags().StringVar(&updateProxyLocalAddr, "local-addr", "127.0.0.1:80", "local addr")

@@ -1,6 +1,7 @@
 package anywhereServer
 
 import (
+	"anywhere/constants"
 	"anywhere/model"
 	"anywhere/util"
 	"encoding/json"
@@ -54,11 +55,8 @@ func (s *Server) LoadProxyConfigFile() error {
 	return nil
 }
 
-const configFile = "proxy.json"
-const systemConfigFIle = "anywhered.json"
-
 func ParseProxyConfigFile() (*model.GlobalConfig, error) {
-	file, err := os.Open(configFile)
+	file, err := os.Open(constants.ProxyConfigFileName)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +75,7 @@ func writeProxyConfigFile(configs []*model.ProxyConfig) error {
 	if configs == nil {
 		return nil
 	}
-	file, err := os.Create(configFile)
+	file, err := os.Create(constants.ProxyConfigFileName)
 	if err != nil {
 		return err
 	}
@@ -136,7 +134,7 @@ func newConfigIllegalError(sectionName, configName string, err error) error {
 }
 
 func ParseSystemConfigFile() (*model.SystemConfig, error) {
-	file, err := os.Open(systemConfigFIle)
+	file, err := os.Open(constants.SystemConfigFIle)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +194,7 @@ func WriteSystemConfigFile(config *model.SystemConfig) error {
 	if config == nil {
 		return nil
 	}
-	file, err := os.Create(systemConfigFIle)
+	file, err := os.Create(constants.SystemConfigFIle)
 	if err != nil {
 		return err
 	}
