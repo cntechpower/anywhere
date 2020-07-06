@@ -2,6 +2,7 @@ package agent
 
 import (
 	"anywhere/conn"
+	"anywhere/constants"
 	"anywhere/log"
 	"anywhere/model"
 	"anywhere/util"
@@ -12,10 +13,6 @@ import (
 	"sync/atomic"
 	"time"
 )
-
-const AGENTPROXYCONNBUFFER = 10
-const TIMEOUTSECFORCONNPOOL = 1
-const OPERATIONRETRYCOUNT = 5
 
 func newErrTimeoutWaitingProxyConn(s string) error {
 	return fmt.Errorf("timeout while waiting for proxy conn for %v", s)
@@ -84,7 +81,7 @@ type Agent struct {
 func NewAgentInfo(agentId string, c net.Conn, errChan chan error) *Agent {
 	a := &Agent{
 		id:              agentId,
-		version:         model.AnywhereVersion,
+		version:         constants.AnywhereVersion,
 		RemoteAddr:      c.RemoteAddr(),
 		adminConn:       conn.NewBaseConn(c),
 		proxyConfigs:    make(map[string]*ProxyConfig, 0),
@@ -103,8 +100,8 @@ func (a *Agent) Info() *model.AgentInfoInServer {
 	return &model.AgentInfoInServer{
 		Id:               a.id,
 		RemoteAddr:       a.RemoteAddr.String(),
-		LastAckRcv:       a.adminConn.LastAckRcvTime.Format("2006-01-02 15:04:05"),
-		LastAckSend:      a.adminConn.LastAckSendTime.Format("2006-01-02 15:04:05"),
+		LastAckRcv:       a.adminConn.LastAckRcvTime.Format(constants.DefaultTimeFormat),
+		LastAckSend:      a.adminConn.LastAckSendTime.Format(constants.DefaultTimeFormat),
 		ProxyConfigCount: a.GetProxyConfigCount(),
 	}
 }
@@ -123,6 +120,8 @@ func (a *Agent) ListProxyConfigs() []*model.ProxyConfig {
 	}
 	res := make([]*model.ProxyConfig, 0, len(a.proxyConfigs))
 	for _, config := range a.proxyConfigs {
+		//fmt.Printf("ListProxyConfigs: %v\n", config.NetworkFlowLocalToRemoteInBytes)
+		//fmt.Printf("ListProxyConfigs: %v\n", config.NetworkFlowRemoteToLocalInBytes)
 		res = append(res, &model.ProxyConfig{
 			AgentId:                         config.AgentId,
 			RemotePort:                      config.RemotePort,
@@ -182,12 +181,12 @@ func (a *Agent) RemoveProxyConfig(remotePort int, localAddr string) error {
 
 func (a *Agent) PutProxyConn(proxyAddr string, c *conn.WrappedConn) error {
 	if _, ok := a.chanProxyConns[proxyAddr]; !ok {
-		a.chanProxyConns[proxyAddr] = make(chan *conn.WrappedConn, AGENTPROXYCONNBUFFER)
+		a.chanProxyConns[proxyAddr] = make(chan *conn.WrappedConn, constants.ProxyConnBufferForEachAgent)
 	}
 	select {
 	case a.chanProxyConns[proxyAddr] <- c:
 		return nil
-	case <-time.After(TIMEOUTSECFORCONNPOOL * time.Second):
+	case <-time.After(constants.ProxyConnGetRetrySeconds * time.Second):
 		a.errChan <- ErrProxyConnBufferFull
 		_ = c.Close()
 		return ErrProxyConnBufferFull
@@ -197,9 +196,9 @@ func (a *Agent) PutProxyConn(proxyAddr string, c *conn.WrappedConn) error {
 func (a *Agent) GetProxyConn(proxyAddr string) (*conn.WrappedConn, error) {
 	h := log.NewHeader("GetProxyConn")
 	if _, ok := a.chanProxyConns[proxyAddr]; !ok {
-		a.chanProxyConns[proxyAddr] = make(chan *conn.WrappedConn, AGENTPROXYCONNBUFFER)
+		a.chanProxyConns[proxyAddr] = make(chan *conn.WrappedConn, constants.ProxyConnBufferForEachAgent)
 	}
-	for i := 0; i < OPERATIONRETRYCOUNT; i++ {
+	for i := 0; i < constants.ProxyConnGetMaxRetryCount; i++ {
 		//request a new proxy conn
 		a.requestNewProxyConn(proxyAddr)
 		select {

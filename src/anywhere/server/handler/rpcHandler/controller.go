@@ -40,14 +40,19 @@ func StartRpcServer(s *anywhereServer.Server, addr string, errChan chan error) {
 	}
 }
 
-func NewClient() (pb.AnywhereServerClient, error) {
+func NewClient(silenceOutput bool) (pb.AnywhereServerClient, error) {
 	h := log.NewHeader("grpc")
 	cc, err := grpc.Dial(grpcAddress, grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(func(ctx context.Context, method string, req, reply interface{},
 			cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-			log.Infof(h, "calling %v", method)
+			if !silenceOutput {
+				log.Infof(h, "calling %v", method)
+			}
+
 			err := invoker(ctx, method, req, reply, cc, opts...)
-			log.Infof(h, "called %v, error: %v", method, err)
+			if !silenceOutput {
+				log.Infof(h, "called %v, error: %v", method, err)
+			}
 			return err
 		}))
 	if err != nil {
@@ -57,7 +62,7 @@ func NewClient() (pb.AnywhereServerClient, error) {
 }
 
 func ListAgent() error {
-	client, err := NewClient()
+	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
@@ -77,7 +82,7 @@ func ListAgent() error {
 
 func AddProxyConfig(agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) error {
 
-	client, err := NewClient()
+	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
@@ -102,7 +107,7 @@ func ListProxyConfigs() error {
 		}
 		return "OFF"
 	}
-	client, err := NewClient()
+	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
@@ -112,28 +117,33 @@ func ListProxyConfigs() error {
 	}
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"AgentId", "ServerAddr", "LocalAddr", "IsWhiteListOn", "IpWhiteList"})
+	table.SetHeader([]string{"AgentId", "ServerAddr", "LocalAddr", "IsWhiteListOn", "IpWhiteList", "TotalNetFlowsInMB"})
 	for _, config := range configs.Config {
-		table.Append([]string{config.AgentId, strconv.Itoa(int(config.RemotePort)), config.LocalAddr, boolToString(config.IsWhiteListOn), config.WhiteCidrList})
+		table.Append([]string{
+			config.AgentId, strconv.Itoa(int(config.RemotePort)), config.LocalAddr,
+			boolToString(config.IsWhiteListOn), config.WhiteCidrList,
+			strconv.FormatFloat(float64(config.NetworkFlowRemoteToLocalInBytes+config.NetworkFlowLocalToRemoteInBytes)/1024/1024, 'f', 5, 64),
+		})
 	}
 	table.Render()
 	return nil
 }
 
-func RemoveProxyConfig(agentId, localAddr string) error {
-	client, err := NewClient()
+func RemoveProxyConfig(agentId string, remotePort int, localAddr string) error {
+	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
 	_, err = client.RemoveProxyConfig(context.Background(), &pb.RemoveProxyConfigInput{
-		AgentId:   agentId,
-		LocalAddr: localAddr,
+		AgentId:    agentId,
+		RemotePort: int64(remotePort),
+		LocalAddr:  localAddr,
 	})
 	return err
 }
 
 func LoadProxyConfigFile() error {
-	client, err := NewClient()
+	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
@@ -142,7 +152,7 @@ func LoadProxyConfigFile() error {
 }
 
 func SaveProxyConfigToFile() error {
-	client, err := NewClient()
+	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
@@ -151,7 +161,7 @@ func SaveProxyConfigToFile() error {
 }
 
 func UpdateProxyConfigWhiteList(agentId, localAddr, whiteCidrs string, whiteListEnable bool) error {
-	client, err := NewClient()
+	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
@@ -165,7 +175,7 @@ func UpdateProxyConfigWhiteList(agentId, localAddr, whiteCidrs string, whiteList
 }
 
 func ListConns(agentId string) error {
-	client, err := NewClient()
+	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
@@ -190,7 +200,7 @@ func ListConns(agentId string) error {
 }
 
 func KillConn(agentId string, id int) error {
-	client, err := NewClient()
+	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
@@ -210,7 +220,7 @@ func FlushConns() error {
 		fmt.Println("cancelled")
 		return nil
 	}
-	client, err := NewClient()
+	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}

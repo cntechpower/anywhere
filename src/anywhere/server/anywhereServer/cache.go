@@ -1,6 +1,7 @@
 package anywhereServer
 
 import (
+	"anywhere/constants"
 	"anywhere/log"
 	"anywhere/model"
 	"time"
@@ -48,6 +49,15 @@ func SortDescAndLimit(a []*model.ProxyConfig, less func(p1 *model.ProxyConfig, p
 
 func (s *Server) RefreshSummaryLoop() {
 	h := log.NewHeader("RefreshSummaryLoop")
+	currentLoop := 0
+	shouldLog := func() bool {
+		if currentLoop == constants.CacheRefreshLogInhibition {
+			currentLoop = 0
+			return true
+		}
+		currentLoop++
+		return false
+	}
 	for {
 		startTime := time.Now()
 		newCache := model.ServerSummary{}
@@ -81,8 +91,10 @@ func (s *Server) RefreshSummaryLoop() {
 		s.statusCache = newCache
 		s.allProxyConfigList = allConfigList
 		s.statusRwMutex.Unlock()
-		log.Infof(h, "refresh done, microseconds used %v", endTime.Sub(startTime).Microseconds())
-		time.Sleep(15 * time.Second)
+		if shouldLog() {
+			log.Infof(h, "refresh done, microseconds used %v", endTime.Sub(startTime).Microseconds())
+		}
+		time.Sleep(constants.CacheRefreshLoopTimeSeconds * time.Second)
 	}
 
 }
