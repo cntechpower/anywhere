@@ -57,7 +57,7 @@ func run(_ *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
-	s := anywhereServer.InitServerInstance(c.ServerId, c.MainPort)
+	s := anywhereServer.InitServerInstance(c.ServerId, c.MainPort, c.User)
 	tlsConfig, err := tls.ParseTlsConfig(c.Ssl.CertFile, c.Ssl.KeyFile, c.Ssl.CaFile)
 	if err != nil {
 		return err
@@ -72,7 +72,7 @@ func run(_ *cobra.Command, _ []string) error {
 	go rpcHandler.StartRpcServer(s, c.UiConfig.GrpcAddr, rpcExitChan)
 	webExitChan := make(chan error, 0)
 	if c.UiConfig.IsWebEnable {
-		go startUIAndAPIService(c.UiConfig.WebAddr, c.User.AdminUser, c.User.AdminPass, c.User.AdminOtpCode, c.User.AdminOtpEnable, webExitChan, c.UiConfig.SkipLogin, c.UiConfig.DebugMode)
+		go startUIAndAPIService(c.UiConfig.WebAddr, webExitChan, c.UiConfig.SkipLogin, c.UiConfig.DebugMode)
 
 	}
 

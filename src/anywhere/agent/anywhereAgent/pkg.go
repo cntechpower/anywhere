@@ -16,5 +16,5 @@ func (a *Agent) SendControlConnRegisterPkg() error {
 	if a.id == "" {
 		return fmt.Errorf("agent not init")
 	}
-	return a.adminConn.Send(model.NewAgentRegisterMsg(a.id))
+	return a.adminConn.Send(model.NewAgentRegisterMsg(a.id, a.user, a.password))
 }

@@ -13,15 +13,21 @@ const (
 	PkgControlConnRegister ReqType = "2"
 	PkgTunnelBegin         ReqType = "3"
 	PkgReqHeartBeatPong    ReqType = "4"
+	PkgAuthenticationFail  ReqType = "5"
 )
 
 type AgentRegisterMsg struct {
-	AgentId string
+	AgentId  string
+	UserName string
+	PassWord string
 }
 
-func NewAgentRegisterMsg(id string) *RequestMsg {
-	return newRequestMsg(PkgControlConnRegister, id, "", &AgentRegisterMsg{AgentId: id})
-
+func NewAgentRegisterMsg(id, userName, password string) *RequestMsg {
+	return newRequestMsg(PkgControlConnRegister, id, "", &AgentRegisterMsg{
+		AgentId:  id,
+		UserName: userName,
+		PassWord: password,
+	})
 }
 
 type DataConnRegisterMsg struct {
@@ -116,6 +122,26 @@ func ParseTunnelBeginPkg(data []byte) (*TunnelBeginMsg, error) {
 	err := json.Unmarshal(data, msg)
 	if err != nil {
 		return &TunnelBeginMsg{}, err
+	}
+	return msg, nil
+}
+
+type AuthenticationFailMsg struct {
+	errorMsg string
+}
+
+func NewAuthenticationFailMsg(errMsg string) *RequestMsg {
+	return newRequestMsg(PkgAuthenticationFail, "", "", &AuthenticationFailMsg{
+		errorMsg: errMsg,
+	})
+
+}
+
+func ParseAuthenticationFailMsg(data []byte) (*AuthenticationFailMsg, error) {
+	msg := &AuthenticationFailMsg{}
+	err := json.Unmarshal(data, msg)
+	if err != nil {
+		return &AuthenticationFailMsg{}, err
 	}
 	return msg, nil
 }

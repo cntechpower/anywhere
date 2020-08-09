@@ -27,10 +27,13 @@ var initConfig = &model.SystemConfig{
 		WebAddr:     "0.0.0.0:1114",
 	},
 	User: &model.UserConfig{
-		AdminUser:      "admin",
-		AdminPass:      "admin",
-		AdminOtpEnable: false,
-		AdminOtpCode:   "ZKQVBFY55NJGGWBV5F6CU5CEK2YAWIB6",
+		Users: []*model.User{&model.User{
+			UserName:  "admin",
+			UserPass:  "admin",
+			IsAdmin:   true,
+			OtpEnable: false,
+			OtpCode:   "ZKQVBFY55NJGGWBV5F6CU5CEK2YAWIB6",
+		}},
 	},
 }
 

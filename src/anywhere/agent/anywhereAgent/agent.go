@@ -14,6 +14,8 @@ import (
 
 type Agent struct {
 	id              string
+	user            string
+	password        string
 	addr            *net.TCPAddr
 	credential      *_tls.Config
 	adminConn       *conn.WrappedConn
@@ -26,7 +28,7 @@ type Agent struct {
 
 var agentInstance *Agent
 
-func InitAnyWhereAgent(id, ip string, port int) *Agent {
+func InitAnyWhereAgent(id, ip, user, password string, port int) *Agent {
 	if agentInstance != nil {
 		panic("agent already init")
 	}
@@ -36,6 +38,8 @@ func InitAnyWhereAgent(id, ip string, port int) *Agent {
 	}
 	agentInstance = &Agent{
 		id:          id,
+		user:        user,
+		password:    password,
 		addr:        addr,
 		joinedConns: conn.NewJoinedConnList(),
 		version:     constants.AnywhereVersion,

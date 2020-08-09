@@ -5,6 +5,7 @@ import (
 	"anywhere/log"
 	"anywhere/model"
 	"anywhere/server/agent"
+	"anywhere/server/auth"
 	"anywhere/util"
 	_tls "crypto/tls"
 	"encoding/json"
@@ -18,12 +19,13 @@ type Server struct {
 	serverAddr                       *net.TCPAddr
 	credential                       *_tls.Config
 	listener                         net.Listener
-	agents                           map[string]agent.Interface
+	agents                           map[string] /*userName*/ map[string] /*agentId*/ agent.Interface
 	agentsRwMutex                    sync.RWMutex
 	ExitChan                         chan error
 	ErrChan                          chan error
 	statusRwMutex                    sync.RWMutex
 	statusCache                      model.ServerSummary
+	userValidator                    *auth.UserValidator
 	allProxyConfigList               []*model.ProxyConfig
 	networkFlowSortedProxyConfigList []*model.ProxyConfig
 	rejectCountSortedProxyConfigList []*model.ProxyConfig
@@ -35,7 +37,7 @@ func GetServerInstance() *Server {
 	return serverInstance
 }
 
-func InitServerInstance(serverId string, port int) *Server {
+func InitServerInstance(serverId string, port int, users *model.UserConfig) *Server {
 	addr, err := util.GetAddrByIpPort("0.0.0.0", port)
 	if err != nil {
 		panic(err)
@@ -43,13 +45,18 @@ func InitServerInstance(serverId string, port int) *Server {
 	serverInstance = &Server{
 		serverId:      serverId,
 		serverAddr:    addr,
-		agents:        make(map[string]agent.Interface, 0),
+		agents:        make(map[string]map[string]agent.Interface, 0),
 		agentsRwMutex: sync.RWMutex{},
 		ExitChan:      make(chan error, 1),
 		ErrChan:       make(chan error, 10000),
 		statusCache:   model.ServerSummary{},
+		userValidator: auth.NewUserValidator(users),
 	}
 	return serverInstance
+}
+
+func (s *Server) GetUserValidator() *auth.UserValidator {
+	return s.userValidator
 }
 
 func (s *Server) SetCredentials(config *_tls.Config) {
@@ -109,7 +116,13 @@ func (s *Server) handleNewConnection(c net.Conn) {
 	switch msg.ReqType {
 	case model.PkgControlConnRegister:
 		m, _ := model.ParseControlRegisterPkg(msg.Message)
-		if isUpdate := s.RegisterAgent(m.AgentId, c); isUpdate {
+		if !s.userValidator.ValidateUserPass(m.UserName, m.PassWord) {
+			log.Errorf(h, "validate userName and password from %v fail", c.RemoteAddr())
+			_ = conn.NewBaseConn(c).Send(model.NewAuthenticationFailMsg("validate userName and password fail"))
+			_ = c.Close()
+			return
+		}
+		if isUpdate := s.RegisterAgent(m.UserName, m.AgentId, c); isUpdate {
 			log.Errorf(h, "rebuild control connection for agent: %v", m.AgentId)
 		} else {
 			log.Infof(h, "accept control connection from agent: %v", m.AgentId)
@@ -138,9 +151,11 @@ func (s *Server) handleNewConnection(c net.Conn) {
 
 }
 
-func (s *Server) isAgentExist(id string) bool {
-	if _, ok := s.agents[id]; ok {
-		return true
+func (s *Server) isAgentExist(userName, id string) bool {
+	if _, userExist := s.agents[userName]; userExist {
+		if _, agentExist := s.agents[userName][id]; agentExist {
+			return true
+		}
 	}
 	return false
 }
@@ -166,7 +181,7 @@ func (s *Server) ListProxyConfigs() []*model.ProxyConfig {
 	return res
 }
 
-func (s *Server) RegisterAgent(agentId string, c net.Conn) (isUpdate bool) {
+func (s *Server) RegisterAgent(user, agentId string, c net.Conn) (isUpdate bool) {
 	s.agentsRwMutex.Lock()
 	defer s.agentsRwMutex.Unlock()
 	isUpdate = s.isAgentExist(agentId)

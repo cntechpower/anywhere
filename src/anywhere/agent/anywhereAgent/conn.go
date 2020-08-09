@@ -117,6 +117,10 @@ func (a *Agent) handleAdminConnection() {
 		case model.PkgReqHeartBeatPong:
 			a.lastAckRcvTime = time.Now()
 
+		case model.PkgAuthenticationFail:
+			m, _ := model.ParseAuthenticationFailMsg(msg.Message)
+			log.Fatalf(h, "authentication fail: %v", m)
+
 		default:
 			log.Errorf(h, "got unknown ReqType: %v, message is: %v", msg.ReqType, string(msg.Message))
 			_ = a.adminConn.Close()
