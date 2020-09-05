@@ -100,6 +100,7 @@ func NewAgentInfo(userName, agentId string, c net.Conn, errChan chan error) *Age
 
 func (a *Agent) Info() *model.AgentInfoInServer {
 	return &model.AgentInfoInServer{
+		UserName:         a.userName,
 		Id:               a.id,
 		RemoteAddr:       a.RemoteAddr.String(),
 		LastAckRcv:       a.adminConn.LastAckRcvTime.Format(constants.DefaultTimeFormat),

@@ -8,6 +8,7 @@ import (
 
 type AgentInfoInServer struct {
 	Id               string
+	UserName         string
 	RemoteAddr       string
 	LastAckSend      string
 	LastAckRcv       string
@@ -70,7 +71,7 @@ type ServerSummary struct {
 	RefreshTime                  time.Time
 }
 
-func NewProxyConfig(agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) (*ProxyConfig, error) {
+func NewProxyConfig(userName, agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) (*ProxyConfig, error) {
 
 	if err := util.CheckPortValid(remotePort); err != nil {
 		return nil, fmt.Errorf("invalid remoteAddr %v in config, error: %v", localAddr, err)
@@ -79,6 +80,7 @@ func NewProxyConfig(agentId string, remotePort int, localAddr string, isWhiteLis
 		return nil, fmt.Errorf("invalid localAddr %v in config, error: %v", localAddr, err)
 	}
 	return &ProxyConfig{
+		UserName:      userName,
 		AgentId:       agentId,
 		RemotePort:    remotePort,
 		LocalAddr:     localAddr,

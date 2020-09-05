@@ -81,7 +81,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVarP(&agentId, "agent-id", "i", "anywhere-agent-1", "anywhere agent id")
 	rootCmd.PersistentFlags().StringVarP(&grpcAddress, "grpc-address", "g", "127.0.0.1:1110", "anywhere agent grpc address")
 	rootCmd.PersistentFlags().StringVarP(&user, "user", "u", "none", "anywhere user")
-	rootCmd.PersistentFlags().StringVarP(&password, "pass", "p", "none", "anywhere password")
+	rootCmd.PersistentFlags().StringVarP(&password, "pass", "", "none", "anywhere password")
 	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "credential/client.crt", "cert file")
 	rootCmd.PersistentFlags().StringVar(&keyFile, "key", "credential/client.key", "key file")
 	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "credential/ca.crt", "ca file")

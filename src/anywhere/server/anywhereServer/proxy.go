@@ -21,9 +21,9 @@ func (s *Server) listenPort(addr string) *net.TCPListener {
 	return ln
 }
 
-func (s *Server) AddProxyConfigToAgent(agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteList string) error {
+func (s *Server) AddProxyConfigToAgent(userName, agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteList string) error {
 
-	pkg, err := model.NewProxyConfig(agentId, remotePort, localAddr, isWhiteListOn, whiteList)
+	pkg, err := model.NewProxyConfig(userName, agentId, remotePort, localAddr, isWhiteListOn, whiteList)
 	if err != nil {
 		return err
 	}

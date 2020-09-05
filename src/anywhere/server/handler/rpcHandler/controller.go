@@ -72,9 +72,9 @@ func ListAgent() error {
 	}
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"AgentId", "AgentAddr", "LastAckSend", "LastAckRcv"})
+	table.SetHeader([]string{"UserName", "AgentId", "AgentAddr", "LastAckSend", "LastAckRcv"})
 	for _, agent := range res.Agent {
-		table.Append([]string{agent.AgentId, agent.AgentRemoteAddr, agent.AgentLastAckSend, agent.AgentLastAckRcv})
+		table.Append([]string{agent.AgentUserName, agent.AgentId, agent.AgentRemoteAddr, agent.AgentLastAckSend, agent.AgentLastAckRcv})
 	}
 	table.Render()
 	return nil

@@ -75,6 +75,10 @@ func InitConfig() {
 			constants.ProxyConfigFileName, err)
 		globalConfig = &ProxyConfigs{}
 	}
+	if globalConfig.ProxyConfigs == nil {
+		globalConfig.ProxyConfigs = make(map[string][]*model.ProxyConfig, 0)
+	}
+
 }
 
 func (c *ProxyConfigs) ProxyConfigIterator(fn func(userName string, config *model.ProxyConfig) error) error {

@@ -88,6 +88,8 @@ func (s *Server) Start() {
 	}
 	s.listener = ln
 	go s.RefreshSummaryLoop()
+	InitConfig()
+	go PersistGlobalConfigLoop()
 
 	go func() {
 		for {
@@ -135,11 +137,11 @@ func (s *Server) handleNewConnection(c net.Conn) {
 			return
 		}
 		if !s.isAgentExist(m.UserName, m.AgentId) {
-			log.Errorf(h, "got data conn register pkg from unknown agent %v", m.AgentId)
+			log.Errorf(h, "got data conn register pkg from unknown user %v, agent %v", m.UserName, m.AgentId)
 			_ = c.Close()
 		} else {
-			log.Infof(h, "add data conn for %v from agent %v", m.LocalAddr, m.AgentId)
-			if err := s.agents[m.AgentId][m.UserName].PutProxyConn(m.LocalAddr, conn.NewBaseConn(c)); err != nil {
+			log.Infof(h, "add data conn for %v from user %v, agent %v", m.UserName, m.LocalAddr, m.AgentId)
+			if err := s.agents[m.UserName][m.AgentId].PutProxyConn(m.LocalAddr, conn.NewBaseConn(c)); err != nil {
 				log.Errorf(h, "put proxy conn to agent error: %v", err)
 			}
 		}
@@ -193,9 +195,9 @@ func (s *Server) RegisterAgent(user, agentId string, c net.Conn) (isUpdate bool)
 	isUpdate = s.isAgentExist(user, agentId)
 	if isUpdate {
 		//close(s.agents[info.id].CloseChan)
-		s.agents[agentId][agentId].ResetAdminConn(c)
+		s.agents[user][agentId].ResetAdminConn(c)
 	} else {
-		s.agents[agentId][agentId] = agent.NewAgentInfo(user, agentId, c, make(chan error, 99))
+		s.agents[user][agentId] = agent.NewAgentInfo(user, agentId, c, make(chan error, 99))
 	}
 
 	return isUpdate

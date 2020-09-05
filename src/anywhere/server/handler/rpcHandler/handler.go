@@ -36,6 +36,7 @@ func (h *rpcHandlers) ListAgent(ctx context.Context, empty *pb.Empty) (*pb.Agent
 	agents := s.ListAgentInfo()
 	for _, agent := range agents {
 		res.Agent = append(res.Agent, &pb.Agent{
+			AgentUserName:         agent.UserName,
 			AgentId:               agent.Id,
 			AgentRemoteAddr:       agent.RemoteAddr,
 			AgentLastAckRcv:       agent.LastAckRcv,
@@ -62,7 +63,7 @@ func (h *rpcHandlers) AddProxyConfig(ctx context.Context, input *pb.AddProxyConf
 	if err := util.CheckAddrValid(config.LocalAddr); err != nil {
 		return &pb.Empty{}, fmt.Errorf("invalid localAddr %v in config, error: %v", config.LocalAddr, err)
 	}
-	if err := s.AddProxyConfigToAgent(config.AgentId, int(config.RemotePort), config.LocalAddr, config.IsWhiteListOn, config.WhiteCidrList); err != nil {
+	if err := s.AddProxyConfigToAgent(config.Username, config.AgentId, int(config.RemotePort), config.LocalAddr, config.IsWhiteListOn, config.WhiteCidrList); err != nil {
 		return nil, err
 	}
 	return &pb.Empty{}, nil
