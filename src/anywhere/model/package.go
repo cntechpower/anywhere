@@ -90,11 +90,12 @@ func NewHeartBeatPongMsg(localAddr, remoteAddr, id string) *RequestMsg {
 }
 
 type TunnelBeginMsg struct {
+	UserName  string
 	AgentId   string
 	LocalAddr string
 }
 
-func NewTunnelBeginMsg(id, addr string) *RequestMsg {
+func NewTunnelBeginMsg(userName, id, addr string) *RequestMsg {
 	return newRequestMsg(PkgTunnelBegin, id, "", &TunnelBeginMsg{AgentId: id, LocalAddr: addr})
 }
 

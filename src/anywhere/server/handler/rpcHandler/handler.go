@@ -96,7 +96,7 @@ func (h *rpcHandlers) RemoveProxyConfig(ctx context.Context, input *pb.RemovePro
 	if s == nil {
 		return &pb.Empty{}, ErrServerNotInit
 	}
-	return &pb.Empty{}, s.RemoveProxyConfigFromAgent(int(input.RemotePort), input.AgentId, input.LocalAddr)
+	return &pb.Empty{}, s.RemoveProxyConfigFromAgent(input.UserName, int(input.RemotePort), input.AgentId, input.LocalAddr)
 }
 
 func (h *rpcHandlers) LoadProxyConfigFile(ctx context.Context, input *pb.Empty) (*pb.Empty, error) {
@@ -113,11 +113,11 @@ func (h *rpcHandlers) SaveProxyConfigToFile(ctx context.Context, input *pb.Empty
 	if s == nil {
 		return &pb.Empty{}, ErrServerNotInit
 	}
-	return &pb.Empty{}, s.SaveConfigToFile()
+	return &pb.Empty{}, nil //TODO: use config auto save and remove this api.
 }
 
 func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (*pb.Conns, error) {
-	agentConnsMap, err := h.s.ListJoinedConns(input.AgentId)
+	agentConnsMap, err := h.s.ListJoinedConns("", input.AgentId)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (
 }
 
 func (h *rpcHandlers) KillConnById(ctx context.Context, input *pb.KillConnByIdInput) (*pb.Empty, error) {
-	return &pb.Empty{}, h.s.KillJoinedConnById(input.AgentId, int(input.ConnId))
+	return &pb.Empty{}, h.s.KillJoinedConnById(input.UserName, input.AgentId, int(input.ConnId))
 }
 
 func (h *rpcHandlers) KillAllConns(ctx context.Context, empty *pb.Empty) (*pb.Empty, error) {
@@ -152,7 +152,7 @@ func (h *rpcHandlers) KillAllConns(ctx context.Context, empty *pb.Empty) (*pb.Em
 }
 
 func (h *rpcHandlers) UpdateProxyConfigWhiteList(ctx context.Context, input *pb.UpdateProxyConfigWhiteListInput) (*pb.Empty, error) {
-	return &pb.Empty{}, h.s.UpdateProxyConfigWhiteList(int(input.RemotePort), input.AgentId, input.LocalAddr, input.WhiteCidrs, input.WhiteListEnable)
+	return &pb.Empty{}, h.s.UpdateProxyConfigWhiteList(input.UserName, int(input.RemotePort), input.AgentId, input.LocalAddr, input.WhiteCidrs, input.WhiteListEnable)
 }
 
 func (h *rpcHandlers) GetSummary(ctx context.Context, empty *pb.Empty) (*pb.GetSummaryOutput, error) {

@@ -134,12 +134,12 @@ func (s *Server) handleNewConnection(c net.Conn) {
 			_ = c.Close()
 			return
 		}
-		if !s.isAgentExist(m.AgentId) {
+		if !s.isAgentExist(m.UserName, m.AgentId) {
 			log.Errorf(h, "got data conn register pkg from unknown agent %v", m.AgentId)
 			_ = c.Close()
 		} else {
 			log.Infof(h, "add data conn for %v from agent %v", m.LocalAddr, m.AgentId)
-			if err := s.agents[m.AgentId].PutProxyConn(m.LocalAddr, conn.NewBaseConn(c)); err != nil {
+			if err := s.agents[m.AgentId][m.UserName].PutProxyConn(m.LocalAddr, conn.NewBaseConn(c)); err != nil {
 				log.Errorf(h, "put proxy conn to agent error: %v", err)
 			}
 		}
@@ -156,6 +156,8 @@ func (s *Server) isAgentExist(userName, id string) bool {
 		if _, agentExist := s.agents[userName][id]; agentExist {
 			return true
 		}
+	} else {
+		s.agents[userName] = make(map[string]agent.Interface, 0)
 	}
 	return false
 }
@@ -164,8 +166,10 @@ func (s *Server) ListAgentInfo() []*model.AgentInfoInServer {
 	res := make([]*model.AgentInfoInServer, 0)
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
-	for _, agent := range s.agents {
-		res = append(res, agent.Info())
+	for _, user := range s.agents {
+		for _, a := range user {
+			res = append(res, a.Info())
+		}
 	}
 	return res
 }
@@ -175,8 +179,10 @@ func (s *Server) ListProxyConfigs() []*model.ProxyConfig {
 	res := make([]*model.ProxyConfig, 0, 100)
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
-	for _, agent := range s.agents {
-		res = append(res, agent.ListProxyConfigs()...)
+	for _, user := range s.agents {
+		for _, a := range user {
+			res = append(res, a.ListProxyConfigs()...)
+		}
 	}
 	return res
 }
@@ -184,54 +190,58 @@ func (s *Server) ListProxyConfigs() []*model.ProxyConfig {
 func (s *Server) RegisterAgent(user, agentId string, c net.Conn) (isUpdate bool) {
 	s.agentsRwMutex.Lock()
 	defer s.agentsRwMutex.Unlock()
-	isUpdate = s.isAgentExist(agentId)
+	isUpdate = s.isAgentExist(user, agentId)
 	if isUpdate {
 		//close(s.agents[info.id].CloseChan)
-		s.agents[agentId].ResetAdminConn(c)
+		s.agents[agentId][agentId].ResetAdminConn(c)
 	} else {
-		s.agents[agentId] = agent.NewAgentInfo(agentId, c, make(chan error, 99))
+		s.agents[agentId][agentId] = agent.NewAgentInfo(user, agentId, c, make(chan error, 99))
 	}
 
 	return isUpdate
 }
 
-func (s *Server) ListJoinedConns(agentId string) (map[string][]*conn.JoinedConnListItem, error) {
+func (s *Server) ListJoinedConns(user, agentId string) (map[string][]*conn.JoinedConnListItem, error) {
 	res := make(map[string][]*conn.JoinedConnListItem, 0)
 	if agentId != "" { //only get specified agent
-		if !s.isAgentExist(agentId) {
+		if !s.isAgentExist(user, agentId) {
 			return nil, fmt.Errorf("no such agent id %v", agentId)
 		}
-		res[agentId] = s.agents[agentId].ListJoinedConns()
+		res[agentId] = s.agents[user][agentId].ListJoinedConns()
 		return res, nil
 	}
-	for agentId, agent := range s.agents {
-		res[agentId] = agent.ListJoinedConns()
+	for _, user := range s.agents {
+		for _, a := range user {
+			res[agentId] = a.ListJoinedConns()
+		}
 	}
 	return res, nil
 }
 
-func (s *Server) KillJoinedConnById(agentId string, id int) error {
+func (s *Server) KillJoinedConnById(user, agentId string, id int) error {
 	if agentId == "" {
 		return fmt.Errorf("agent id is empty")
 	}
-	if !s.isAgentExist(agentId) {
+	if !s.isAgentExist(user, agentId) {
 		return fmt.Errorf("no such agent id %v", agentId)
 	}
-	return s.agents[agentId].KillJoinedConnById(id)
+	return s.agents[agentId][agentId].KillJoinedConnById(id)
 }
 
 func (s *Server) FlushJoinedConns() {
-	for _, agent := range s.agents {
-		agent.FlushJoinedConns()
+	for _, user := range s.agents {
+		for _, a := range user {
+			a.FlushJoinedConns()
+		}
 	}
 }
 
-func (s *Server) UpdateProxyConfigWhiteList(remotePort int, agentId, localAddr, whiteCidrs string, whiteListEnable bool) error {
+func (s *Server) UpdateProxyConfigWhiteList(userName string, remotePort int, agentId, localAddr, whiteCidrs string, whiteListEnable bool) error {
 	if agentId == "" {
 		return fmt.Errorf("agent id is empty")
 	}
-	if !s.isAgentExist(agentId) {
+	if !s.isAgentExist(userName, agentId) {
 		return fmt.Errorf("no such agent id %v", agentId)
 	}
-	return s.agents[agentId].UpdateProxyConfigWhiteListConfig(remotePort, localAddr, whiteCidrs, whiteListEnable)
+	return s.agents[userName][agentId].UpdateProxyConfigWhiteListConfig(remotePort, localAddr, whiteCidrs, whiteListEnable)
 }

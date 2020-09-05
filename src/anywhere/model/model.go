@@ -24,6 +24,7 @@ type AgentInfoInAgent struct {
 
 type ProxyConfig struct {
 	AgentId                         string `json:"agent_id"`
+	UserName                        string `json:"user_name"`
 	RemotePort                      int    `json:"remote_port"`
 	LocalAddr                       string `json:"local_addr"`
 	IsWhiteListOn                   bool   `json:"is_white_list_enable"`
@@ -32,10 +33,6 @@ type ProxyConfig struct {
 	NetworkFlowLocalToRemoteInBytes uint64 `json:"-"`
 	ProxyConnectCount               uint64 `json:"-"`
 	ProxyConnectRejectCount         uint64 `json:"-"`
-}
-
-type GlobalConfig struct {
-	ProxyConfigs []*ProxyConfig
 }
 
 type UiConfig struct {

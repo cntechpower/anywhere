@@ -35,7 +35,7 @@ func (a *Agent) newProxyConn(localAddr string) {
 	}
 	//let server use this local connection
 	c := conn.NewBaseConn(a.mustGetTlsConnToServer())
-	if err := c.Send(model.NewTunnelBeginMsg(a.id, localAddr)); err != nil {
+	if err := c.Send(model.NewTunnelBeginMsg(a.user, a.id, localAddr)); err != nil {
 		log.Errorf(h, "error while send tunnel pkg : %v", err)
 		_ = c.Close()
 		_ = dst.Close()
