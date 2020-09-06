@@ -88,6 +88,11 @@ type PostV1ProxyAddParams struct {
 
 	*/
 	RemotePort int64
+	/*UserName
+	  user name
+
+	*/
+	UserName string
 	/*WhiteListEnable
 	  white_list_enable
 
@@ -170,6 +175,17 @@ func (o *PostV1ProxyAddParams) SetRemotePort(remotePort int64) {
 	o.RemotePort = remotePort
 }
 
+// WithUserName adds the userName to the post v1 proxy add params
+func (o *PostV1ProxyAddParams) WithUserName(userName string) *PostV1ProxyAddParams {
+	o.SetUserName(userName)
+	return o
+}
+
+// SetUserName adds the userName to the post v1 proxy add params
+func (o *PostV1ProxyAddParams) SetUserName(userName string) {
+	o.UserName = userName
+}
+
 // WithWhiteListEnable adds the whiteListEnable to the post v1 proxy add params
 func (o *PostV1ProxyAddParams) WithWhiteListEnable(whiteListEnable bool) *PostV1ProxyAddParams {
 	o.SetWhiteListEnable(whiteListEnable)
@@ -223,6 +239,15 @@ func (o *PostV1ProxyAddParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 	fRemotePort := swag.FormatInt64(frRemotePort)
 	if fRemotePort != "" {
 		if err := r.SetFormParam("remote_port", fRemotePort); err != nil {
+			return err
+		}
+	}
+
+	// form param user_name
+	frUserName := o.UserName
+	fUserName := frUserName
+	if fUserName != "" {
+		if err := r.SetFormParam("user_name", fUserName); err != nil {
 			return err
 		}
 	}

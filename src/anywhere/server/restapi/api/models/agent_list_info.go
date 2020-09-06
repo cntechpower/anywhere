@@ -29,6 +29,9 @@ type AgentListInfo struct {
 
 	// proxy config count
 	ProxyConfigCount int64 `json:"proxyConfigCount,omitempty"`
+
+	// user name
+	UserName string `json:"userName,omitempty"`
 }
 
 // Validate validates this agent list info

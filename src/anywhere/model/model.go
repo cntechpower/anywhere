@@ -8,6 +8,7 @@ import (
 
 type AgentInfoInServer struct {
 	Id               string
+	UserName         string
 	RemoteAddr       string
 	LastAckSend      string
 	LastAckRcv       string
@@ -24,6 +25,7 @@ type AgentInfoInAgent struct {
 
 type ProxyConfig struct {
 	AgentId                         string `json:"agent_id"`
+	UserName                        string `json:"user_name"`
 	RemotePort                      int    `json:"remote_port"`
 	LocalAddr                       string `json:"local_addr"`
 	IsWhiteListOn                   bool   `json:"is_white_list_enable"`
@@ -32,10 +34,6 @@ type ProxyConfig struct {
 	NetworkFlowLocalToRemoteInBytes uint64 `json:"-"`
 	ProxyConnectCount               uint64 `json:"-"`
 	ProxyConnectRejectCount         uint64 `json:"-"`
-}
-
-type GlobalConfig struct {
-	ProxyConfigs []*ProxyConfig
 }
 
 type UiConfig struct {
@@ -51,13 +49,6 @@ type SslConfig struct {
 	CertFile string `json:"cert_file_path"`
 	KeyFile  string `json:"key_file_path"`
 	CaFile   string `json:"ca_file_path"`
-}
-
-type UserConfig struct {
-	AdminUser      string `json:"admin_user_name"`
-	AdminPass      string `json:"admin_password"`
-	AdminOtpEnable bool   `json:"admin_otp_enable"`
-	AdminOtpCode   string `json:"admin_otp_code"`
 }
 
 type SystemConfig struct {
@@ -80,7 +71,7 @@ type ServerSummary struct {
 	RefreshTime                  time.Time
 }
 
-func NewProxyConfig(agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) (*ProxyConfig, error) {
+func NewProxyConfig(userName, agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) (*ProxyConfig, error) {
 
 	if err := util.CheckPortValid(remotePort); err != nil {
 		return nil, fmt.Errorf("invalid remoteAddr %v in config, error: %v", localAddr, err)
@@ -89,6 +80,7 @@ func NewProxyConfig(agentId string, remotePort int, localAddr string, isWhiteLis
 		return nil, fmt.Errorf("invalid localAddr %v in config, error: %v", localAddr, err)
 	}
 	return &ProxyConfig{
+		UserName:      userName,
 		AgentId:       agentId,
 		RemotePort:    remotePort,
 		LocalAddr:     localAddr,

@@ -35,7 +35,7 @@ func (a *Agent) newProxyConn(localAddr string) {
 	}
 	//let server use this local connection
 	c := conn.NewBaseConn(a.mustGetTlsConnToServer())
-	if err := c.Send(model.NewTunnelBeginMsg(a.id, localAddr)); err != nil {
+	if err := c.Send(model.NewTunnelBeginMsg(a.user, a.id, localAddr)); err != nil {
 		log.Errorf(h, "error while send tunnel pkg : %v", err)
 		_ = c.Close()
 		_ = dst.Close()
@@ -116,6 +116,10 @@ func (a *Agent) handleAdminConnection() {
 			go a.newProxyConn(m.LocalAddr)
 		case model.PkgReqHeartBeatPong:
 			a.lastAckRcvTime = time.Now()
+
+		case model.PkgAuthenticationFail:
+			m, _ := model.ParseAuthenticationFailMsg(msg.Message)
+			log.Fatalf(h, "authentication fail: %v", m)
 
 		default:
 			log.Errorf(h, "got unknown ReqType: %v, message is: %v", msg.ReqType, string(msg.Message))

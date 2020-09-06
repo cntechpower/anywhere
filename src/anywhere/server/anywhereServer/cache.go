@@ -63,16 +63,18 @@ func (s *Server) RefreshSummaryLoop() {
 		newCache := model.ServerSummary{}
 		allConfigList := make([]*model.ProxyConfig, 0, 100)
 		s.agentsRwMutex.Lock()
-		for _, agent := range s.agents {
-			configs := agent.ListProxyConfigs()
-			newCache.ProxyConfigTotalCount += uint64(len(configs))
-			allConfigList = append(allConfigList, configs...)
-			newCache.AgentTotalCount++
-			for _, config := range configs {
-				newCache.NetworkFlowTotalCountInBytes += config.NetworkFlowRemoteToLocalInBytes
-				newCache.NetworkFlowTotalCountInBytes += config.NetworkFlowLocalToRemoteInBytes
-				newCache.ProxyConnectRejectCount += config.ProxyConnectRejectCount
-				newCache.ProxyConnectTotalCount += config.ProxyConnectCount
+		for _, user := range s.agents {
+			for _, agent := range user {
+				configs := agent.ListProxyConfigs()
+				newCache.ProxyConfigTotalCount += uint64(len(configs))
+				allConfigList = append(allConfigList, configs...)
+				newCache.AgentTotalCount++
+				for _, config := range configs {
+					newCache.NetworkFlowTotalCountInBytes += config.NetworkFlowRemoteToLocalInBytes
+					newCache.NetworkFlowTotalCountInBytes += config.NetworkFlowLocalToRemoteInBytes
+					newCache.ProxyConnectRejectCount += config.ProxyConnectRejectCount
+					newCache.ProxyConnectTotalCount += config.ProxyConnectCount
+				}
 			}
 		}
 		s.agentsRwMutex.Unlock()

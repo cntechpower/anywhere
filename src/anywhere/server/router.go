@@ -2,6 +2,7 @@ package main
 
 import (
 	"anywhere/log"
+	"anywhere/server/anywhereServer"
 	"anywhere/server/auth"
 	"anywhere/server/restapi/api/restapi"
 	"anywhere/server/restapi/api/restapi/operations"
@@ -21,7 +22,6 @@ import (
 
 var userValidator *auth.UserValidator
 var jwtValidator *auth.JwtValidator
-var totpValidator *auth.TOTPValidator
 
 var (
 	ErrUserPassIsRequired = gin.H{"message": "username/password/otp_code is required"}
@@ -109,17 +109,11 @@ func userLogin(c *gin.Context) {
 		return
 	}
 
-	//username & password check
-	if !userValidator.Validate(userName, password) {
+	if !userValidator.Validate(userName, password, otpCode) {
 		c.AbortWithStatusJSON(http.StatusNotAcceptable, ErrUserPassWrong)
 		return
 	}
 
-	//OTP check
-	if !totpValidator.Validate(userName, otpCode) {
-		c.AbortWithStatusJSON(http.StatusNotAcceptable, ErrUserPassWrong)
-		return
-	}
 	//validate success, generate setCookie
 	token, err := jwtValidator.Generate(userName)
 	if err != nil {
@@ -132,7 +126,7 @@ func userLogin(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "login success"})
 }
 
-func startUIAndAPIService(addr, user, pass, totpSecret string, otpEnable bool, errChan chan error, skipLogin, debug bool) {
+func startUIAndAPIService(addr string, errChan chan error, skipLogin, debug bool) {
 	if err := util.CheckAddrValid(addr); err != nil {
 		errChan <- err
 	}
@@ -161,9 +155,8 @@ func startUIAndAPIService(addr, user, pass, totpSecret string, otpEnable bool, e
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	userValidator = auth.NewUserValidator(user, pass)
+	userValidator = anywhereServer.GetServerInstance().GetUserValidator()
 	jwtValidator = auth.NewJwtValidator()
-	totpValidator = auth.NewTOTPValidator(user, totpSecret, otpEnable)
 	//session auth
 	store := cookie.NewStore([]byte(util.RandString(16)))
 	router.Use(sessions.Sessions("anywhere", store))

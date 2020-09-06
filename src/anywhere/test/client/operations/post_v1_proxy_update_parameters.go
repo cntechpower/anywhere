@@ -83,6 +83,11 @@ type PostV1ProxyUpdateParams struct {
 
 	*/
 	LocalAddr string
+	/*UserName
+	  user name
+
+	*/
+	UserName string
 	/*WhiteListEnable
 	  white_list_enable
 
@@ -154,6 +159,17 @@ func (o *PostV1ProxyUpdateParams) SetLocalAddr(localAddr string) {
 	o.LocalAddr = localAddr
 }
 
+// WithUserName adds the userName to the post v1 proxy update params
+func (o *PostV1ProxyUpdateParams) WithUserName(userName string) *PostV1ProxyUpdateParams {
+	o.SetUserName(userName)
+	return o
+}
+
+// SetUserName adds the userName to the post v1 proxy update params
+func (o *PostV1ProxyUpdateParams) SetUserName(userName string) {
+	o.UserName = userName
+}
+
 // WithWhiteListEnable adds the whiteListEnable to the post v1 proxy update params
 func (o *PostV1ProxyUpdateParams) WithWhiteListEnable(whiteListEnable bool) *PostV1ProxyUpdateParams {
 	o.SetWhiteListEnable(whiteListEnable)
@@ -198,6 +214,15 @@ func (o *PostV1ProxyUpdateParams) WriteToRequest(r runtime.ClientRequest, reg st
 	fLocalAddr := frLocalAddr
 	if fLocalAddr != "" {
 		if err := r.SetFormParam("local_addr", fLocalAddr); err != nil {
+			return err
+		}
+	}
+
+	// form param user_name
+	frUserName := o.UserName
+	fUserName := frUserName
+	if fUserName != "" {
+		if err := r.SetFormParam("user_name", fUserName); err != nil {
 			return err
 		}
 	}

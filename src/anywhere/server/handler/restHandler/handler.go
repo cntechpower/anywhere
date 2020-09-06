@@ -22,6 +22,7 @@ func ListAgentV1() ([]*models.AgentListInfo, error) {
 	}
 	for _, agent := range agents.Agent {
 		a := &models.AgentListInfo{
+			UserName:         agent.AgentUserName,
 			AgentAdminAddr:   agent.AgentRemoteAddr,
 			AgentID:          agent.AgentId,
 			LastAckSend:      agent.AgentLastAckSend,
@@ -46,6 +47,7 @@ func ListProxyV1() ([]*models.ProxyConfig, error) {
 	}
 	for _, config := range configs.Config {
 		res = append(res, &models.ProxyConfig{
+			UserName:                        config.Username,
 			AgentID:                         config.AgentId,
 			LocalAddr:                       config.LocalAddr,
 			RemotePort:                      config.RemotePort,
@@ -65,6 +67,7 @@ func AddProxyConfigV1(params v1.PostV1ProxyAddParams) (*models.ProxyConfig, erro
 	}
 	if _, err := c.AddProxyConfig(context.Background(), &pb.AddProxyConfigInput{
 		Config: &pb.ProxyConfig{
+			Username:      params.UserName,
 			AgentId:       params.AgentID,
 			RemotePort:    params.RemotePort,
 			LocalAddr:     params.LocalAddr,
@@ -75,6 +78,7 @@ func AddProxyConfigV1(params v1.PostV1ProxyAddParams) (*models.ProxyConfig, erro
 		return nil, err
 	}
 	return &models.ProxyConfig{
+		UserName:      params.UserName,
 		AgentID:       params.AgentID,
 		IsWhitelistOn: params.WhiteListEnable,
 		LocalAddr:     params.LocalAddr,
@@ -97,6 +101,7 @@ func PostV1ProxyUpdateParams(params v1.PostV1ProxyUpdateParams) (*models.ProxyCo
 		return nil, err
 	}
 	if _, err := c.UpdateProxyConfigWhiteList(context.Background(), &pb.UpdateProxyConfigWhiteListInput{
+		UserName:        params.UserName,
 		AgentId:         params.AgentID,
 		LocalAddr:       params.LocalAddr,
 		WhiteCidrs:      util.StringNvl(params.WhiteListIps),
@@ -105,6 +110,7 @@ func PostV1ProxyUpdateParams(params v1.PostV1ProxyUpdateParams) (*models.ProxyCo
 		return nil, err
 	}
 	return &models.ProxyConfig{
+		UserName:      params.UserName,
 		AgentID:       params.AgentID,
 		IsWhitelistOn: params.WhiteListEnable,
 		LocalAddr:     params.LocalAddr,
@@ -118,12 +124,14 @@ func PostV1ProxyDeleteHandler(params v1.PostV1ProxyDeleteParams) (*models.ProxyC
 		return nil, err
 	}
 	if _, err := c.RemoveProxyConfig(context.Background(), &pb.RemoveProxyConfigInput{
+		UserName:  params.UserName,
 		AgentId:   params.AgentID,
 		LocalAddr: params.LocalAddr,
 	}); err != nil {
 		return nil, err
 	}
 	return &models.ProxyConfig{
+		UserName:  params.UserName,
 		AgentID:   params.AgentID,
 		LocalAddr: params.LocalAddr,
 	}, nil

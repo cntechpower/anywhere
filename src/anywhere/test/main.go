@@ -14,6 +14,7 @@ import (
 var addr string
 var o operations.ClientService
 var agentId string
+var userName string
 var errBuilder strings.Builder
 
 func init() {
@@ -37,6 +38,7 @@ func addError(funcName string, err error) {
 func addProxyConfig(remotePort int64, localAddr string) error {
 	ctx, cancel := getDefaultContext()
 	_, err := o.PostV1ProxyAdd(&operations.PostV1ProxyAddParams{
+		UserName:        userName,
 		AgentID:         agentId,
 		LocalAddr:       localAddr,
 		RemotePort:      remotePort,
@@ -70,6 +72,7 @@ func main() {
 		}
 		for _, agent := range resp.Payload {
 			agentId = agent.AgentID
+			userName = agent.UserName
 		}
 	}
 	// add proxy config and check
