@@ -39,6 +39,9 @@ type ProxyConfig struct {
 	// anywhered server listen addr
 	RemotePort int64 `json:"remote_port,omitempty"`
 
+	// user name
+	UserName string `json:"user_name,omitempty"`
+
 	// whitelist ips
 	WhitelistIps string `json:"whitelist_ips,omitempty"`
 }

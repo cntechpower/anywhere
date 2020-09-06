@@ -14,6 +14,7 @@ import (
 var addr string
 var o operations.ClientService
 var agentId string
+var userName string
 var errBuilder strings.Builder
 
 func init() {
@@ -70,6 +71,7 @@ func main() {
 		}
 		for _, agent := range resp.Payload {
 			agentId = agent.AgentID
+			userName = agent.UserName
 		}
 	}
 	// add proxy config and check

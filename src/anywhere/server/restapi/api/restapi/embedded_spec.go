@@ -63,6 +63,13 @@ func init() {
         "parameters": [
           {
             "type": "string",
+            "description": "user name",
+            "name": "user_name",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "string",
             "description": "agent id",
             "name": "agent_id",
             "in": "formData",
@@ -116,6 +123,13 @@ func init() {
     "/v1/proxy/delete": {
       "post": {
         "parameters": [
+          {
+            "type": "string",
+            "description": "user name",
+            "name": "user_name",
+            "in": "formData",
+            "required": true
+          },
           {
             "type": "string",
             "description": "agent id",
@@ -179,6 +193,13 @@ func init() {
     "/v1/proxy/update": {
       "post": {
         "parameters": [
+          {
+            "type": "string",
+            "description": "user name",
+            "name": "user_name",
+            "in": "formData",
+            "required": true
+          },
           {
             "type": "string",
             "description": "agent id",
@@ -281,6 +302,9 @@ func init() {
         },
         "proxyConfigCount": {
           "type": "integer"
+        },
+        "userName": {
+          "type": "string"
         }
       }
     },
@@ -319,6 +343,10 @@ func init() {
         "remote_port": {
           "description": "anywhered server listen addr",
           "type": "integer"
+        },
+        "user_name": {
+          "description": "user name",
+          "type": "string"
         },
         "whitelist_ips": {
           "description": "whitelist ips",
@@ -410,6 +438,13 @@ func init() {
         "parameters": [
           {
             "type": "string",
+            "description": "user name",
+            "name": "user_name",
+            "in": "formData",
+            "required": true
+          },
+          {
+            "type": "string",
             "description": "agent id",
             "name": "agent_id",
             "in": "formData",
@@ -463,6 +498,13 @@ func init() {
     "/v1/proxy/delete": {
       "post": {
         "parameters": [
+          {
+            "type": "string",
+            "description": "user name",
+            "name": "user_name",
+            "in": "formData",
+            "required": true
+          },
           {
             "type": "string",
             "description": "agent id",
@@ -526,6 +568,13 @@ func init() {
     "/v1/proxy/update": {
       "post": {
         "parameters": [
+          {
+            "type": "string",
+            "description": "user name",
+            "name": "user_name",
+            "in": "formData",
+            "required": true
+          },
           {
             "type": "string",
             "description": "agent id",
@@ -628,6 +677,9 @@ func init() {
         },
         "proxyConfigCount": {
           "type": "integer"
+        },
+        "userName": {
+          "type": "string"
         }
       }
     },
@@ -666,6 +718,10 @@ func init() {
         "remote_port": {
           "description": "anywhered server listen addr",
           "type": "integer"
+        },
+        "user_name": {
+          "description": "user name",
+          "type": "string"
         },
         "whitelist_ips": {
           "description": "whitelist ips",

@@ -55,6 +55,11 @@ type PostV1ProxyAddParams struct {
 	  In: formData
 	*/
 	RemotePort int64
+	/*user name
+	  Required: true
+	  In: formData
+	*/
+	UserName string
 	/*white_list_enable
 	  Required: true
 	  In: formData
@@ -97,6 +102,11 @@ func (o *PostV1ProxyAddParams) BindRequest(r *http.Request, route *middleware.Ma
 
 	fdRemotePort, fdhkRemotePort, _ := fds.GetOK("remote_port")
 	if err := o.bindRemotePort(fdRemotePort, fdhkRemotePort, route.Formats); err != nil {
+		res = append(res, err)
+	}
+
+	fdUserName, fdhkUserName, _ := fds.GetOK("user_name")
+	if err := o.bindUserName(fdUserName, fdhkUserName, route.Formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -179,6 +189,27 @@ func (o *PostV1ProxyAddParams) bindRemotePort(rawData []string, hasKey bool, for
 		return errors.InvalidType("remote_port", "formData", "int64", raw)
 	}
 	o.RemotePort = value
+
+	return nil
+}
+
+// bindUserName binds and validates parameter UserName from formData.
+func (o *PostV1ProxyAddParams) bindUserName(rawData []string, hasKey bool, formats strfmt.Registry) error {
+	if !hasKey {
+		return errors.Required("user_name", "formData")
+	}
+	var raw string
+	if len(rawData) > 0 {
+		raw = rawData[len(rawData)-1]
+	}
+
+	// Required: true
+
+	if err := validate.RequiredString("user_name", "formData", raw); err != nil {
+		return err
+	}
+
+	o.UserName = raw
 
 	return nil
 }

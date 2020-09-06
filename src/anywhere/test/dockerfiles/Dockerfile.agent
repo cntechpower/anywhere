@@ -12,4 +12,4 @@ ENV SERVER_ADDR=172.90.101.11
 WORKDIR /usr/local/anywhere/
 
 
-CMD ["sh","-c","./bin/anywhere -s $SERVER_ADDR"]
+CMD ["sh","-c","./bin/anywhere -s $SERVER_ADDR -u admin --pass admin"]
