@@ -14,10 +14,6 @@ import (
 	"time"
 )
 
-func newErrTimeoutWaitingProxyConn(s string) error {
-	return fmt.Errorf("timeout while waiting for proxy conn for %v", s)
-}
-
 var ErrProxyConnBufferFull = fmt.Errorf("proxy conn buffer is full")
 
 type Interface interface {
@@ -72,7 +68,7 @@ type Agent struct {
 	proxyConfigs     map[string]*ProxyConfig
 	proxyConfigMutex sync.Mutex
 	proxyConfigChan  chan *ProxyConfig
-	chanProxyConns   map[string]chan *conn.WrappedConn
+	connectionPool   conn.ConnectionPool
 	errChan          chan error
 	CloseChan        chan struct{}
 	joinedConns      *conn.JoinedConnList
@@ -85,14 +81,14 @@ func NewAgentInfo(userName, agentId string, c net.Conn, errChan chan error) *Age
 		userName:        userName,
 		version:         constants.AnywhereVersion,
 		RemoteAddr:      c.RemoteAddr(),
-		adminConn:       conn.NewBaseConn(c),
+		adminConn:       conn.NewWrappedConn(c),
 		proxyConfigs:    make(map[string]*ProxyConfig, 0),
-		chanProxyConns:  make(map[string]chan *conn.WrappedConn, 5),
 		proxyConfigChan: make(chan *ProxyConfig, 0),
 		errChan:         errChan,
 		CloseChan:       make(chan struct{}, 0),
 		joinedConns:     conn.NewJoinedConnList(),
 	}
+	a.connectionPool = conn.NewConnectionPool(a.requestNewProxyConn)
 	go a.proxyConfigHandleLoop()
 	go a.handleAdminConnection()
 	return a
@@ -183,37 +179,11 @@ func (a *Agent) RemoveProxyConfig(remotePort int, localAddr string) error {
 }
 
 func (a *Agent) PutProxyConn(proxyAddr string, c *conn.WrappedConn) error {
-	if _, ok := a.chanProxyConns[proxyAddr]; !ok {
-		a.chanProxyConns[proxyAddr] = make(chan *conn.WrappedConn, constants.ProxyConnBufferForEachAgent)
-	}
-	select {
-	case a.chanProxyConns[proxyAddr] <- c:
-		return nil
-	case <-time.After(constants.ProxyConnGetRetrySeconds * time.Second):
-		a.errChan <- ErrProxyConnBufferFull
-		_ = c.Close()
-		return ErrProxyConnBufferFull
-	}
+	return a.connectionPool.Put(proxyAddr, c)
 }
 
 func (a *Agent) GetProxyConn(proxyAddr string) (*conn.WrappedConn, error) {
-	h := log.NewHeader("GetProxyConn")
-	if _, ok := a.chanProxyConns[proxyAddr]; !ok {
-		a.chanProxyConns[proxyAddr] = make(chan *conn.WrappedConn, constants.ProxyConnBufferForEachAgent)
-	}
-	for i := 0; i < constants.ProxyConnGetMaxRetryCount; i++ {
-		//request a new proxy conn
-		a.requestNewProxyConn(proxyAddr)
-		select {
-		case c := <-a.chanProxyConns[proxyAddr]:
-			return c, nil
-		case <-time.After(200 * time.Millisecond):
-			continue
-		}
-	}
-	log.Infof(h, "get conn from agent %v proxy addr %v failed, maybe proxy address is down or agent is dead", a.id, proxyAddr)
-
-	return nil, newErrTimeoutWaitingProxyConn(proxyAddr)
+	return a.connectionPool.Get(proxyAddr)
 }
 
 func (a *Agent) ListJoinedConns() []*conn.JoinedConnListItem {
@@ -349,7 +319,7 @@ func (a *Agent) handelProxyConnection(c net.Conn, localAddr string, fnOnEnd func
 		_ = c.Close()
 		return
 	}
-	idx := a.joinedConns.Add(conn.NewBaseConn(c), dst)
+	idx := a.joinedConns.Add(conn.NewWrappedConn(c), dst)
 	localToRemoteBytes, remoteToLocalBytes := conn.JoinConn(dst.GetConn(), c)
 	fnOnEnd(localToRemoteBytes, remoteToLocalBytes)
 	if err := a.joinedConns.Remove(idx); err != nil {

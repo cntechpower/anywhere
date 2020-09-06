@@ -34,14 +34,14 @@ func (a *Agent) newProxyConn(localAddr string) {
 		return
 	}
 	//let server use this local connection
-	c := conn.NewBaseConn(a.mustGetTlsConnToServer())
+	c := conn.NewWrappedConn(a.mustGetTlsConnToServer())
 	if err := c.Send(model.NewTunnelBeginMsg(a.user, a.id, localAddr)); err != nil {
 		log.Errorf(h, "error while send tunnel pkg : %v", err)
 		_ = c.Close()
 		_ = dst.Close()
 	}
 	log.Infof(h, "called newProxyConn for %v", localAddr)
-	idx := a.joinedConns.Add(c, conn.NewBaseConn(dst))
+	idx := a.joinedConns.Add(c, conn.NewWrappedConn(dst))
 	conn.JoinConn(c.GetConn(), dst)
 	a.joinedConns.Remove(idx)
 }
@@ -59,7 +59,7 @@ func (a *Agent) getTlsConnToServer() (*_tls.Conn, error) {
 func (a *Agent) initControlConn(dur int) {
 	h := log.NewHeader("initControlConn")
 	if a.adminConn == nil {
-		a.adminConn = conn.NewBaseConn(nil)
+		a.adminConn = conn.NewWrappedConn(nil)
 	}
 CONNECT:
 	c := a.mustGetTlsConnToServer()

@@ -13,6 +13,7 @@ var ErrNilConn = fmt.Errorf("empty net.Conn")
 type WrappedConn struct {
 	conn            net.Conn
 	statusMutex     sync.RWMutex
+	CreateTime      time.Time
 	LastAckSendTime time.Time
 	LastAckRcvTime  time.Time
 }
@@ -90,10 +91,11 @@ func (c *WrappedConn) GetConn() net.Conn {
 	return c.conn
 }
 
-func NewBaseConn(c net.Conn) *WrappedConn {
+func NewWrappedConn(c net.Conn) *WrappedConn {
 	return &WrappedConn{
 		conn:            c,
 		statusMutex:     sync.RWMutex{},
+		CreateTime:      time.Now(),
 		LastAckSendTime: time.Time{},
 		LastAckRcvTime:  time.Time{},
 	}
