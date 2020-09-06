@@ -13,5 +13,6 @@ const SystemConfigFIle = "anywhered.json"
 
 // anywhered agent proxy connection
 const ProxyConnBufferForEachAgent = 10
-const ProxyConnGetRetrySeconds = 1
+const ProxyConnGetRetryMilliseconds = 200
 const ProxyConnGetMaxRetryCount = 5
+const ProxyConnMaxIdleTimeout = 30

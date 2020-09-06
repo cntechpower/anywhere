@@ -120,7 +120,7 @@ func (s *Server) handleNewConnection(c net.Conn) {
 		m, _ := model.ParseControlRegisterPkg(msg.Message)
 		if !s.userValidator.ValidateUserPass(m.UserName, m.PassWord) {
 			log.Errorf(h, "validate userName and password from %v fail", c.RemoteAddr())
-			_ = conn.NewBaseConn(c).Send(model.NewAuthenticationFailMsg("validate userName and password fail"))
+			_ = conn.NewWrappedConn(c).Send(model.NewAuthenticationFailMsg("validate userName and password fail"))
 			_ = c.Close()
 			return
 		}
@@ -141,7 +141,7 @@ func (s *Server) handleNewConnection(c net.Conn) {
 			_ = c.Close()
 		} else {
 			log.Infof(h, "add data conn for %v from user %v, agent %v", m.UserName, m.LocalAddr, m.AgentId)
-			if err := s.agents[m.UserName][m.AgentId].PutProxyConn(m.LocalAddr, conn.NewBaseConn(c)); err != nil {
+			if err := s.agents[m.UserName][m.AgentId].PutProxyConn(m.LocalAddr, conn.NewWrappedConn(c)); err != nil {
 				log.Errorf(h, "put proxy conn to agent error: %v", err)
 			}
 		}
