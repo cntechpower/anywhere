@@ -59,6 +59,11 @@ paths:
     post:
       parameters:
         - in: formData
+          name: user_name
+          description: "user name"
+          type: string
+          required: true
+        - in: formData
           name: agent_id
           description: "agent id"
           type: string
@@ -97,6 +102,11 @@ paths:
     post:
       parameters:
         - in: formData
+          name: user_name
+          description: "user name"
+          type: string
+          required: true
+        - in: formData
           name: agent_id
           description: "agent id"
           type: string
@@ -129,6 +139,11 @@ paths:
   /v1/proxy/delete:
     post:
       parameters:
+        - in: formData
+          name: user_name
+          description: "user name"
+          type: string
+          required: true
         - in: formData
           name: agent_id
           description: "agent id"
@@ -175,6 +190,8 @@ definitions:
     type: object
     description: Journal information
     properties:
+      userName:
+        type: string
       agentId:
         type: string
       agentAdminAddr:
@@ -190,6 +207,9 @@ definitions:
     type: object
     description: proxy config information
     properties:
+      user_name:
+        description: "user name"
+        type: string
       agent_id:
         description: "agent id"
         type: string

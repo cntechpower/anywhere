@@ -5,6 +5,7 @@ import (
 	"anywhere/log"
 	"anywhere/model"
 	"anywhere/server/agent"
+	"anywhere/server/auth"
 	"anywhere/util"
 	_tls "crypto/tls"
 	"encoding/json"
@@ -18,12 +19,13 @@ type Server struct {
 	serverAddr                       *net.TCPAddr
 	credential                       *_tls.Config
 	listener                         net.Listener
-	agents                           map[string]agent.Interface
+	agents                           map[string] /*userName*/ map[string] /*agentId*/ agent.Interface
 	agentsRwMutex                    sync.RWMutex
 	ExitChan                         chan error
 	ErrChan                          chan error
 	statusRwMutex                    sync.RWMutex
 	statusCache                      model.ServerSummary
+	userValidator                    *auth.UserValidator
 	allProxyConfigList               []*model.ProxyConfig
 	networkFlowSortedProxyConfigList []*model.ProxyConfig
 	rejectCountSortedProxyConfigList []*model.ProxyConfig
@@ -35,7 +37,7 @@ func GetServerInstance() *Server {
 	return serverInstance
 }
 
-func InitServerInstance(serverId string, port int) *Server {
+func InitServerInstance(serverId string, port int, users *model.UserConfig) *Server {
 	addr, err := util.GetAddrByIpPort("0.0.0.0", port)
 	if err != nil {
 		panic(err)
@@ -43,13 +45,18 @@ func InitServerInstance(serverId string, port int) *Server {
 	serverInstance = &Server{
 		serverId:      serverId,
 		serverAddr:    addr,
-		agents:        make(map[string]agent.Interface, 0),
+		agents:        make(map[string]map[string]agent.Interface, 0),
 		agentsRwMutex: sync.RWMutex{},
 		ExitChan:      make(chan error, 1),
 		ErrChan:       make(chan error, 10000),
 		statusCache:   model.ServerSummary{},
+		userValidator: auth.NewUserValidator(users),
 	}
 	return serverInstance
+}
+
+func (s *Server) GetUserValidator() *auth.UserValidator {
+	return s.userValidator
 }
 
 func (s *Server) SetCredentials(config *_tls.Config) {
@@ -81,6 +88,8 @@ func (s *Server) Start() {
 	}
 	s.listener = ln
 	go s.RefreshSummaryLoop()
+	InitConfig()
+	go PersistGlobalConfigLoop()
 
 	go func() {
 		for {
@@ -109,7 +118,13 @@ func (s *Server) handleNewConnection(c net.Conn) {
 	switch msg.ReqType {
 	case model.PkgControlConnRegister:
 		m, _ := model.ParseControlRegisterPkg(msg.Message)
-		if isUpdate := s.RegisterAgent(m.AgentId, c); isUpdate {
+		if !s.userValidator.ValidateUserPass(m.UserName, m.PassWord) {
+			log.Errorf(h, "validate userName and password from %v fail", c.RemoteAddr())
+			_ = conn.NewBaseConn(c).Send(model.NewAuthenticationFailMsg("validate userName and password fail"))
+			_ = c.Close()
+			return
+		}
+		if isUpdate := s.RegisterAgent(m.UserName, m.AgentId, c); isUpdate {
 			log.Errorf(h, "rebuild control connection for agent: %v", m.AgentId)
 		} else {
 			log.Infof(h, "accept control connection from agent: %v", m.AgentId)
@@ -121,12 +136,12 @@ func (s *Server) handleNewConnection(c net.Conn) {
 			_ = c.Close()
 			return
 		}
-		if !s.isAgentExist(m.AgentId) {
-			log.Errorf(h, "got data conn register pkg from unknown agent %v", m.AgentId)
+		if !s.isAgentExist(m.UserName, m.AgentId) {
+			log.Errorf(h, "got data conn register pkg from unknown user %v, agent %v", m.UserName, m.AgentId)
 			_ = c.Close()
 		} else {
-			log.Infof(h, "add data conn for %v from agent %v", m.LocalAddr, m.AgentId)
-			if err := s.agents[m.AgentId].PutProxyConn(m.LocalAddr, conn.NewBaseConn(c)); err != nil {
+			log.Infof(h, "add data conn for %v from user %v, agent %v", m.UserName, m.LocalAddr, m.AgentId)
+			if err := s.agents[m.UserName][m.AgentId].PutProxyConn(m.LocalAddr, conn.NewBaseConn(c)); err != nil {
 				log.Errorf(h, "put proxy conn to agent error: %v", err)
 			}
 		}
@@ -138,9 +153,13 @@ func (s *Server) handleNewConnection(c net.Conn) {
 
 }
 
-func (s *Server) isAgentExist(id string) bool {
-	if _, ok := s.agents[id]; ok {
-		return true
+func (s *Server) isAgentExist(userName, id string) bool {
+	if _, userExist := s.agents[userName]; userExist {
+		if _, agentExist := s.agents[userName][id]; agentExist {
+			return true
+		}
+	} else {
+		s.agents[userName] = make(map[string]agent.Interface, 0)
 	}
 	return false
 }
@@ -149,8 +168,10 @@ func (s *Server) ListAgentInfo() []*model.AgentInfoInServer {
 	res := make([]*model.AgentInfoInServer, 0)
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
-	for _, agent := range s.agents {
-		res = append(res, agent.Info())
+	for _, user := range s.agents {
+		for _, a := range user {
+			res = append(res, a.Info())
+		}
 	}
 	return res
 }
@@ -160,63 +181,69 @@ func (s *Server) ListProxyConfigs() []*model.ProxyConfig {
 	res := make([]*model.ProxyConfig, 0, 100)
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
-	for _, agent := range s.agents {
-		res = append(res, agent.ListProxyConfigs()...)
+	for _, user := range s.agents {
+		for _, a := range user {
+			res = append(res, a.ListProxyConfigs()...)
+		}
 	}
 	return res
 }
 
-func (s *Server) RegisterAgent(agentId string, c net.Conn) (isUpdate bool) {
+func (s *Server) RegisterAgent(user, agentId string, c net.Conn) (isUpdate bool) {
 	s.agentsRwMutex.Lock()
 	defer s.agentsRwMutex.Unlock()
-	isUpdate = s.isAgentExist(agentId)
+	isUpdate = s.isAgentExist(user, agentId)
 	if isUpdate {
 		//close(s.agents[info.id].CloseChan)
-		s.agents[agentId].ResetAdminConn(c)
+		s.agents[user][agentId].ResetAdminConn(c)
 	} else {
-		s.agents[agentId] = agent.NewAgentInfo(agentId, c, make(chan error, 99))
+		s.agents[user][agentId] = agent.NewAgentInfo(user, agentId, c, make(chan error, 99))
 	}
 
 	return isUpdate
 }
 
-func (s *Server) ListJoinedConns(agentId string) (map[string][]*conn.JoinedConnListItem, error) {
+func (s *Server) ListJoinedConns(user, agentId string) (map[string][]*conn.JoinedConnListItem, error) {
 	res := make(map[string][]*conn.JoinedConnListItem, 0)
 	if agentId != "" { //only get specified agent
-		if !s.isAgentExist(agentId) {
+		if !s.isAgentExist(user, agentId) {
 			return nil, fmt.Errorf("no such agent id %v", agentId)
 		}
-		res[agentId] = s.agents[agentId].ListJoinedConns()
+		res[agentId] = s.agents[user][agentId].ListJoinedConns()
 		return res, nil
 	}
-	for agentId, agent := range s.agents {
-		res[agentId] = agent.ListJoinedConns()
+	for _, user := range s.agents {
+		for _, a := range user {
+			res[agentId] = a.ListJoinedConns()
+		}
 	}
 	return res, nil
 }
 
-func (s *Server) KillJoinedConnById(agentId string, id int) error {
+func (s *Server) KillJoinedConnById(user, agentId string, id int) error {
 	if agentId == "" {
 		return fmt.Errorf("agent id is empty")
 	}
-	if !s.isAgentExist(agentId) {
+	if !s.isAgentExist(user, agentId) {
 		return fmt.Errorf("no such agent id %v", agentId)
 	}
-	return s.agents[agentId].KillJoinedConnById(id)
+	return s.agents[agentId][agentId].KillJoinedConnById(id)
 }
 
 func (s *Server) FlushJoinedConns() {
-	for _, agent := range s.agents {
-		agent.FlushJoinedConns()
+	for _, user := range s.agents {
+		for _, a := range user {
+			a.FlushJoinedConns()
+		}
 	}
 }
 
-func (s *Server) UpdateProxyConfigWhiteList(remotePort int, agentId, localAddr, whiteCidrs string, whiteListEnable bool) error {
+func (s *Server) UpdateProxyConfigWhiteList(userName string, remotePort int, agentId, localAddr, whiteCidrs string, whiteListEnable bool) error {
 	if agentId == "" {
 		return fmt.Errorf("agent id is empty")
 	}
-	if !s.isAgentExist(agentId) {
+	if !s.isAgentExist(userName, agentId) {
 		return fmt.Errorf("no such agent id %v", agentId)
 	}
-	return s.agents[agentId].UpdateProxyConfigWhiteListConfig(remotePort, localAddr, whiteCidrs, whiteListEnable)
+	return s.agents[userName][agentId].UpdateProxyConfigWhiteListConfig(remotePort, localAddr, whiteCidrs, whiteListEnable)
 }

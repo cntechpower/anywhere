@@ -11,7 +11,7 @@ import (
 )
 
 var serverPort int
-var serverIp, agentId, certFile, keyFile, caFile string
+var serverIp, agentId, user, password, certFile, keyFile, caFile string
 var version string
 
 var grpcAddress string
@@ -80,6 +80,8 @@ func main() {
 	rootCmd.PersistentFlags().IntVarP(&serverPort, "server-port", "p", 1111, "anywhered server port")
 	rootCmd.PersistentFlags().StringVarP(&agentId, "agent-id", "i", "anywhere-agent-1", "anywhere agent id")
 	rootCmd.PersistentFlags().StringVarP(&grpcAddress, "grpc-address", "g", "127.0.0.1:1110", "anywhere agent grpc address")
+	rootCmd.PersistentFlags().StringVarP(&user, "user", "u", "none", "anywhere user")
+	rootCmd.PersistentFlags().StringVarP(&password, "pass", "", "none", "anywhere password")
 	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "credential/client.crt", "cert file")
 	rootCmd.PersistentFlags().StringVar(&keyFile, "key", "credential/client.key", "key file")
 	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "credential/ca.crt", "ca file")
@@ -97,7 +99,7 @@ func main() {
 
 func run(_ *cobra.Command, _ []string) error {
 	h := log.NewHeader("agentMain")
-	a := anywhereAgent.InitAnyWhereAgent(agentId, serverIp, serverPort)
+	a := anywhereAgent.InitAnyWhereAgent(agentId, serverIp, user, password, serverPort)
 	if err := a.SetCredentials(certFile, keyFile, caFile); err != nil {
 		return err
 	}

@@ -23,7 +23,7 @@ var proxyAddCmd = &cobra.Command{
 	Short: "add proxy config",
 	Long:  `add a proxy config.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := rpcHandler.AddProxyConfig(addProxyAgentId, addProxyRemoteAddr, addProxyLocalAddr, addProxyIsWhiteListOn, addProxyWhiteListIps); err != nil {
+		if err := rpcHandler.AddProxyConfig(userName, addProxyAgentId, addProxyRemoteAddr, addProxyLocalAddr, addProxyIsWhiteListOn, addProxyWhiteListIps); err != nil {
 			fmt.Printf("error adding proxy config : %v\n", err)
 		}
 	},
@@ -38,7 +38,7 @@ var proxyDelCmd = &cobra.Command{
 	Short: "delete proxy config",
 	Long:  `delete a proxy config.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := rpcHandler.RemoveProxyConfig(delProxyAgentId, delProxyRemotePort, delProxyLocalAddr); err != nil {
+		if err := rpcHandler.RemoveProxyConfig(userName, delProxyAgentId, delProxyRemotePort, delProxyLocalAddr); err != nil {
 			fmt.Printf("error deleting proxy config : %v\n", err)
 		}
 	},
@@ -86,13 +86,15 @@ var proxyUpdateCmd = &cobra.Command{
 	Short: "update proxy config white list",
 	Long:  `update proxy config white list.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := rpcHandler.UpdateProxyConfigWhiteList(updateProxyAgentId, updateProxyLocalAddr, updateProxyWhiteListIps, updateProxyIsWhiteListOn); err != nil {
+		if err := rpcHandler.UpdateProxyConfigWhiteList(userName, updateProxyAgentId, updateProxyLocalAddr,
+			updateProxyWhiteListIps, updateProxyIsWhiteListOn); err != nil {
 			fmt.Printf("error save proxy config: %v\n", err)
 		}
 	},
 }
 
 func GetProxyCmd() *cobra.Command {
+	proxyCmd.PersistentFlags().StringVar(&userName, "user", "", "user name ")
 	proxyAddCmd.PersistentFlags().StringVar(&addProxyAgentId, "agent-id", "", "belong to which agent")
 	proxyAddCmd.PersistentFlags().IntVar(&addProxyRemoteAddr, "remote-addr", 0, "remote port")
 	proxyAddCmd.PersistentFlags().StringVar(&addProxyLocalAddr, "local-addr", "127.0.0.1:80", "local addr")

@@ -72,21 +72,22 @@ func ListAgent() error {
 	}
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"AgentId", "AgentAddr", "LastAckSend", "LastAckRcv"})
+	table.SetHeader([]string{"UserName", "AgentId", "AgentAddr", "LastAckSend", "LastAckRcv"})
 	for _, agent := range res.Agent {
-		table.Append([]string{agent.AgentId, agent.AgentRemoteAddr, agent.AgentLastAckSend, agent.AgentLastAckRcv})
+		table.Append([]string{agent.AgentUserName, agent.AgentId, agent.AgentRemoteAddr, agent.AgentLastAckSend, agent.AgentLastAckRcv})
 	}
 	table.Render()
 	return nil
 }
 
-func AddProxyConfig(agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) error {
+func AddProxyConfig(userName, agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) error {
 
 	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
 	input := &pb.AddProxyConfigInput{Config: &pb.ProxyConfig{
+		Username:      userName,
 		AgentId:       agentId,
 		RemotePort:    int64(remotePort),
 		LocalAddr:     localAddr,
@@ -129,12 +130,13 @@ func ListProxyConfigs() error {
 	return nil
 }
 
-func RemoveProxyConfig(agentId string, remotePort int, localAddr string) error {
+func RemoveProxyConfig(userName, agentId string, remotePort int, localAddr string) error {
 	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
 	_, err = client.RemoveProxyConfig(context.Background(), &pb.RemoveProxyConfigInput{
+		UserName:   userName,
 		AgentId:    agentId,
 		RemotePort: int64(remotePort),
 		LocalAddr:  localAddr,
@@ -160,12 +162,13 @@ func SaveProxyConfigToFile() error {
 	return err
 }
 
-func UpdateProxyConfigWhiteList(agentId, localAddr, whiteCidrs string, whiteListEnable bool) error {
+func UpdateProxyConfigWhiteList(userName, agentId, localAddr, whiteCidrs string, whiteListEnable bool) error {
 	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
 	_, err = client.UpdateProxyConfigWhiteList(context.Background(), &pb.UpdateProxyConfigWhiteListInput{
+		UserName:        userName,
 		AgentId:         agentId,
 		LocalAddr:       localAddr,
 		WhiteCidrs:      whiteCidrs,
@@ -199,14 +202,15 @@ func ListConns(agentId string) error {
 	return nil
 }
 
-func KillConn(agentId string, id int) error {
+func KillConn(userName, agentId string, id int) error {
 	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
 	_, err = client.KillConnById(context.Background(), &pb.KillConnByIdInput{
-		AgentId: agentId,
-		ConnId:  int64(id),
+		UserName: userName,
+		AgentId:  agentId,
+		ConnId:   int64(id),
 	})
 	return err
 }

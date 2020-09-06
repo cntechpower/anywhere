@@ -21,9 +21,9 @@ func (s *Server) listenPort(addr string) *net.TCPListener {
 	return ln
 }
 
-func (s *Server) AddProxyConfigToAgent(agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteList string) error {
+func (s *Server) AddProxyConfigToAgent(userName, agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteList string) error {
 
-	pkg, err := model.NewProxyConfig(agentId, remotePort, localAddr, isWhiteListOn, whiteList)
+	pkg, err := model.NewProxyConfig(userName, agentId, remotePort, localAddr, isWhiteListOn, whiteList)
 	if err != nil {
 		return err
 	}
@@ -32,19 +32,29 @@ func (s *Server) AddProxyConfigToAgent(agentId string, remotePort int, localAddr
 }
 
 func (s *Server) AddProxyConfigToAgentByModel(config *model.ProxyConfig) error {
-	if !s.isAgentExist(config.AgentId) {
+	if !s.isAgentExist(config.UserName, config.AgentId) {
 		return fmt.Errorf("agent %v not exist", config.AgentId)
 	}
-	return s.agents[config.AgentId].AddProxyConfig(config)
+	s.agentsRwMutex.Lock()
+	defer s.agentsRwMutex.Unlock()
+	if err := s.agents[config.UserName][config.AgentId].AddProxyConfig(config); err != nil {
+		return err
+	}
+	return Add(config)
 }
 
-func (s *Server) RemoveProxyConfigFromAgent(remotePort int, agentId, localAddr string) error {
-	if !s.isAgentExist(agentId) {
+func (s *Server) RemoveProxyConfigFromAgent(userName string, remotePort int, agentId, localAddr string) error {
+	if !s.isAgentExist(userName, agentId) {
 		return fmt.Errorf("agent %v not exist", agentId)
 	}
 	if err := util.CheckAddrValid(localAddr); err != nil {
 		return fmt.Errorf("invalid localAddr %v, error: %v", localAddr, err)
 	}
-	return s.agents[agentId].RemoveProxyConfig(remotePort, localAddr)
+	s.agentsRwMutex.Lock()
+	defer s.agentsRwMutex.Unlock()
+	if err := s.agents[userName][agentId].RemoveProxyConfig(remotePort, localAddr); err != nil {
+		return err
+	}
+	return Remove(userName, agentId, remotePort)
 
 }

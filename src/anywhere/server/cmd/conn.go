@@ -9,6 +9,7 @@ import (
 
 var agentId string
 var connIdToKill int
+var userName string
 
 var connCmd = &cobra.Command{
 	Use:   "conn",
@@ -32,7 +33,7 @@ var connKillCmd = &cobra.Command{
 	Short: "kill conn",
 	Long:  `kill anywhere conn.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := rpcHandler.KillConn(agentId, connIdToKill); err != nil {
+		if err := rpcHandler.KillConn(userName, agentId, connIdToKill); err != nil {
 			fmt.Printf("error query agent list: %v\n", err)
 		}
 	},
@@ -49,6 +50,7 @@ var connFlushCmd = &cobra.Command{
 }
 
 func GetConnCmd() *cobra.Command {
+	connCmd.PersistentFlags().StringVar(&userName, "user", "", "user name ")
 	connListCmd.PersistentFlags().StringVar(&agentId, "agent-id", "", "agent id to list, leave blank to list all agent")
 	connCmd.AddCommand(connListCmd)
 	connKillCmd.PersistentFlags().StringVar(&agentId, "agent-id", "anywhere-agent-1", "agent id to delete conn")

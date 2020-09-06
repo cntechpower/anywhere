@@ -2,36 +2,47 @@ package auth
 
 import (
 	"anywhere/log"
-	"anywhere/util"
+	"anywhere/model"
+
+	"github.com/pquerna/otp/totp"
 )
 
 type UserValidator struct {
-	userPassMap map[string] /*userName*/ string /*password*/
+	userPassMap map[string] /*userName*/ *model.User /*password*/
 	logHeader   *log.Header
 }
 
-func NewUserValidator(userName string, password string) *UserValidator {
-	return &UserValidator{
-		userPassMap: map[string]string{
-			userName: password,
-		},
-		logHeader: log.NewHeader("UserValidator"),
+func NewUserValidator(users *model.UserConfig) *UserValidator {
+	u := &UserValidator{
+		userPassMap: make(map[string]*model.User, len(users.Users)),
+		logHeader:   log.NewHeader("UserValidator"),
 	}
+	for _, user := range users.Users {
+		u.userPassMap[user.UserName] = user
+	}
+	return u
 }
 
-func (v *UserValidator) Generate(userName string) (string, error) {
-	randPass := util.RandString(16)
-	v.userPassMap[userName] = randPass
-	log.Infof(v.logHeader, "generate password for user %v", userName)
-	return randPass, nil
+func (v *UserValidator) Validate(userName, password, otpCode string) bool {
+	return v.ValidateOtp(userName, otpCode) && v.ValidateUserPass(userName, password)
 }
 
-func (v *UserValidator) Validate(userName string, auth string) bool {
-	pass, ok := v.userPassMap[userName]
-	if ok && (auth == pass) {
-		log.Infof(v.logHeader, "validate password for user %v success", userName)
-		return true
+func (v *UserValidator) ValidateUserPass(userName, auth string) bool {
+	user, ok := v.userPassMap[userName]
+	if !ok || (auth != user.UserPass) {
+		log.Infof(v.logHeader, "validate password for user %v fail", userName)
+		return false
 	}
-	log.Infof(v.logHeader, "validate password for user %v fail", userName)
-	return false
+	log.Infof(v.logHeader, "validate password for user %v success", userName)
+	return true
+}
+
+func (v *UserValidator) ValidateOtp(userName, otpCode string) bool {
+	user, ok := v.userPassMap[userName]
+	if !ok || !totp.Validate(user.OtpCode, otpCode) {
+		log.Infof(v.logHeader, "validate totp for user %v fail", userName)
+		return false
+	}
+	log.Infof(v.logHeader, "validate totp for user %v success", userName)
+	return true
 }

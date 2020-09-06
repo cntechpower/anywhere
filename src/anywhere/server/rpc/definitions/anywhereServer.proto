@@ -22,9 +22,10 @@ message Empty{}
 message Agent{
     string agentId = 1;
     string agentRemoteAddr = 2;
-    string agentLastAckRcv =3;
-    string agentLastAckSend =4;
-    int64 agentProxyConfigCount =5;
+    string agentLastAckRcv = 3;
+    string agentLastAckSend = 4;
+    int64 agentProxyConfigCount = 5;
+    string agentUserName = 6;
 }
 
 message Agents{
@@ -41,6 +42,7 @@ message ProxyConfig{
     int64 NetworkFlowLocalToRemoteInBytes = 7;
 	  int64 ProxyConnectCount = 8;
     int64 ProxyConnectRejectCount = 9;
+    string username=10;
 }
 
 message AddProxyConfigInput{
@@ -56,6 +58,7 @@ message RemoveProxyConfigInput{
     string agentId = 1;
     string localAddr = 2;
     int64 remotePort = 3;
+    string userName = 4;
 }
 
 message ListConnsInput{
@@ -69,6 +72,7 @@ message Conn {
     string srcLocalAddr = 4;
     string dstRemoteAddr = 5;
     string dstLocalAddr = 6;
+    string userName = 7;
 
 }
 
@@ -79,6 +83,7 @@ message Conns{
 message KillConnByIdInput {
     string agentId = 1;
     int64 connId = 2;
+    string userName = 3;
 }
 
 message UpdateProxyConfigWhiteListInput {
@@ -87,6 +92,7 @@ message UpdateProxyConfigWhiteListInput {
     string whiteCidrs = 3;
     bool whiteListEnable = 4;
     int64 remotePort = 5;
+    string userName = 6;
 }
 message GetSummaryOutput {
     int64 agentCount = 1;

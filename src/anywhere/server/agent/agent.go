@@ -65,6 +65,7 @@ func (c *ProxyConfig) GetCurrentConnectionCount() int {
 
 type Agent struct {
 	id               string
+	userName         string
 	version          string
 	RemoteAddr       net.Addr
 	adminConn        *conn.WrappedConn
@@ -78,9 +79,10 @@ type Agent struct {
 	connectCount     uint64
 }
 
-func NewAgentInfo(agentId string, c net.Conn, errChan chan error) *Agent {
+func NewAgentInfo(userName, agentId string, c net.Conn, errChan chan error) *Agent {
 	a := &Agent{
 		id:              agentId,
+		userName:        userName,
 		version:         constants.AnywhereVersion,
 		RemoteAddr:      c.RemoteAddr(),
 		adminConn:       conn.NewBaseConn(c),
@@ -98,6 +100,7 @@ func NewAgentInfo(agentId string, c net.Conn, errChan chan error) *Agent {
 
 func (a *Agent) Info() *model.AgentInfoInServer {
 	return &model.AgentInfoInServer{
+		UserName:         a.userName,
 		Id:               a.id,
 		RemoteAddr:       a.RemoteAddr.String(),
 		LastAckRcv:       a.adminConn.LastAckRcvTime.Format(constants.DefaultTimeFormat),
@@ -261,7 +264,7 @@ func (a *Agent) AddProxyConfigWhiteListConfig(remotePort int, localAddr, whiteCi
 
 func (a *Agent) requestNewProxyConn(localAddr string) {
 	h := log.NewHeader("requestNewProxyConn")
-	if err := a.adminConn.Send(model.NewTunnelBeginMsg(a.id, localAddr)); err != nil {
+	if err := a.adminConn.Send(model.NewTunnelBeginMsg(a.userName, a.id, localAddr)); err != nil {
 		errMsg := fmt.Errorf("agent %v request for new proxy conn error %v", a.id, err)
 		log.Errorf(h, "%v", err)
 		a.errChan <- errMsg
