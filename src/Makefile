@@ -27,11 +27,17 @@ api:
 	GOPATH=${GOPATH} swagger23 generate client -t anywhere/test  -f anywhere/server/restapi/definition/anywhere.yml
 build_server:
 	mkdir -p bin/
+	rm -rf bin/anywhered
 	GOPATH=${GOPATH} go build ${LDFLAGS} -o bin/anywhered anywhere/server/*.go
 
 build_agent:
 	mkdir -p bin/
+	rm -rf bin/anywhere
 	GOPATH=${GOPATH} go build ${LDFLAGS} -o bin/anywhere anywhere/agent/*.go
+build_agent/arm:
+	mkdir -p bin/
+	rm -rf bin/anywhere
+	GOPATH=${GOPATH} GOARCH=arm64 GOARM=7 go build ${LDFLAGS} -o bin/anywhere anywhere/agent/*.go
 
 build_test_agent:
 	mkdir -p bin/
