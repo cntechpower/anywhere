@@ -39,16 +39,19 @@ func PersistGlobalConfigLoop() {
 		bs, err := json.MarshalIndent(globalConfig, "", "    ")
 		if err != nil {
 			configMu.RUnlock()
+			file.Close()
 			log.Errorf(h, "marshal config error: %v", err)
 			continue
 		}
 		_, err = file.Write(bs)
 		if err != nil {
 			configMu.RUnlock()
+			file.Close()
 			log.Errorf(h, "write config to file error: %v", err)
 			continue
 		}
 		configMu.RUnlock()
+		file.Close()
 	}
 }
 
@@ -296,6 +299,7 @@ func WriteSystemConfigFile(config *model.SystemConfig) error {
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
 	bs, err := json.MarshalIndent(config, "", "    ")
 	if err != nil {
