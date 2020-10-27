@@ -76,12 +76,22 @@ sonar:
 		    -Dsonar.sources=. \
 		      -Dsonar.host.url=http://10.0.0.2:9001 \
 		        -Dsonar.login=a460f47352f57960e3606b827090f32fdb207b7e
-upload: build ui
-	tar -czvf anywhere-$(VERSION).tar.gz bin/ credential/ static/
-	tar -czvf anywhere-latest.tar.gz bin/ credential/ static/
-	curl -T  anywhere-$(VERSION).tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
-	curl -T  anywhere-latest.tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
 
+upload: upload_x86 upload_arm
+upload_arm: build_arm ui
+	tar -czf anywhere-$(VERSION)-arm.tar.gz bin/ credential/ static/
+	tar -czf anywhere-latest-arm.tar.gz bin/ credential/ static/
+	curl -T anywhere-$(VERSION)-arm.tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
+	curl -T anywhere-latest-arm.tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
+	rm -rf anywhere-latest-arm.tar.gz
+	rm -rf anywhere-$(VERSION).tar.gz
+upload_x86: build ui
+	tar -czf anywhere-$(VERSION).tar.gz bin/ credential/ static/
+	tar -czf anywhere-latest.tar.gz bin/ credential/ static/
+	curl -T anywhere-$(VERSION).tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
+	curl -T anywhere-latest.tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
+	rm -rf anywhere-$(VERSION).tar.gz
+	rm -rf anywhere-latest.tar.gz
 upload_release:
 	mv anywhere-$(VERSION).tar.gz /var/www/html/
 	rm -rf /var/www/html/anywhere-latest.tar.gz && mv anywhere-latest.tar.gz /var/www/html/
@@ -90,6 +100,7 @@ clean:
 	rm -rf bin/
 	rm -rf *.tar.gz
 build: vet build_server build_agent build_test_agent
+build_arm: vet build_server build_agent/arm build_test_agent
 
 build_release: vet build_server build_agent newkey ui
 	tar -czvf anywhere-$(VERSION).tar.gz bin/ credential/ static/
