@@ -15,10 +15,10 @@ newkey:
 	openssl req -x509 -new -nodes -key credential/ca.key -days 10000 -out credential/ca.crt -subj "/CN=cntechpower_anywhere"
 	openssl genrsa -out credential/server.key 2048
 	openssl req -new -key credential/server.key -out credential/server.csr -subj "/CN=cntechpower_anywhere"
-	openssl x509 -req -in credential/server.csr -CA credential/ca.crt -CAkey credential/ca.key -CAcreateserial -out credential/server.crt -days 365
+	openssl x509 -req -in credential/server.csr -CA credential/ca.crt -CAkey credential/ca.key -CAcreateserial -out credential/server.crt -days 3650
 	openssl genrsa -out credential/client.key 2048
 	openssl req -new -key credential/client.key -out credential/client.csr -subj "/CN=cntechpower_anywhere"
-	openssl x509 -req -in credential/client.csr -CA credential/ca.crt -CAkey credential/ca.key -CAcreateserial -out credential/client.crt -days 365
+	openssl x509 -req -in credential/client.csr -CA credential/ca.crt -CAkey credential/ca.key -CAcreateserial -out credential/client.crt -days 3650
 rpc:
 	protoc --go_out=plugins=grpc:. anywhere/server/rpc/definitions/*.proto
 	protoc --go_out=plugins=grpc:. anywhere/agent/rpc/definitions/*.proto
