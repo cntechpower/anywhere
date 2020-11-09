@@ -72,10 +72,10 @@ unittest:
 
 sonar:
 	sonar-scanner \
-		  -Dsonar.projectKey=anywhere \
-		    -Dsonar.sources=. \
-		      -Dsonar.host.url=http://10.0.0.2:9001 \
-		        -Dsonar.login=a460f47352f57960e3606b827090f32fdb207b7e
+ 	 -Dsonar.projectKey=Anywhere \
+ 	 -Dsonar.sources=. \
+ 	 -Dsonar.host.url=http://10.0.0.2:9999 \
+ 	 -Dsonar.login=fb582fcecc6a2363ca2b559e0e2bdd7ecc244903
 
 upload: upload_x86 upload_arm
 upload_arm: build_arm ui
