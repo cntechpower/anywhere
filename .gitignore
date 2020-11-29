@@ -3,3 +3,9 @@ pkg/*
 /bin/*
 /.idea/*
 .idea/*
+bin/*
+bin
+credential/*
+static/*
+*.tar.gz
+.scannerwork/
