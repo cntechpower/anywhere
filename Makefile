@@ -56,7 +56,7 @@ docker_test: docker_test_clean build_test_image
 	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.2:5000/cntechpower/busybox:1.31.1-glibc wget -O - http://172.90.101.11:4446
 	sudo $(DOCKER) exec -t composefiles_anywhered_1 bash -c "/usr/local/anywhere/bin/anywhered agent list"
 	sudo $(DOCKER) exec -t composefiles_anywhered_1 bash -c "/usr/local/anywhere/bin/anywhered proxy list"
-	sudo $(DOCKER-COMPOSE) -f anywhere/test/composefiles/docker-compose.yml down
+	sudo $(DOCKER-COMPOSE) -f test/composefiles/docker-compose.yml down
 	sudo $(DOCKER) rmi anywhere-test-image:latest
 	sudo $(DOCKER) rmi anywhered-test-image:latest
 
