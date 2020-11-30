@@ -1,4 +1,4 @@
-package anywhereServer
+package conf
 
 import (
 	"encoding/json"
@@ -15,18 +15,33 @@ import (
 	"github.com/cntechpower/anywhere/util"
 )
 
-var globalConfig *ProxyConfigs
+var proxyConf *ProxyConfigs
+var Conf *model.SystemConfig
 var configMu sync.RWMutex
 
 type ProxyConfigs struct {
 	ProxyConfigs map[string] /*user*/ []*model.ProxyConfig
 }
 
+func Add(config *model.ProxyConfig) error {
+	if proxyConf == nil {
+		return fmt.Errorf("config not init")
+	}
+	return proxyConf.Add(config)
+}
+
+func Remove(userName, agentId string, remotePort int) error {
+	if proxyConf == nil {
+		return fmt.Errorf("config not init")
+	}
+	return proxyConf.Remove(userName, agentId, remotePort)
+}
+
 func PersistGlobalConfigLoop() {
 	h := log.NewHeader("persist_config_loop")
 	for range time.NewTicker(15 * time.Second).C {
 		configMu.RLock()
-		if globalConfig == nil {
+		if proxyConf == nil {
 			configMu.RUnlock()
 			log.Infof(h, "skip because config is nil")
 			continue
@@ -37,52 +52,41 @@ func PersistGlobalConfigLoop() {
 			log.Errorf(h, "create file %v error: %v", constants.ProxyConfigFileName, err)
 			continue
 		}
-		bs, err := json.MarshalIndent(globalConfig, "", "    ")
+		bs, err := json.MarshalIndent(proxyConf, "", "    ")
 		if err != nil {
 			configMu.RUnlock()
-			file.Close()
+			_ = file.Close()
 			log.Errorf(h, "marshal config error: %v", err)
 			continue
 		}
 		_, err = file.Write(bs)
 		if err != nil {
 			configMu.RUnlock()
-			file.Close()
+			_ = file.Close()
 			log.Errorf(h, "write config to file error: %v", err)
 			continue
 		}
 		configMu.RUnlock()
-		file.Close()
+		_ = file.Close()
 	}
 }
 
-func Add(config *model.ProxyConfig) error {
-	if globalConfig == nil {
-		return fmt.Errorf("config not init")
-	}
-	return globalConfig.Add(config)
-}
-
-func Remove(userName, agentId string, remotePort int) error {
-	if globalConfig == nil {
-		return fmt.Errorf("config not init")
-	}
-	return globalConfig.Remove(userName, agentId, remotePort)
-}
-
-func InitConfig() {
+func Init() {
 	h := log.NewHeader("init_proxy_config")
 	var err error
-	globalConfig, err = ParseProxyConfigFile()
+	proxyConf, err = ParseProxyConfigFile()
 	if err != nil {
 		log.Warnf(h, "read config file %v error: %v, will start with empty config",
 			constants.ProxyConfigFileName, err)
-		globalConfig = &ProxyConfigs{}
+		proxyConf = &ProxyConfigs{}
 	}
-	if globalConfig.ProxyConfigs == nil {
-		globalConfig.ProxyConfigs = make(map[string][]*model.ProxyConfig, 0)
+	if proxyConf.ProxyConfigs == nil {
+		proxyConf.ProxyConfigs = make(map[string][]*model.ProxyConfig, 0)
 	}
-
+	Conf, err = parseSystemConfigFile()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (c *ProxyConfigs) ProxyConfigIterator(fn func(userName string, config *model.ProxyConfig) error) error {
@@ -139,44 +143,39 @@ func (c *ProxyConfigs) Remove(userName, agentId string, remotePort int) error {
 	return nil
 }
 
-var initConfig *model.SystemConfig = &model.SystemConfig{
-	ServerId: "anywhered-1",
-	MainPort: 1111,
-	Ssl: &model.SslConfig{
-		CertFile: "credential/server.crt",
-		KeyFile:  "credential/server.key",
-		CaFile:   "credential/ca.crt",
-	},
-	UiConfig: &model.UiConfig{
-		SkipLogin:   true,
-		GrpcAddr:    "127.0.0.1:1113",
-		IsWebEnable: true,
-		RestAddr:    "127.0.0.1:1112",
-		WebAddr:     "0.0.0.0:1114",
-	},
-	User: &model.UserConfig{
-		Users: []*model.User{&model.User{
-			UserName:  "admin",
-			UserPass:  "admin",
-			IsAdmin:   true,
-			OtpEnable: false,
-			OtpCode:   "ZKQVBFY55NJGGWBV5F6CU5CEK2YAWIB6",
-		}},
-	},
-}
-
-func (s *Server) LoadProxyConfigFile() error {
-	configs, err := ParseProxyConfigFile()
-	if err != nil {
-		return err
+var (
+	initConfig = &model.SystemConfig{
+		ServerId: "anywhered-1",
+		MainPort: 1111,
+		Ssl: &model.SslConfig{
+			CertFile: "credential/server.crt",
+			KeyFile:  "credential/server.key",
+			CaFile:   "credential/ca.crt",
+		},
+		UiConfig: &model.UiConfig{
+			SkipLogin:   true,
+			GrpcAddr:    "127.0.0.1:1113",
+			IsWebEnable: true,
+			RestAddr:    "127.0.0.1:1112",
+			WebAddr:     "0.0.0.0:1114",
+		},
+		User: &model.UserConfig{
+			Users: []*model.User{{
+				UserName:  "admin",
+				UserPass:  "admin",
+				IsAdmin:   true,
+				OtpEnable: false,
+				OtpCode:   "ZKQVBFY55NJGGWBV5F6CU5CEK2YAWIB6",
+			}},
+		},
+		SmtpConfig: &model.SmtpConfig{
+			Host:     "smtp.exmail.qq.com",
+			Port:     465,
+			UserName: "no_reply@cntechpower.com",
+			Password: "APB0K77gamkkAaFc",
+		},
 	}
-	if err := configs.ProxyConfigIterator(func(userName string, config *model.ProxyConfig) error {
-		return s.AddProxyConfigToAgentByModel(config)
-	}); err != nil {
-		return err
-	}
-	return nil
-}
+)
 
 func ParseProxyConfigFile() (*ProxyConfigs, error) {
 	file, err := os.Open(constants.ProxyConfigFileName)
@@ -235,7 +234,7 @@ func newConfigIllegalError(sectionName, configName string, err error) error {
 	return fmt.Errorf("%s is illegal in config section [%s], reason: %v", printName, printSection, err)
 }
 
-func ParseSystemConfigFile() (*model.SystemConfig, error) {
+func parseSystemConfigFile() (*model.SystemConfig, error) {
 	file, err := os.Open(constants.SystemConfigFIle)
 	if err != nil {
 		return nil, err
@@ -285,7 +284,7 @@ func ParseSystemConfigFile() (*model.SystemConfig, error) {
 }
 
 func GetGrpcAddr() (string, error) {
-	c, err := ParseSystemConfigFile()
+	c, err := parseSystemConfigFile()
 	if err != nil {
 		return "", err
 	}
@@ -300,7 +299,9 @@ func WriteSystemConfigFile(config *model.SystemConfig) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	bs, err := json.MarshalIndent(config, "", "    ")
 	if err != nil {

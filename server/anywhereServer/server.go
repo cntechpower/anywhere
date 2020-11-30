@@ -7,6 +7,8 @@ import (
 	"net"
 	"sync"
 
+	"github.com/cntechpower/anywhere/server/conf"
+
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/model"
@@ -89,8 +91,8 @@ func (s *Server) Start() {
 	}
 	s.listener = ln
 	go s.RefreshSummaryLoop()
-	InitConfig()
-	go PersistGlobalConfigLoop()
+	conf.Init()
+	go conf.PersistGlobalConfigLoop()
 
 	go func() {
 		for {
@@ -247,4 +249,17 @@ func (s *Server) UpdateProxyConfigWhiteList(userName string, remotePort int, age
 		return fmt.Errorf("no such agent id %v", agentId)
 	}
 	return s.agents[userName][agentId].UpdateProxyConfigWhiteListConfig(remotePort, localAddr, whiteCidrs, whiteListEnable)
+}
+
+func (s *Server) LoadProxyConfigFile() error {
+	configs, err := conf.ParseProxyConfigFile()
+	if err != nil {
+		return err
+	}
+	if err := configs.ProxyConfigIterator(func(userName string, config *model.ProxyConfig) error {
+		return s.AddProxyConfigToAgentByModel(config)
+	}); err != nil {
+		return err
+	}
+	return nil
 }
