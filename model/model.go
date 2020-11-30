@@ -37,29 +37,6 @@ type ProxyConfig struct {
 	ProxyConnectRejectCount         uint64 `json:"-"`
 }
 
-type UiConfig struct {
-	SkipLogin   bool   `json:"skip_login"`
-	GrpcAddr    string `json:"grpc_addr"`
-	IsWebEnable bool   `json:"is_web_enable"`
-	RestAddr    string `json:"rest_api_listen_addr"`
-	WebAddr     string `json:"web_ui_listen_addr"`
-	DebugMode   bool   `json:"debug"`
-}
-
-type SslConfig struct {
-	CertFile string `json:"cert_file_path"`
-	KeyFile  string `json:"key_file_path"`
-	CaFile   string `json:"ca_file_path"`
-}
-
-type SystemConfig struct {
-	ServerId string      `json:"server_id"`
-	MainPort int         `json:"server_port"`
-	Ssl      *SslConfig  `json:"ssl_config"`
-	UiConfig *UiConfig   `json:"ui_config"`
-	User     *UserConfig `json:"user_config"`
-}
-
 type ServerSummary struct {
 	AgentTotalCount              uint64
 	CurrentProxyConnectionCount  uint64

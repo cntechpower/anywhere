@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/cntechpower/anywhere/server/conf"
+
 	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/util"
@@ -41,7 +43,7 @@ func (s *Server) AddProxyConfigToAgentByModel(config *model.ProxyConfig) error {
 	if err := s.agents[config.UserName][config.AgentId].AddProxyConfig(config); err != nil {
 		return err
 	}
-	return Add(config)
+	return conf.Add(config)
 }
 
 func (s *Server) RemoveProxyConfigFromAgent(userName string, remotePort int, agentId, localAddr string) error {
@@ -56,6 +58,6 @@ func (s *Server) RemoveProxyConfigFromAgent(userName string, remotePort int, age
 	if err := s.agents[userName][agentId].RemoveProxyConfig(remotePort, localAddr); err != nil {
 		return err
 	}
-	return Remove(userName, agentId, remotePort)
+	return conf.Remove(userName, agentId, remotePort)
 
 }

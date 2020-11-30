@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/cntechpower/anywhere/server/anywhereServer"
+	"github.com/cntechpower/anywhere/server/conf"
 
 	"github.com/spf13/cobra"
 )
@@ -18,7 +18,7 @@ var resetConfigCmd = &cobra.Command{
 	Short: "reset system config file",
 	Long:  `reset system config file 'anywhered.json'`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := anywhereServer.WriteInitConfigFile(); err != nil {
+		if err := conf.WriteInitConfigFile(); err != nil {
 			fmt.Printf("error reset proxy config: %v\n", err)
 		}
 	},

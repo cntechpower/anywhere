@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cntechpower/anywhere/server/conf"
+
 	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/server/anywhereServer"
 	"github.com/cntechpower/anywhere/server/auth"
@@ -46,16 +48,16 @@ func main() {
 
 	//main service
 	rootCmd.AddCommand(startCmd)
-	//agent cmds
+	//agent cmd
 	rootCmd.AddCommand(cmd.GetAgentCmd())
 
-	//proxy cmds
+	//proxy cmd
 	rootCmd.AddCommand(cmd.GetProxyCmd())
 
-	//config file manage cmds
+	//config file manage cmd
 	rootCmd.AddCommand(cmd.GetConfigCmd())
 
-	//conn cmds
+	//conn cmd
 	rootCmd.AddCommand(cmd.GetConnCmd())
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)
@@ -65,12 +67,9 @@ func main() {
 
 func run(_ *cobra.Command, _ []string) error {
 	h := log.NewHeader("serverMain")
-	c, err := anywhereServer.ParseSystemConfigFile()
-	if err != nil {
-		return err
-	}
-	s := anywhereServer.InitServerInstance(c.ServerId, c.MainPort, c.User)
-	tlsConfig, err := tls.ParseTlsConfig(c.Ssl.CertFile, c.Ssl.KeyFile, c.Ssl.CaFile)
+	conf.Init()
+	s := anywhereServer.InitServerInstance(conf.Conf.ServerId, conf.Conf.MainPort, conf.Conf.User)
+	tlsConfig, err := tls.ParseTlsConfig(conf.Conf.Ssl.CertFile, conf.Conf.Ssl.KeyFile, conf.Conf.Ssl.CaFile)
 	if err != nil {
 		return err
 	}
@@ -81,10 +80,10 @@ func run(_ *cobra.Command, _ []string) error {
 
 	// start rpc server
 	rpcExitChan := make(chan error, 0)
-	go rpcHandler.StartRpcServer(s, c.UiConfig.GrpcAddr, rpcExitChan)
+	go rpcHandler.StartRpcServer(s, conf.Conf.UiConfig.GrpcAddr, rpcExitChan)
 	webExitChan := make(chan error, 0)
-	if c.UiConfig.IsWebEnable {
-		go startUIAndAPIService(c.UiConfig.WebAddr, webExitChan, c.UiConfig.SkipLogin, c.UiConfig.DebugMode)
+	if conf.Conf.UiConfig.IsWebEnable {
+		go startUIAndAPIService(conf.Conf.UiConfig.WebAddr, webExitChan, conf.Conf.UiConfig.SkipLogin, conf.Conf.UiConfig.DebugMode)
 
 	}
 
@@ -138,7 +137,6 @@ func addAPIRouter(router *gin.Engine) error {
 	}
 	api := operations.NewAnywhereServerAPI(swaggerSpec)
 	server := restapi.NewServer(api)
-	defer server.Shutdown()
 	server.ConfigureAPI()
 	apiRouter := router.Group("/api")
 	handler := server.GetHandler()

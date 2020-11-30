@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cntechpower/anywhere/server/conf"
+
 	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/server/anywhereServer"
 	pb "github.com/cntechpower/anywhere/server/rpc/definitions"
@@ -21,7 +23,7 @@ import (
 var grpcAddress string
 
 func init() {
-	grpcAddress, _ = anywhereServer.GetGrpcAddr()
+	grpcAddress, _ = conf.GetGrpcAddr()
 }
 
 func StartRpcServer(s *anywhereServer.Server, addr string, errChan chan error) {
