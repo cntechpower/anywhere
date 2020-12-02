@@ -20,13 +20,14 @@ type WhiteListDenyItem struct {
 const (
 	createTableSql = `
 create table if not exists whitelist_deny_history(
+  id int AUTO_INCREMENT COMMENT '自增ID',
   ip varchar(15) NOT NULL COMMENT '被拒绝的IP地址',
   remote_port int NOT NULL DEFAULT 0 COMMENT '外网端口',
   agent_id varchar(50) NOT NULL COMMENT '节点名',
   local_addr varchar(25) NOT NULL COMMENT '内网地址',
   ctime timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   mtime timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-  PRIMARY KEY (ip),
+  PRIMARY KEY (id),
   KEY ix_mtime (mtime)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8 COMMENT = '防火墙拦截记录表';`
 
