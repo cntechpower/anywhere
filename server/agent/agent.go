@@ -276,7 +276,7 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, config *ProxyConfig)
 	}()
 
 	//always try to get a whitelist
-	whiteList, err := util.NewWhiteList(config.WhiteCidrList, config.IsWhiteListOn)
+	whiteList, err := util.NewWhiteList(config.RemotePort, config.AgentId, config.LocalAddr, config.WhiteCidrList, config.IsWhiteListOn)
 	if err != nil {
 		log.Errorf(h, "init white list error: %v", err)
 		return

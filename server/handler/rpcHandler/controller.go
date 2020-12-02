@@ -9,15 +9,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cntechpower/anywhere/server/conf"
+	"github.com/olekukonko/tablewriter"
+	"google.golang.org/grpc"
 
 	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/server/anywhereServer"
+	"github.com/cntechpower/anywhere/server/conf"
 	pb "github.com/cntechpower/anywhere/server/rpc/definitions"
 	"github.com/cntechpower/anywhere/util"
-
-	"github.com/olekukonko/tablewriter"
-	"google.golang.org/grpc"
 )
 
 var grpcAddress string
@@ -105,12 +104,7 @@ func AddProxyConfig(userName, agentId string, remotePort int, localAddr string, 
 }
 
 func ListProxyConfigs() error {
-	boolToString := func(b bool) string {
-		if b {
-			return "ON"
-		}
-		return "OFF"
-	}
+
 	client, err := NewClient(true)
 	if err != nil {
 		return err
@@ -125,7 +119,7 @@ func ListProxyConfigs() error {
 	for _, config := range configs.Config {
 		table.Append([]string{
 			config.AgentId, strconv.Itoa(int(config.RemotePort)), config.LocalAddr,
-			boolToString(config.IsWhiteListOn), config.WhiteCidrList,
+			util.BoolToString(config.IsWhiteListOn), config.WhiteCidrList,
 			strconv.FormatFloat(float64(config.NetworkFlowRemoteToLocalInBytes+config.NetworkFlowLocalToRemoteInBytes)/1024/1024, 'f', 5, 64),
 		})
 	}
@@ -233,4 +227,17 @@ func FlushConns() error {
 	}
 	_, err = client.KillAllConns(context.Background(), &pb.Empty{})
 	return err
+}
+
+func SendReport() error {
+	client, err := NewClient(true)
+	if err != nil {
+		return err
+	}
+	_, err = client.SendReport(context.Background(), &pb.Empty{})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

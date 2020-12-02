@@ -4,11 +4,16 @@ import (
 	"net"
 	"strings"
 	"sync"
+
+	"github.com/cntechpower/anywhere/server/persist"
 )
 
 type WhiteList struct {
-	enable bool
-	cidrs  []*net.IPNet
+	remotePort int
+	agentId    string
+	localAddr  string
+	enable     bool
+	cidrs      []*net.IPNet
 	//any r/w to cidrs should hold mutex by caller
 	mutex sync.RWMutex
 }
@@ -47,11 +52,14 @@ func (l *WhiteList) SetEnable(enable bool) {
 	l.mutex.Unlock()
 }
 
-func NewWhiteList(cidrList string, enable bool) (*WhiteList, error) {
+func NewWhiteList(remotePort int, agentId, localAddr, cidrList string, enable bool) (*WhiteList, error) {
 	l := &WhiteList{
-		enable: enable,
-		cidrs:  make([]*net.IPNet, 0),
-		mutex:  sync.RWMutex{},
+		remotePort: remotePort,
+		agentId:    agentId,
+		localAddr:  localAddr,
+		enable:     enable,
+		cidrs:      make([]*net.IPNet, 0),
+		mutex:      sync.RWMutex{},
 	}
 
 	//add private to start of cidrs
@@ -70,16 +78,23 @@ func NewWhiteList(cidrList string, enable bool) (*WhiteList, error) {
 	return l, nil
 }
 
-func (l *WhiteList) IpInWhiteList(ip string) bool {
+func (l *WhiteList) IpInWhiteList(ip string) (res bool) {
 	l.mutex.RLock()
+	defer func() {
+		l.mutex.RUnlock()
+		if !res {
+			go persist.AddWhiteListDenyIp(l.remotePort, l.agentId, l.localAddr, ip)
+		}
+	}()
 	if !l.enable {
-		return true
+		res = true
+		return
 	}
-	defer l.mutex.RUnlock()
 	for _, cidr := range l.cidrs {
 		if cidr.Contains(net.ParseIP(ip)) {
-			return true
+			res = true
+			return
 		}
 	}
-	return false
+	return res
 }
