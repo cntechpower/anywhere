@@ -69,6 +69,10 @@ func Init(dsn string) {
 }
 
 func AddWhiteListDenyIp(remotePort int, agentId, localAddr, ip string) error {
+	if DB == nil {
+		log.Errorf(header, "db is not init")
+		return fmt.Errorf("db is not init")
+	}
 	_, err := DB.Exec(insertWhiteListHistorySql, remotePort, ip, agentId, localAddr)
 	if err != nil {
 		log.Errorf(header, "save whitelist history error: %v", err)
@@ -77,6 +81,10 @@ func AddWhiteListDenyIp(remotePort int, agentId, localAddr, ip string) error {
 }
 
 func GetTotalDenyRank() (res []*WhiteListDenyItem, err error) {
+	if DB == nil {
+		log.Errorf(header, "db is not init")
+		return nil, fmt.Errorf("db is not init")
+	}
 	rows, err := DB.Query(totalDenyRankSql)
 	if err != nil {
 		return nil, err

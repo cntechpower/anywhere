@@ -73,7 +73,6 @@ func main() {
 func run(_ *cobra.Command, _ []string) error {
 	h := log.NewHeader("serverMain")
 	conf.Init()
-	persist.Init(conf.Conf.MysqlDSN)
 	s := anywhereServer.InitServerInstance(conf.Conf.ServerId, conf.Conf.MainPort, conf.Conf.User)
 	tlsConfig, err := tls.ParseTlsConfig(conf.Conf.Ssl.CertFile, conf.Conf.Ssl.KeyFile, conf.Conf.Ssl.CaFile)
 	if err != nil {
@@ -95,6 +94,11 @@ func run(_ *cobra.Command, _ []string) error {
 
 	//wait for os kill signal. TODO: graceful shutdown
 	go util.ListenTTINSignalLoop()
+	//delay init of persist
+	go func() {
+		time.Sleep(20 * time.Second)
+		persist.Init(conf.Conf.MysqlDSN)
+	}()
 	serverExitChan := util.ListenKillSignal()
 	select {
 	case <-serverExitChan:
