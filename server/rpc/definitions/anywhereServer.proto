@@ -15,6 +15,7 @@ service AnywhereServer {
     rpc KillAllConns(Empty)returns(Empty){}
     rpc UpdateProxyConfigWhiteList(UpdateProxyConfigWhiteListInput)returns(Empty){}
     rpc GetSummary(Empty)returns(GetSummaryOutput){}
+    rpc SendReport(Empty)returns(Empty){}
 }
 
 message Empty{}

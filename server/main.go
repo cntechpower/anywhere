@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cntechpower/anywhere/server/persist"
+
 	"github.com/cntechpower/anywhere/server/conf"
 
 	"github.com/cntechpower/anywhere/log"
@@ -59,6 +61,9 @@ func main() {
 
 	//conn cmd
 	rootCmd.AddCommand(cmd.GetConnCmd())
+
+	//status cmd
+	rootCmd.AddCommand(cmd.GetStatusCmd())
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)
 	}
@@ -68,6 +73,7 @@ func main() {
 func run(_ *cobra.Command, _ []string) error {
 	h := log.NewHeader("serverMain")
 	conf.Init()
+	persist.Init(conf.Conf.MysqlDSN)
 	s := anywhereServer.InitServerInstance(conf.Conf.ServerId, conf.Conf.MainPort, conf.Conf.User)
 	tlsConfig, err := tls.ParseTlsConfig(conf.Conf.Ssl.CertFile, conf.Conf.Ssl.KeyFile, conf.Conf.Ssl.CaFile)
 	if err != nil {

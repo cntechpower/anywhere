@@ -174,3 +174,10 @@ func StringNvl(s *string) string {
 	}
 	return *s
 }
+
+func BoolToString(b bool) string {
+	if b {
+		return "ON"
+	}
+	return "OFF"
+}

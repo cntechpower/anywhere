@@ -15,6 +15,7 @@ require (
 	github.com/go-openapi/swag v0.19.5
 	github.com/go-openapi/validate v0.19.4
 	github.com/go-playground/universal-translator v0.17.0 // indirect
+	github.com/go-sql-driver/mysql v1.5.0
 	github.com/golang/protobuf v1.3.2
 	github.com/gorilla/sessions v1.2.0 // indirect
 	github.com/jessevdk/go-flags v1.4.0
@@ -26,6 +27,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/olekukonko/tablewriter v0.0.1
 	github.com/pquerna/otp v1.2.0
+	github.com/robfig/cron/v3 v3.0.0
 	github.com/rs/cors v1.7.0
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/pflag v1.0.5 // indirect

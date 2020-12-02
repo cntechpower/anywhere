@@ -16,5 +16,5 @@ func TestSendMail(t *testing.T) {
 		UserName: "no_reply@cntechpower.com",
 		Password: "APB0K77gamkkAaFc",
 	}
-	assert.Equal(t, nil, Send("test", []string{"root@cntechpower.com"}))
+	assert.Equal(t, nil, Send([]string{"root@cntechpower.com"}, "test", "test"))
 }
