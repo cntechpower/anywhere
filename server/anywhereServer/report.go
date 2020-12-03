@@ -22,6 +22,7 @@ func (s *Server) StartReportCron() {
 	if err != nil {
 		panic(err)
 	}
+	cronTab.Start()
 }
 
 func (s *Server) SendDailyReport() {
