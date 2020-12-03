@@ -3,6 +3,7 @@ package model
 type SystemConfig struct {
 	ServerId   string      `json:"server_id"`
 	MainPort   int         `json:"server_port"`
+	ReportCron string      `json:"report_cron"`
 	MysqlDSN   string      `json:"mysql_dsn"`
 	Ssl        *SslConfig  `json:"ssl_config"`
 	UiConfig   *UiConfig   `json:"ui_config"`
