@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cntechpower/anywhere/server/conf"
+
 	"github.com/robfig/cron/v3"
 
 	"github.com/cntechpower/anywhere/log"
@@ -18,7 +20,7 @@ var cronTab *cron.Cron
 
 func (s *Server) StartReportCron() {
 	cronTab = cron.New()
-	_, err := cronTab.AddFunc("20 9 * * *", s.SendDailyReport)
+	_, err := cronTab.AddFunc(conf.Conf.ReportCron, s.SendDailyReport)
 	if err != nil {
 		panic(err)
 	}
@@ -27,7 +29,7 @@ func (s *Server) StartReportCron() {
 
 func (s *Server) SendDailyReport() {
 	h := log.NewHeader("sendDailyReport")
-	proxy, err := s.GetProxyConfigHtmlReport()
+	proxy, err := s.GetProxyConfigHtmlReport(10)
 	if err != nil {
 		log.Errorf(h, "get proxy html error: %v", err)
 		return
@@ -43,7 +45,7 @@ func (s *Server) SendDailyReport() {
 	}
 }
 
-func (s *Server) GetProxyConfigHtmlReport() (html string, err error) {
+func (s *Server) GetProxyConfigHtmlReport(maxLines int) (html string, err error) {
 	configs := s.ListProxyConfigs()
 
 	configsHtmlTable := strings.Builder{}
@@ -62,14 +64,15 @@ func (s *Server) GetProxyConfigHtmlReport() (html string, err error) {
 	totalFlows := float64(0)
 	whiteListDisable := 0
 	nodeMap := make(map[string]struct{}, 0)
-	for _, config := range configs {
+	for idx, config := range configs {
 		flows := float64(config.NetworkFlowRemoteToLocalInBytes+config.NetworkFlowLocalToRemoteInBytes) / 1024 / 1024
 		totalFlows += flows
 		nodeMap[config.AgentId] = struct{}{}
 		if !config.IsWhiteListOn {
 			whiteListDisable++
 		}
-		configsHtmlTable.WriteString(fmt.Sprintf(`
+		if idx < maxLines {
+			configsHtmlTable.WriteString(fmt.Sprintf(`
     <tr>
       <td>%v</td>
       <td>%v</td>
@@ -77,8 +80,9 @@ func (s *Server) GetProxyConfigHtmlReport() (html string, err error) {
       <td>%v</td>
       <td>%vMB</td>
     </tr>`,
-			config.AgentId, config.RemotePort, config.LocalAddr, util.BoolToString(config.IsWhiteListOn),
-			strconv.FormatFloat(flows, 'f', 5, 64)))
+				config.AgentId, config.RemotePort, config.LocalAddr, util.BoolToString(config.IsWhiteListOn),
+				strconv.FormatFloat(flows, 'f', 5, 64)))
+		}
 	}
 	configsHtmlTable.WriteString(fmt.Sprintf(`
     <tfoot>

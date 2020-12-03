@@ -7,13 +7,12 @@ import (
 	"net"
 	"sync"
 
-	"github.com/cntechpower/anywhere/server/conf"
-
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/server/agent"
 	"github.com/cntechpower/anywhere/server/auth"
+	"github.com/cntechpower/anywhere/server/conf"
 	"github.com/cntechpower/anywhere/util"
 )
 
@@ -91,8 +90,7 @@ func (s *Server) Start() {
 	}
 	s.listener = ln
 	go s.RefreshSummaryLoop()
-	conf.Init()
-	go conf.PersistGlobalConfigLoop()
+	go s.StartReportCron()
 
 	go func() {
 		for {
