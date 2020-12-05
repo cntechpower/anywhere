@@ -1,6 +1,7 @@
 package persist
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -60,34 +61,49 @@ func Init(dsn string) {
 		panic(err)
 	}
 	DB.SetConnMaxLifetime(time.Minute * 3)
-	DB.SetMaxOpenConns(10)
 	DB.SetMaxIdleConns(10)
 	_, err = DB.Exec(createTableSql)
 	if err != nil {
 		panic(err)
 	}
 	header = log.NewHeader("persist")
+	header.Infof("init finish")
+	go func() {
+		for {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+			if err := DB.PingContext(ctx); err != nil {
+				header.Infof("db ping check error: %v", err)
+			}
+			cancel()
+			time.Sleep(15 * time.Second)
+		}
+	}()
 }
 
 func AddWhiteListDenyIp(remotePort int, agentId, localAddr, ip string) error {
 	if DB == nil {
-		log.Errorf(header, "db is not init")
+		header.Errorf("db is not init")
 		return fmt.Errorf("db is not init")
 	}
-	_, err := DB.Exec(insertWhiteListHistorySql, remotePort, ip, agentId, localAddr)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	_, err := DB.ExecContext(ctx, insertWhiteListHistorySql, remotePort, ip, agentId, localAddr)
+	cancel()
 	if err != nil {
-		log.Errorf(header, "save whitelist history error: %v", err)
+		header.Errorf("save whitelist history error: %v", err)
 	}
 	return err
 }
 
 func GetTotalDenyRank() (res []*WhiteListDenyItem, err error) {
 	if DB == nil {
-		log.Errorf(header, "db is not init")
+		header.Errorf("db is not init")
 		return nil, fmt.Errorf("db is not init")
 	}
-	rows, err := DB.Query(totalDenyRankSql)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	rows, err := DB.QueryContext(ctx, totalDenyRankSql)
+	cancel()
 	if err != nil {
+		header.Errorf("query total deny rank error: %v", err)
 		return nil, err
 	}
 	res = make([]*WhiteListDenyItem, 0)

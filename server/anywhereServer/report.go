@@ -20,6 +20,7 @@ var cronTab *cron.Cron
 
 func (s *Server) StartReportCron() {
 	cronTab = cron.New()
+	cron.WithLogger(log.NewHeader("cron"))
 	_, err := cronTab.AddFunc(conf.Conf.ReportCron, s.SendDailyReport)
 	if err != nil {
 		panic(err)
