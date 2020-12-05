@@ -20,6 +20,7 @@ var cronTab *cron.Cron
 
 func (s *Server) StartReportCron() {
 	cronTab = cron.New()
+	cron.WithLogger(log.NewHeader("cron"))
 	_, err := cronTab.AddFunc(conf.Conf.ReportCron, s.SendDailyReport)
 	if err != nil {
 		panic(err)
@@ -34,7 +35,7 @@ func (s *Server) SendDailyReport() {
 		log.Errorf(h, "get proxy html error: %v", err)
 		return
 	}
-	whiteList, err := s.GetWhiteListHtmlReport()
+	whiteList, err := s.GetWhiteListHtmlReport(10)
 	if err != nil {
 		//do not return because we still need send proxy report.
 		log.Errorf(h, "get whiteList html error: %v", err)
@@ -100,7 +101,7 @@ func (s *Server) GetProxyConfigHtmlReport(maxLines int) (html string, err error)
 	return configsHtmlTable.String(), nil
 }
 
-func (s *Server) GetWhiteListHtmlReport() (html string, err error) {
+func (s *Server) GetWhiteListHtmlReport(maxLines int) (html string, err error) {
 	proxyDenyHtmlTable := strings.Builder{}
 	totalCount := int64(0)
 	proxyDenys, err := persist.GetTotalDenyRank()
@@ -118,14 +119,16 @@ func (s *Server) GetWhiteListHtmlReport() (html string, err error) {
   </thead>
   <tbody>`)
 
-	for _, p := range proxyDenys {
+	for idx, p := range proxyDenys {
 		totalCount += p.Count
-		proxyDenyHtmlTable.WriteString(fmt.Sprintf(`
+		if idx < maxLines {
+			proxyDenyHtmlTable.WriteString(fmt.Sprintf(`
     <tr>
       <td>%v</td>
       <td>%v</td>
     </tr>`,
-			p.Ip, p.Count))
+				p.Ip, p.Count))
+		}
 	}
 	proxyDenyHtmlTable.WriteString(fmt.Sprintf(`
     <tfoot>

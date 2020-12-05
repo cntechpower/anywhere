@@ -36,10 +36,10 @@ func InitLogger(fileName string) {
 type Level string
 
 const (
-	info  Level = "INFO"
-	warn  Level = "WARN"
-	error Level = "ERROR"
-	fatal Level = "FATAL"
+	levelInfo  Level = "INFO"
+	levelWarn  Level = "WARN"
+	levelError Level = "ERROR"
+	levelFatal Level = "FATAL"
 )
 
 func getCaller(skip int) (string, int) {
@@ -68,18 +68,50 @@ func (h *Header) String() string {
 	return h.name
 }
 
+type Logger interface {
+	// Info logs routine messages about cron's operation.
+	Info(msg string, keysAndValues ...interface{})
+	// Error logs an error condition.
+	Error(err error, msg string, keysAndValues ...interface{})
+}
+
+func (h *Header) Info(format string, a ...interface{}) {
+	log(3, h, levelInfo, format, a...)
+}
+func (h *Header) Infof(format string, a ...interface{}) {
+	log(3, h, levelInfo, format, a...)
+}
+
+func (h *Header) Errorf(format string, a ...interface{}) {
+	log(3, h, levelError, format, a...)
+}
+
+func (h *Header) Error(err error, format string, a ...interface{}) {
+	log(3, h, levelError, "%v", err)
+	log(3, h, levelError, format, a...)
+}
+
+func (h *Header) Warnf(format string, a ...interface{}) {
+	log(3, h, levelWarn, format, a...)
+}
+
+func (h *Header) Fatalf(format string, a ...interface{}) {
+	log(3, h, levelFatal, format, a...)
+	panic(nil)
+}
+
 func Infof(h *Header, format string, a ...interface{}) {
-	log(3, h, info, format, a...)
+	log(3, h, levelInfo, format, a...)
 }
 
 func Errorf(h *Header, format string, a ...interface{}) {
-	log(3, h, error, format, a...)
+	log(3, h, levelError, format, a...)
 }
 
 func Warnf(h *Header, format string, a ...interface{}) {
-	log(3, h, warn, format, a...)
+	log(3, h, levelWarn, format, a...)
 }
 
 func Fatalf(h *Header, format string, a ...interface{}) {
-	log(3, h, error, format, a...)
+	log(3, h, levelError, format, a...)
 }
