@@ -192,7 +192,6 @@ func (s *Server) ListProxyConfigs() []*model.ProxyConfig {
 
 func (s *Server) RegisterAgent(user, agentId string, c net.Conn) (isUpdate bool) {
 	s.agentsRwMutex.Lock()
-	defer s.agentsRwMutex.Unlock()
 	isUpdate = s.isAgentExist(user, agentId)
 	if isUpdate {
 		//close(s.agents[info.id].CloseChan)
@@ -200,6 +199,7 @@ func (s *Server) RegisterAgent(user, agentId string, c net.Conn) (isUpdate bool)
 	} else {
 		s.agents[user][agentId] = agent.NewAgentInfo(user, agentId, c, make(chan error, 99))
 	}
+	s.agentsRwMutex.Unlock()
 	_ = s.LoadProxyConfigByAgent(log.NewHeader("RegisterAgent"), agentId)
 
 	return isUpdate
