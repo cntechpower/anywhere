@@ -147,7 +147,7 @@ func (c *ProxyConfigs) Remove(userName, agentId string, remotePort int) error {
 var (
 	initConfig = &model.SystemConfig{
 		ServerId:   "anywhered-1",
-		MysqlDSN:   "anywhere:anywhere@tcp(10.0.0.2:3306)/anywhere?charset=utf8mb4&parseTime=True&loc=Local",
+		MysqlDSN:   "anywhere:anywhere@tcp(10.0.0.2:3306)/anywhere?charset=utf8mb4&parseTime=True&loc=Local&timeout=5s&readTimeout=5s",
 		MainPort:   1111,
 		ReportCron: "20 9 * * *",
 		Ssl: &model.SslConfig{

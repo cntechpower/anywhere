@@ -200,6 +200,7 @@ func (s *Server) RegisterAgent(user, agentId string, c net.Conn) (isUpdate bool)
 	} else {
 		s.agents[user][agentId] = agent.NewAgentInfo(user, agentId, c, make(chan error, 99))
 	}
+	_ = s.LoadProxyConfigByAgent(log.NewHeader("RegisterAgent"), agentId)
 
 	return isUpdate
 }
@@ -256,6 +257,25 @@ func (s *Server) LoadProxyConfigFile() error {
 	}
 	if err := configs.ProxyConfigIterator(func(userName string, config *model.ProxyConfig) error {
 		return s.AddProxyConfigToAgentByModel(config)
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Server) LoadProxyConfigByAgent(header *log.Header, agentId string) error {
+	configs, err := conf.ParseProxyConfigFile()
+	if err != nil {
+		return err
+	}
+	if err := configs.ProxyConfigIterator(func(userName string, config *model.ProxyConfig) error {
+		var err error
+		if agentId == config.AgentId {
+			err = s.AddProxyConfigToAgentByModel(config)
+			header.Infof("restore config for agent %v remotePort(%v), localAddr(%v), error: %v",
+				config.AgentId, config.RemotePort, config.LocalAddr, err)
+		}
+		return err
 	}); err != nil {
 		return err
 	}
