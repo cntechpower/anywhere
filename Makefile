@@ -1,11 +1,12 @@
 GIT_VERSION = $(shell git rev-parse --abbrev-ref HEAD) $(shell git rev-parse HEAD)
-VERSION=$(shell git rev-parse --short HEAD)
-RPM_VERSION=master
-PROJECT_NAME  = anywhere
-DOCKER        = $(shell which docker)
-DOCKER-COMPOSE        = $(shell which docker-compose)
-LDFLAGS       = -ldflags "-X 'main.version=\"${RPM_VERSION}-${GIT_VERSION}\"'"
-DOCKER_IMAGE  = 10.0.0.2:5000/actiontech/universe-compiler-go1.11-centos6:v2
+VERSION = $(shell git rev-parse --short HEAD)
+PROJECT_NAME = anywhere
+DOCKER = $(shell which docker)
+DOCKER-COMPOSE = $(shell which docker-compose)
+LDFLAGS = -ldflags "-X 'main.version=\"${GIT_VERSION}\"'"
+DOCKER_IMAGE = 10.0.0.2:5000/actiontech/universe-compiler-go1.11-centos6:v2
+GOOS ?= $(shell go env GOOS)
+GOARCH ?= $(shell go env GOARCH)
 default: build
 newkey:
 	mkdir -p credential/
@@ -48,14 +49,15 @@ build_test_image: build ui
 
 docker_test: docker_test_clean build_test_image
 	sudo $(DOCKER-COMPOSE) -f test/composefiles/docker-compose.yml up -d
-	sudo $(DOCKER) exec composefiles_anywhered_1 /usr/local/anywhere/bin/test
-	sleep 40
+	sleep 20 #wait mysql init
 	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.2:5000/mysql/mysql_client:8.0.19 -h172.90.101.11 -P4444 -proot -e "select @@version"
 	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.2:5000/mysql/mysql_client:5.7.28 -h172.90.101.11 -P4445 -proot -e "select @@version"
 	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net --env PASSWD=sshpass 10.0.0.2:5000/centos:sshpass_client sshpass -p sshpass ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -n root@172.90.101.11 -p 4447 /usr/sbin/ip a
 	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.2:5000/cntechpower/busybox:1.31.1-glibc wget -O - http://172.90.101.11:4446
 	sudo $(DOCKER) exec -t composefiles_anywhered_1 bash -c "/usr/local/anywhere/bin/anywhered agent list"
 	sudo $(DOCKER) exec -t composefiles_anywhered_1 bash -c "/usr/local/anywhere/bin/anywhered proxy list"
+	sudo $(DOCKER) logs composefiles_anywhered_1
+	sudo $(DOCKER) logs composefiles_anywhere_1
 	sudo $(DOCKER-COMPOSE) -f test/composefiles/docker-compose.yml down
 	sudo $(DOCKER) rmi anywhere-test-image:latest
 	sudo $(DOCKER) rmi anywhered-test-image:latest
@@ -111,3 +113,11 @@ ui:
 	tar -xf anywhere-fe-latest.tar.gz
 	mv build static
 	rm -rf anywhere-fe-latest.tar.gz
+
+.PHONY: help
+help:
+	$(warning ---------------------------------------------------------------------------------)
+	$(warning Supported Variables And Values:)
+	$(warning ---------------------------------------------------------------------------------)
+	$(foreach v, $(.VARIABLES), $(if $(filter file,$(origin $(v))), $(info $(v)=$($(v)))))
+

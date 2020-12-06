@@ -30,7 +30,10 @@ func (s *Server) AddProxyConfigToAgent(userName, agentId string, remotePort int,
 	if err != nil {
 		return err
 	}
-	return s.AddProxyConfigToAgentByModel(pkg)
+	if err := s.AddProxyConfigToAgentByModel(pkg); err != nil {
+		return err
+	}
+	return conf.Add(pkg)
 
 }
 
@@ -43,7 +46,7 @@ func (s *Server) AddProxyConfigToAgentByModel(config *model.ProxyConfig) error {
 	if err := s.agents[config.UserName][config.AgentId].AddProxyConfig(config); err != nil {
 		return err
 	}
-	return conf.Add(config)
+	return nil
 }
 
 func (s *Server) RemoveProxyConfigFromAgent(userName string, remotePort int, agentId, localAddr string) error {

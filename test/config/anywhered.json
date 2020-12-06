@@ -1,0 +1,36 @@
+{
+  "server_id": "anywhered-1",
+  "server_port": 1111,
+  "report_cron": "20 9 * * *",
+  "mysql_dsn": "anywhere:anywhere@tcp(10.0.0.2:3306)/anywhere_test?charset=utf8mb4\u0026parseTime=True\u0026loc=Local",
+  "ssl_config": {
+    "cert_file_path": "credential/server.crt",
+    "key_file_path": "credential/server.key",
+    "ca_file_path": "credential/ca.crt"
+  },
+  "ui_config": {
+    "skip_login": true,
+    "grpc_addr": "127.0.0.1:1113",
+    "is_web_enable": true,
+    "rest_api_listen_addr": "127.0.0.1:1112",
+    "web_ui_listen_addr": "0.0.0.0:1114",
+    "debug": false
+  },
+  "user_config": {
+    "users": [
+      {
+        "user_name": "admin",
+        "user_password": "admin",
+        "is_admin": true,
+        "otp_enable": false,
+        "otp_code": "ZKQVBFY55NJGGWBV5F6CU5CEK2YAWIB6"
+      }
+    ]
+  },
+  "smtp_config": {
+    "host": "smtp.exmail.qq.com",
+    "port": 465,
+    "user_name": "no_reply@cntechpower.com",
+    "password": "APB0K77gamkkAaFc"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "ProxyConfigs": {
+    "admin": [
+      {
+        "agent_id": "anywhere-agent-1",
+        "user_name": "admin",
+        "remote_port": 4444,
+        "local_addr": "172.90.101.21:3306",
+        "is_white_list_enable": false,
+        "white_cidr_list": "180.168.0.0/16,101.86.210.116/16,223.88.249.186/16,120.253.0.0/16"
+      },
+      {
+        "agent_id": "anywhere-agent-1",
+        "user_name": "admin",
+        "remote_port": 4445,
+        "local_addr": "172.90.101.22:3306",
+        "is_white_list_enable": false,
+        "white_cidr_list": "180.168.0.0/16,101.86.210.116/16,223.88.249.186/16,120.253.0.0/16"
+      },
+      {
+        "agent_id": "anywhere-agent-1",
+        "user_name": "admin",
+        "remote_port": 4446,
+        "local_addr": "172.90.101.23:80",
+        "is_white_list_enable": false,
+        "white_cidr_list": "180.168.0.0/16,101.86.210.116/16,223.88.249.186/16,120.253.0.0/16"
+      },
+      {
+        "agent_id": "anywhere-agent-1",
+        "user_name": "admin",
+        "remote_port": 4447,
+        "local_addr": "172.90.101.24:22",
+        "is_white_list_enable": false,
+        "white_cidr_list": "180.168.0.0/16,101.86.210.116/16,223.88.249.186/16,120.253.0.0/16"
+      }
+    ]
+  }
+}
