@@ -101,11 +101,12 @@ func GetTotalDenyRank() (res []*WhiteListDenyItem, err error) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
 	rows, err := DB.QueryContext(ctx, totalDenyRankSql)
-	cancel()
 	if err != nil {
+		cancel()
 		header.Errorf("query total deny rank error: %v", err)
 		return nil, err
 	}
+	defer cancel()
 	res = make([]*WhiteListDenyItem, 0)
 	for rows.Next() {
 		i := &WhiteListDenyItem{}

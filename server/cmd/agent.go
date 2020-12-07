@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/cntechpower/anywhere/server/handler/rpcHandler"
+	"github.com/cntechpower/anywhere/server/rpc/handler"
 
 	"github.com/spf13/cobra"
 )
@@ -18,7 +18,7 @@ var agentListCmd = &cobra.Command{
 	Short: "list agents",
 	Long:  `list anywhere agents.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := rpcHandler.ListAgent(); err != nil {
+		if err := handler.ListAgent(); err != nil {
 			fmt.Printf("error query agent list: %v\n", err)
 		}
 	},

@@ -6,7 +6,7 @@ import (
 	"crypto/tls"
 	"net/http"
 
-	handler "github.com/cntechpower/anywhere/server/handler/restHandler"
+	handler "github.com/cntechpower/anywhere/server/http"
 	"github.com/cntechpower/anywhere/server/restapi/api/models"
 
 	"github.com/go-openapi/errors"

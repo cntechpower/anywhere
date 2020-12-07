@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/cntechpower/anywhere/server/handler/rpcHandler"
+	"github.com/cntechpower/anywhere/server/rpc/handler"
 
 	"github.com/spf13/cobra"
 )
@@ -24,7 +24,7 @@ var proxyAddCmd = &cobra.Command{
 	Short: "add proxy config",
 	Long:  `add a proxy config.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := rpcHandler.AddProxyConfig(userName, addProxyAgentId, addProxyRemoteAddr, addProxyLocalAddr, addProxyIsWhiteListOn, addProxyWhiteListIps); err != nil {
+		if err := handler.AddProxyConfig(userName, addProxyAgentId, addProxyRemoteAddr, addProxyLocalAddr, addProxyIsWhiteListOn, addProxyWhiteListIps); err != nil {
 			fmt.Printf("error adding proxy config : %v\n", err)
 		}
 	},
@@ -39,7 +39,7 @@ var proxyDelCmd = &cobra.Command{
 	Short: "delete proxy config",
 	Long:  `delete a proxy config.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := rpcHandler.RemoveProxyConfig(userName, delProxyAgentId, delProxyRemotePort, delProxyLocalAddr); err != nil {
+		if err := handler.RemoveProxyConfig(userName, delProxyAgentId, delProxyRemotePort, delProxyLocalAddr); err != nil {
 			fmt.Printf("error deleting proxy config : %v\n", err)
 		}
 	},
@@ -50,7 +50,7 @@ var proxyListCmd = &cobra.Command{
 	Short: "list proxy configs",
 	Long:  `add a proxy config.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := rpcHandler.ListProxyConfigs(); err != nil {
+		if err := handler.ListProxyConfigs(); err != nil {
 			fmt.Printf("error query proxy config list: %v\n", err)
 		}
 	},
@@ -61,7 +61,7 @@ var proxyLoadCmd = &cobra.Command{
 	Short: "load proxy configs",
 	Long:  `load proxy configs from config file.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := rpcHandler.LoadProxyConfigFile(); err != nil {
+		if err := handler.LoadProxyConfigFile(); err != nil {
 			fmt.Printf("error load proxy config: %v\n", err)
 		}
 	},
@@ -72,7 +72,7 @@ var proxySaveCmd = &cobra.Command{
 	Short: "save proxy configs",
 	Long:  `save proxy configs to config file.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := rpcHandler.SaveProxyConfigToFile(); err != nil {
+		if err := handler.SaveProxyConfigToFile(); err != nil {
 			fmt.Printf("error save proxy config: %v\n", err)
 		}
 	},
@@ -87,7 +87,7 @@ var proxyUpdateCmd = &cobra.Command{
 	Short: "update proxy config white list",
 	Long:  `update proxy config white list.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := rpcHandler.UpdateProxyConfigWhiteList(userName, updateProxyAgentId, updateProxyLocalAddr,
+		if err := handler.UpdateProxyConfigWhiteList(userName, updateProxyAgentId, updateProxyLocalAddr,
 			updateProxyWhiteListIps, updateProxyIsWhiteListOn); err != nil {
 			fmt.Printf("error save proxy config: %v\n", err)
 		}

@@ -1,0 +1,115 @@
+package http
+
+import (
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/cntechpower/anywhere/log"
+
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-gonic/contrib/static"
+	"github.com/gin-gonic/gin"
+
+	"github.com/cntechpower/anywhere/server/auth"
+	"github.com/cntechpower/anywhere/server/server"
+	"github.com/cntechpower/anywhere/util"
+)
+
+var userValidator *auth.UserValidator
+var jwtValidator *auth.JwtValidator
+var serverInst *server.Server
+
+var (
+	ErrUserPassIsRequired = gin.H{"message": "username/password/otp_code is required"}
+	ErrUserPassWrong      = gin.H{"message": "username/password wrong"}
+)
+
+func addUIRouter(router *gin.Engine) error {
+	if !util.CheckPathExist("./static") {
+		return fmt.Errorf("static dir not found")
+	}
+	staticHandler := static.Serve("/", static.LocalFile("./static", true))
+	router.Use(staticHandler)
+	router.NoRoute(func(c *gin.Context) {
+		c.File("./static/index.html")
+	})
+
+	return nil
+}
+
+func addAPIRouter(router *gin.Engine, restHandler http.Handler) error {
+	apiRouter := router.Group("/api")
+	apiRouter.Any("/*any", gin.WrapH(restHandler))
+	return nil
+}
+
+func StartUIAndAPIService(restHandler http.Handler, serverI *server.Server, addr string, errChan chan error, skipLogin, debug bool, reportWhiteCidrs string) {
+	if err := util.CheckAddrValid(addr); err != nil {
+		errChan <- err
+	}
+	serverInst = serverI
+	router := gin.New()
+	if debug {
+		// running in debug mode, open access log
+		gin.SetMode(gin.DebugMode)
+		router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+			Formatter: func(param gin.LogFormatterParams) string {
+				return fmt.Sprintf("[%s] %s \"%s %s %s %d %s \"%s\" %s\"\n",
+					param.TimeStamp.Format(time.RFC3339),
+					param.ClientIP,
+					param.Method,
+					param.Path,
+					param.Request.Proto,
+					param.StatusCode,
+					param.Latency,
+					param.Request.UserAgent(),
+					param.ErrorMessage,
+				)
+			},
+			Output:    nil,
+			SkipPaths: []string{"/static"},
+		}))
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	userValidator = server.GetServerInstance().GetUserValidator()
+	jwtValidator = auth.NewJwtValidator()
+	//session auth
+	store := cookie.NewStore([]byte(util.RandString(16)))
+	router.Use(sessions.Sessions("anywhere", store))
+	//support frontend development
+	if !skipLogin {
+		router.Use(sessionFilter)
+	}
+
+	router.POST("/user_login", userLogin)
+	if err := addUIRouter(router); err != nil {
+		errChan <- err
+	}
+	if err := addAPIRouter(router, restHandler); err != nil {
+		errChan <- err
+	}
+	_, port, _ := util.GetIpPortByAddr(addr)
+	wl, err := util.NewWhiteList(port, "frontend-handler", "127.0.0.1:1114", reportWhiteCidrs, true)
+	if err != nil {
+		panic(err)
+	}
+	router.GET("/report", func(ctx *gin.Context) {
+		if !wl.AddrInWhiteList(ctx.Request.RemoteAddr) {
+			_ = ctx.AbortWithError(http.StatusBadRequest, nil)
+			return
+		}
+		html, err := serverInst.GetHtmlReport(log.NewHeader("web"))
+		if err != nil {
+			_ = ctx.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		ctx.Header("Content-Type", "text/html; charset=utf-8")
+		ctx.String(http.StatusOK, html)
+	})
+	errChan <- router.Run(addr)
+
+}

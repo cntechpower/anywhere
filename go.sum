@@ -43,6 +43,8 @@ github.com/gin-contrib/sessions v0.0.3 h1:PoBXki+44XdJdlgDqDrY5nDVe3Wk7wDV/UCOuL
 github.com/gin-contrib/sessions v0.0.3/go.mod h1:8C/J6cad3Il1mWYYgtw0w+hqasmpvy25mPkXdOgeB9I=
 github.com/gin-contrib/sse v0.1.0 h1:Y/yl/+YNO8GZSjAhjMsSuLt29uWRFHdHYUb5lYOV9qE=
 github.com/gin-contrib/sse v0.1.0/go.mod h1:RHrZQHXnP2xjPF+u1gW/2HnVO7nvIa9PG3Gm+fLHvGI=
+github.com/gin-gonic/contrib v0.0.0-20201101042839-6a891bf89f19 h1:J2LPEOcQmWaooBnBtUDV9KHFEnP5LYTZY03GiQ0oQBw=
+github.com/gin-gonic/contrib v0.0.0-20201101042839-6a891bf89f19/go.mod h1:iqneQ2Df3omzIVTkIfn7c1acsVnMGiSLn4XF5Blh3Yg=
 github.com/gin-gonic/gin v1.5.0 h1:fi+bqFAx/oLK54somfCtEZs9HeH1LHVoEPUgARpTqyc=
 github.com/gin-gonic/gin v1.5.0/go.mod h1:Nd6IXA8m5kNZdNEHMBd93KT+mdY3+bewLgRvmCsR2Do=
 github.com/globalsign/mgo v0.0.0-20180905125535-1ca0a4f7cbcb/go.mod h1:xkRDCp4j0OGD1HRkm4kmhM+pmpv3AKq5SU7GMg4oO/Q=
