@@ -50,6 +50,10 @@ type PostV1ProxyUpdateParams struct {
 	  In: formData
 	*/
 	LocalAddr string
+	/*anywhered server listen port
+	  In: formData
+	*/
+	RemotePort *int64
 	/*user name
 	  Required: true
 	  In: formData
@@ -92,6 +96,11 @@ func (o *PostV1ProxyUpdateParams) BindRequest(r *http.Request, route *middleware
 
 	fdLocalAddr, fdhkLocalAddr, _ := fds.GetOK("local_addr")
 	if err := o.bindLocalAddr(fdLocalAddr, fdhkLocalAddr, route.Formats); err != nil {
+		res = append(res, err)
+	}
+
+	fdRemotePort, fdhkRemotePort, _ := fds.GetOK("remote_port")
+	if err := o.bindRemotePort(fdRemotePort, fdhkRemotePort, route.Formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -154,6 +163,28 @@ func (o *PostV1ProxyUpdateParams) bindLocalAddr(rawData []string, hasKey bool, f
 	}
 
 	o.LocalAddr = raw
+
+	return nil
+}
+
+// bindRemotePort binds and validates parameter RemotePort from formData.
+func (o *PostV1ProxyUpdateParams) bindRemotePort(rawData []string, hasKey bool, formats strfmt.Registry) error {
+	var raw string
+	if len(rawData) > 0 {
+		raw = rawData[len(rawData)-1]
+	}
+
+	// Required: false
+
+	if raw == "" { // empty values pass all other validations
+		return nil
+	}
+
+	value, err := swag.ConvertInt64(raw)
+	if err != nil {
+		return errors.InvalidType("remote_port", "formData", "int64", raw)
+	}
+	o.RemotePort = &value
 
 	return nil
 }

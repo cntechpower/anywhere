@@ -83,6 +83,11 @@ type PostV1ProxyUpdateParams struct {
 
 	*/
 	LocalAddr string
+	/*RemotePort
+	  anywhered server listen port
+
+	*/
+	RemotePort *int64
 	/*UserName
 	  user name
 
@@ -159,6 +164,17 @@ func (o *PostV1ProxyUpdateParams) SetLocalAddr(localAddr string) {
 	o.LocalAddr = localAddr
 }
 
+// WithRemotePort adds the remotePort to the post v1 proxy update params
+func (o *PostV1ProxyUpdateParams) WithRemotePort(remotePort *int64) *PostV1ProxyUpdateParams {
+	o.SetRemotePort(remotePort)
+	return o
+}
+
+// SetRemotePort adds the remotePort to the post v1 proxy update params
+func (o *PostV1ProxyUpdateParams) SetRemotePort(remotePort *int64) {
+	o.RemotePort = remotePort
+}
+
 // WithUserName adds the userName to the post v1 proxy update params
 func (o *PostV1ProxyUpdateParams) WithUserName(userName string) *PostV1ProxyUpdateParams {
 	o.SetUserName(userName)
@@ -216,6 +232,22 @@ func (o *PostV1ProxyUpdateParams) WriteToRequest(r runtime.ClientRequest, reg st
 		if err := r.SetFormParam("local_addr", fLocalAddr); err != nil {
 			return err
 		}
+	}
+
+	if o.RemotePort != nil {
+
+		// form param remote_port
+		var frRemotePort int64
+		if o.RemotePort != nil {
+			frRemotePort = *o.RemotePort
+		}
+		fRemotePort := swag.FormatInt64(frRemotePort)
+		if fRemotePort != "" {
+			if err := r.SetFormParam("remote_port", fRemotePort); err != nil {
+				return err
+			}
+		}
+
 	}
 
 	// form param user_name

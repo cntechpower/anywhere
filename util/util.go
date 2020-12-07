@@ -81,6 +81,14 @@ func GetAddrByIpPort(ip string, port int) (*net.TCPAddr, error) {
 	return net.ResolveTCPAddr("tcp", addrString)
 }
 
+func GetIpPortByAddr(addr string) (string, int, error) {
+	rAddr, err := net.ResolveTCPAddr("tcp", addr)
+	if err != nil {
+		return "", 0, err
+	}
+	return rAddr.IP.String(), rAddr.Port, nil
+}
+
 func ListenTcp(addr string) (*net.TCPListener, error) {
 	rAddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
@@ -171,6 +179,13 @@ func RandInt(n int) int {
 func StringNvl(s *string) string {
 	if s == nil {
 		return ""
+	}
+	return *s
+}
+
+func Int64Nvl(s *int64) int64 {
+	if s == nil {
+		return 0
 	}
 	return *s
 }

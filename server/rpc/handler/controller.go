@@ -1,4 +1,4 @@
-package rpcHandler
+package handler
 
 import (
 	"bufio"
@@ -13,9 +13,9 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/cntechpower/anywhere/log"
-	"github.com/cntechpower/anywhere/server/anywhereServer"
 	"github.com/cntechpower/anywhere/server/conf"
 	pb "github.com/cntechpower/anywhere/server/rpc/definitions"
+	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/util"
 )
 
@@ -25,7 +25,7 @@ func init() {
 	grpcAddress, _ = conf.GetGrpcAddr()
 }
 
-func StartRpcServer(s *anywhereServer.Server, addr string, errChan chan error) {
+func StartRpcServer(s *server.Server, addr string, errChan chan error) {
 	if err := util.CheckAddrValid(addr); err != nil {
 		errChan <- err
 		return

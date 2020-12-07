@@ -112,6 +112,10 @@ paths:
           type: string
           required: true
         - in: formData
+          name: remote_port
+          description: "anywhered server listen port"
+          type: integer
+        - in: formData
           name: local_addr
           description: "localAddress"
           type: string

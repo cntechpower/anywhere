@@ -208,6 +208,12 @@ func init() {
             "required": true
           },
           {
+            "type": "integer",
+            "description": "anywhered server listen port",
+            "name": "remote_port",
+            "in": "formData"
+          },
+          {
             "type": "string",
             "description": "localAddress",
             "name": "local_addr",
@@ -581,6 +587,12 @@ func init() {
             "name": "agent_id",
             "in": "formData",
             "required": true
+          },
+          {
+            "type": "integer",
+            "description": "anywhered server listen port",
+            "name": "remote_port",
+            "in": "formData"
           },
           {
             "type": "string",

@@ -1,4 +1,4 @@
-package anywhereServer
+package server
 
 import (
 	"fmt"
@@ -30,23 +30,30 @@ func (s *Server) StartReportCron() {
 
 func (s *Server) SendDailyReport() {
 	h := log.NewHeader("sendDailyReport")
-	proxy, err := s.GetProxyConfigHtmlReport(10)
+	report, err := s.GetHtmlReport(h)
 	if err != nil {
-		log.Errorf(h, "get proxy html error: %v", err)
 		return
 	}
-	whiteList, err := s.GetWhiteListHtmlReport(10)
-	if err != nil {
-		//do not return because we still need send proxy report.
-		log.Errorf(h, "get whiteList html error: %v", err)
-	}
-	if err := tool.Send([]string{"root@cntechpower.com"}, "Anywhere Daily Report",
-		fmt.Sprintf(template.HTMLReport, template.HTMLReportCss, whiteList, proxy)); err != nil {
+	if err := tool.Send([]string{"root@cntechpower.com"}, report, "Anywhere Daily Report"); err != nil {
 		log.Errorf(h, "send mail error: %v", err)
 	}
 }
 
-func (s *Server) GetProxyConfigHtmlReport(maxLines int) (html string, err error) {
+func (s *Server) GetHtmlReport(h *log.Header) (string, error) {
+	proxy, err := s.getProxyConfigHtmlReport(10)
+	if err != nil {
+		h.Errorf("get proxy html error: %v", err)
+		return "", err
+	}
+	whiteList, err := s.getWhiteListHtmlReport(10)
+	if err != nil {
+		//do not return because we still need send proxy report.
+		h.Errorf("get whiteList html error: %v", err)
+	}
+	return fmt.Sprintf(template.HTMLReport, template.HTMLReportCss, whiteList, proxy), nil
+}
+
+func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error) {
 	configs := s.ListProxyConfigs()
 
 	configsHtmlTable := strings.Builder{}
@@ -101,7 +108,7 @@ func (s *Server) GetProxyConfigHtmlReport(maxLines int) (html string, err error)
 	return configsHtmlTable.String(), nil
 }
 
-func (s *Server) GetWhiteListHtmlReport(maxLines int) (html string, err error) {
+func (s *Server) getWhiteListHtmlReport(maxLines int) (html string, err error) {
 	proxyDenyHtmlTable := strings.Builder{}
 	totalCount := int64(0)
 	proxyDenys, err := persist.GetTotalDenyRank()

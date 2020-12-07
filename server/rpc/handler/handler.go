@@ -1,12 +1,12 @@
-package rpcHandler
+package handler
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/cntechpower/anywhere/log"
-	"github.com/cntechpower/anywhere/server/anywhereServer"
 	pb "github.com/cntechpower/anywhere/server/rpc/definitions"
+	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/util"
 )
 
@@ -15,11 +15,11 @@ var (
 )
 
 type rpcHandlers struct {
-	s         *anywhereServer.Server
+	s         *server.Server
 	logHeader *log.Header
 }
 
-func GetRpcHandlers(s *anywhereServer.Server) *rpcHandlers {
+func GetRpcHandlers(s *server.Server) *rpcHandlers {
 	return &rpcHandlers{
 		s:         s,
 		logHeader: log.NewHeader("rpcHandler"),
@@ -27,7 +27,7 @@ func GetRpcHandlers(s *anywhereServer.Server) *rpcHandlers {
 }
 
 func (h *rpcHandlers) ListAgent(ctx context.Context, empty *pb.Empty) (*pb.Agents, error) {
-	s := anywhereServer.GetServerInstance()
+	s := server.GetServerInstance()
 	if s == nil {
 		return &pb.Agents{}, ErrServerNotInit
 	}
@@ -52,7 +52,7 @@ func (h *rpcHandlers) AddProxyConfig(ctx context.Context, input *pb.AddProxyConf
 	if input.Config == nil {
 		return nil, fmt.Errorf("config not vaild: nil")
 	}
-	s := anywhereServer.GetServerInstance()
+	s := server.GetServerInstance()
 	if s == nil {
 		return &pb.Empty{}, ErrServerNotInit
 	}
@@ -71,7 +71,7 @@ func (h *rpcHandlers) AddProxyConfig(ctx context.Context, input *pb.AddProxyConf
 }
 
 func (h *rpcHandlers) ListProxyConfigs(ctx context.Context, input *pb.Empty) (*pb.ListProxyConfigsOutput, error) {
-	s := anywhereServer.GetServerInstance()
+	s := server.GetServerInstance()
 	if s == nil {
 		return nil, ErrServerNotInit
 	}
@@ -94,7 +94,7 @@ func (h *rpcHandlers) ListProxyConfigs(ctx context.Context, input *pb.Empty) (*p
 }
 
 func (h *rpcHandlers) RemoveProxyConfig(ctx context.Context, input *pb.RemoveProxyConfigInput) (*pb.Empty, error) {
-	s := anywhereServer.GetServerInstance()
+	s := server.GetServerInstance()
 	if s == nil {
 		return &pb.Empty{}, ErrServerNotInit
 	}
@@ -103,7 +103,7 @@ func (h *rpcHandlers) RemoveProxyConfig(ctx context.Context, input *pb.RemovePro
 
 func (h *rpcHandlers) LoadProxyConfigFile(ctx context.Context, input *pb.Empty) (*pb.Empty, error) {
 
-	s := anywhereServer.GetServerInstance()
+	s := server.GetServerInstance()
 	if s == nil {
 		return &pb.Empty{}, ErrServerNotInit
 	}
@@ -111,7 +111,7 @@ func (h *rpcHandlers) LoadProxyConfigFile(ctx context.Context, input *pb.Empty) 
 }
 
 func (h *rpcHandlers) SaveProxyConfigToFile(ctx context.Context, input *pb.Empty) (*pb.Empty, error) {
-	s := anywhereServer.GetServerInstance()
+	s := server.GetServerInstance()
 	if s == nil {
 		return &pb.Empty{}, ErrServerNotInit
 	}

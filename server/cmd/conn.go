@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/cntechpower/anywhere/server/handler/rpcHandler"
+	"github.com/cntechpower/anywhere/server/rpc/handler"
 
 	"github.com/spf13/cobra"
 )
@@ -23,7 +23,7 @@ var connListCmd = &cobra.Command{
 	Short: "list conns",
 	Long:  `list anywhere conns.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := rpcHandler.ListConns(agentId); err != nil {
+		if err := handler.ListConns(agentId); err != nil {
 			fmt.Printf("error query conn list: %v\n", err)
 		}
 	},
@@ -34,7 +34,7 @@ var connKillCmd = &cobra.Command{
 	Short: "kill conn",
 	Long:  `kill anywhere conn.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := rpcHandler.KillConn(userName, agentId, connIdToKill); err != nil {
+		if err := handler.KillConn(userName, agentId, connIdToKill); err != nil {
 			fmt.Printf("error query agent list: %v\n", err)
 		}
 	},
@@ -44,7 +44,7 @@ var connFlushCmd = &cobra.Command{
 	Short: "flush conn",
 	Long:  `flush anywhere conn.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := rpcHandler.FlushConns(); err != nil {
+		if err := handler.FlushConns(); err != nil {
 			fmt.Printf("error query agent list: %v\n", err)
 		}
 	},

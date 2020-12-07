@@ -1,4 +1,4 @@
-package anywhereServer
+package server
 
 import (
 	_tls "crypto/tls"
