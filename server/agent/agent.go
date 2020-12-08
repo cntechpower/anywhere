@@ -8,14 +8,14 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/cntechpower/anywhere/server/auth"
+
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/constants"
 	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/util"
 )
-
-var ErrProxyConnBufferFull = fmt.Errorf("proxy conn buffer is full")
 
 type Interface interface {
 	ResetAdminConn(c net.Conn)
@@ -37,7 +37,7 @@ type Interface interface {
 
 type ProxyConfig struct {
 	*model.ProxyConfig
-	acl         *util.WhiteList
+	acl         *auth.WhiteListValidator
 	joinedConns *conn.JoinedConnList
 	closeChan   chan struct{}
 }
@@ -263,10 +263,10 @@ func (a *Agent) proxyConfigHandler(config *ProxyConfig, h *log.Header) {
 		a.errChan <- errMsg
 		return
 	}
-	go a.handelTunnelConnection(ln, config)
+	go a.handleTunnelConnection(ln, config)
 }
 
-func (a *Agent) handelTunnelConnection(ln *net.TCPListener, config *ProxyConfig) {
+func (a *Agent) handleTunnelConnection(ln *net.TCPListener, config *ProxyConfig) {
 	h := log.NewHeader(fmt.Sprintf("tunnel_%v_handler", config.LocalAddr))
 	closeFlag := false
 	go func() {
@@ -276,7 +276,7 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, config *ProxyConfig)
 	}()
 
 	//always try to get a whitelist
-	whiteList, err := util.NewWhiteList(config.RemotePort, config.AgentId, config.LocalAddr, config.WhiteCidrList, config.IsWhiteListOn)
+	whiteList, err := auth.NewWhiteListValidator(config.RemotePort, config.AgentId, config.LocalAddr, config.WhiteCidrList, config.IsWhiteListOn)
 	if err != nil {
 		log.Errorf(h, "init white list error: %v", err)
 		return
@@ -307,12 +307,12 @@ func (a *Agent) handelTunnelConnection(ln *net.TCPListener, config *ProxyConfig)
 			config.AddConnectRejectedCount(1)
 			continue
 		}
-		go a.handelProxyConnection(c, config.LocalAddr, onConnectionEnd)
+		go a.handleProxyConnection(c, config.LocalAddr, onConnectionEnd)
 
 	}
 }
 
-func (a *Agent) handelProxyConnection(c net.Conn, localAddr string, fnOnEnd func(localToRemoteBytes, remoteToLocalBytes uint64)) {
+func (a *Agent) handleProxyConnection(c net.Conn, localAddr string, fnOnEnd func(localToRemoteBytes, remoteToLocalBytes uint64)) {
 	h := log.NewHeader(fmt.Sprintf("proxy: %v->%v", c.RemoteAddr().String(), localAddr))
 	dst, err := a.GetProxyConn(localAddr)
 	if err != nil {
@@ -341,7 +341,7 @@ func (a *Agent) handleAdminConnection() {
 		// when handleAdminConnection there is always error happen.
 		// so we need close adminConn and wait client reconnect.
 		log.Warnf(h, "handleAdminConnection for %v closed", a.id)
-		a.adminConn.Close()
+		_ = a.adminConn.Close()
 	}()
 	msg := &model.RequestMsg{}
 	for {

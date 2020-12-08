@@ -5,19 +5,20 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cntechpower/anywhere/log"
-
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/server/auth"
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/util"
 )
 
 var userValidator *auth.UserValidator
+var whiteListValidator *auth.WhiteListValidator
 var jwtValidator *auth.JwtValidator
 var serverInst *server.Server
 
@@ -93,15 +94,12 @@ func StartUIAndAPIService(restHandler http.Handler, serverI *server.Server, addr
 		errChan <- err
 	}
 	_, port, _ := util.GetIpPortByAddr(addr)
-	wl, err := util.NewWhiteList(port, "frontend-handler", "127.0.0.1:1114", reportWhiteCidrs, true)
+	var err error
+	whiteListValidator, err = auth.NewWhiteListValidator(port, "frontend", addr, reportWhiteCidrs, true)
 	if err != nil {
 		panic(err)
 	}
-	router.GET("/report", func(ctx *gin.Context) {
-		if !wl.AddrInWhiteList(ctx.Request.RemoteAddr) {
-			_ = ctx.AbortWithError(http.StatusBadRequest, nil)
-			return
-		}
+	router.GET("/report", whiteListValidator.GinHandler, func(ctx *gin.Context) {
 		html, err := serverInst.GetHtmlReport(log.NewHeader("web"))
 		if err != nil {
 			_ = ctx.AbortWithError(http.StatusInternalServerError, err)
@@ -110,6 +108,7 @@ func StartUIAndAPIService(restHandler http.Handler, serverI *server.Server, addr
 		ctx.Header("Content-Type", "text/html; charset=utf-8")
 		ctx.String(http.StatusOK, html)
 	})
+	router.GET("/metrics", whiteListValidator.GinHandler, gin.WrapH(promhttp.Handler()))
 	errChan <- router.Run(addr)
 
 }

@@ -21,7 +21,10 @@ func sessionFilter(c *gin.Context) {
 		c.Next()
 		return
 	}
-	if c.Request.URL.Path == "/user/login" || c.Request.URL.Path == "/user_login" || c.Request.URL.Path == "/report" {
+	if c.Request.URL.Path == "/user/login" ||
+		c.Request.URL.Path == "/user_login" ||
+		c.Request.URL.Path == "/report" ||
+		c.Request.URL.Path == "/metrics" {
 		c.Next()
 		return
 	}

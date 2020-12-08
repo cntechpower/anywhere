@@ -83,7 +83,9 @@ func (l *WhiteList) IpInWhiteList(ip string) (res bool) {
 	defer func() {
 		l.mutex.RUnlock()
 		if !res {
-			go persist.AddWhiteListDenyIp(l.remotePort, l.agentId, l.localAddr, ip)
+			go func() {
+				_ = persist.AddWhiteListDenyIp(l.remotePort, l.agentId, l.localAddr, ip)
+			}()
 		}
 	}()
 	if !l.enable {
