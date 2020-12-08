@@ -34,7 +34,7 @@ func (s *Server) SendDailyReport() {
 	if err != nil {
 		return
 	}
-	if err := tool.Send([]string{"root@cntechpower.com"}, report, "Anywhere Daily Report"); err != nil {
+	if err := tool.Send([]string{"root@cntechpower.com"}, "Anywhere Daily Report", report); err != nil {
 		log.Errorf(h, "send mail error: %v", err)
 	}
 }
