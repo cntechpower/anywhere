@@ -32,6 +32,14 @@
         "local_addr": "172.90.101.24:22",
         "is_white_list_enable": false,
         "white_cidr_list": "180.168.0.0/16,101.86.210.116/16,223.88.249.186/16,120.253.0.0/16"
+      },
+      {
+        "agent_id": "anywhere-agent-1",
+        "user_name": "admin",
+        "remote_port": 4448,
+        "local_addr": "172.90.101.24:22",
+        "is_white_list_enable": true,
+        "white_cidr_list": "180.168.0.0/16,101.86.210.116/16,223.88.249.186/16,120.253.0.0/16"
       }
     ]
   }
