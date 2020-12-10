@@ -8,10 +8,23 @@ import (
 
 	"github.com/cntechpower/anywhere/log"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var DB *sql.DB
 var header *log.Header
+
+var stageExec = []string{"exec"}
+var stageQuery = []string{"query"}
+var stageScan = []string{"scan"}
+var stagePing = []string{"ping"}
+var persistErrorCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Name: "persist_error_count"},
+	[]string{"stage"})
+
+func init() {
+	prometheus.MustRegister(persistErrorCount)
+}
 
 type WhiteListDenyItem struct {
 	Ip    string
@@ -72,6 +85,7 @@ func Init(dsn string) {
 		for {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 			if err := DB.PingContext(ctx); err != nil {
+				persistErrorCount.WithLabelValues(stagePing...).Inc()
 				header.Infof("db ping check error: %v", err)
 			}
 			cancel()
@@ -89,6 +103,7 @@ func AddWhiteListDenyIp(remotePort int, agentId, localAddr, ip string) error {
 	_, err := DB.ExecContext(ctx, insertWhiteListHistorySql, remotePort, ip, agentId, localAddr)
 	cancel()
 	if err != nil {
+		persistErrorCount.WithLabelValues(stageExec...).Inc()
 		header.Errorf("save whitelist history error: %v", err)
 	}
 	return err
@@ -103,6 +118,7 @@ func GetTotalDenyRank() (res []*WhiteListDenyItem, err error) {
 	rows, err := DB.QueryContext(ctx, totalDenyRankSql)
 	if err != nil {
 		cancel()
+		persistErrorCount.WithLabelValues(stageQuery...).Inc()
 		header.Errorf("query total deny rank error: %v", err)
 		return nil, err
 	}
@@ -111,6 +127,7 @@ func GetTotalDenyRank() (res []*WhiteListDenyItem, err error) {
 	for rows.Next() {
 		i := &WhiteListDenyItem{}
 		if err := rows.Scan(&i.Ip, &i.Count); err != nil {
+			persistErrorCount.WithLabelValues(stageScan...).Inc()
 			return nil, err
 		}
 		res = append(res, i)
