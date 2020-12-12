@@ -64,6 +64,7 @@ message RemoveProxyConfigInput{
 
 message ListConnsInput{
     string agentId = 1;
+    string userName = 2;
 }
 
 message Conn {

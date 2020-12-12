@@ -119,7 +119,7 @@ func (h *rpcHandlers) SaveProxyConfigToFile(ctx context.Context, input *pb.Empty
 }
 
 func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (*pb.Conns, error) {
-	agentConnsMap, err := h.s.ListJoinedConns("", input.AgentId)
+	agentConns, err := h.s.ListJoinedConns("", input.AgentId)
 	if err != nil {
 		return nil, err
 	}
@@ -127,10 +127,11 @@ func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (
 		Conn: make([]*pb.Conn, 0),
 	}
 
-	for agentId, agentConns := range agentConnsMap {
-		for _, conn := range agentConns {
+	for _, agentConns := range agentConns {
+		for _, conn := range agentConns.List {
 			res.Conn = append(res.Conn, &pb.Conn{
-				AgentId:       agentId,
+				AgentId:       agentConns.AgentId,
+				UserName:      agentConns.UserName,
 				ConnId:        int64(conn.ConnId),
 				SrcRemoteAddr: conn.SrcRemoteAddr,
 				SrcLocalAddr:  conn.SrcLocalAddr,

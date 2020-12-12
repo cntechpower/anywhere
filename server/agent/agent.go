@@ -8,12 +8,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cntechpower/anywhere/server/auth"
-
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/constants"
 	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/model"
+	"github.com/cntechpower/anywhere/server/auth"
 	"github.com/cntechpower/anywhere/util"
 )
 
@@ -23,7 +22,7 @@ type Interface interface {
 	RemoveProxyConfig(remotePort int, localAddr string) error
 	PutProxyConn(proxyAddr string, c *conn.WrappedConn) error
 	GetProxyConn(proxyAddr string) (*conn.WrappedConn, error)
-	ListJoinedConns() []*conn.JoinedConnListItem
+	ListJoinedConns() []*model.JoinedConnListItem
 	KillJoinedConnById(id int) error
 	FlushJoinedConns()
 	GetCurrentConnectionCount() int
@@ -187,7 +186,7 @@ func (a *Agent) GetProxyConn(proxyAddr string) (*conn.WrappedConn, error) {
 	return a.connectionPool.Get(proxyAddr)
 }
 
-func (a *Agent) ListJoinedConns() []*conn.JoinedConnListItem {
+func (a *Agent) ListJoinedConns() []*model.JoinedConnListItem {
 	return a.joinedConns.List()
 }
 

@@ -4,20 +4,13 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/util"
 )
 
 type joinedConn struct {
 	src *WrappedConn
 	dst *WrappedConn
-}
-
-type JoinedConnListItem struct {
-	ConnId        int
-	SrcRemoteAddr string
-	SrcLocalAddr  string
-	DstRemoteAddr string
-	DstLocalAddr  string
 }
 
 type JoinedConnList struct {
@@ -92,12 +85,12 @@ func (l *JoinedConnList) Flush() {
 	}
 }
 
-func (l *JoinedConnList) List() []*JoinedConnListItem {
+func (l *JoinedConnList) List() []*model.JoinedConnListItem {
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
-	res := make([]*JoinedConnListItem, 0)
+	res := make([]*model.JoinedConnListItem, 0)
 	for idx, conn := range l.list {
-		res = append(res, &JoinedConnListItem{
+		res = append(res, &model.JoinedConnListItem{
 			ConnId:        idx,
 			SrcRemoteAddr: conn.src.GetRemoteAddr(),
 			SrcLocalAddr:  conn.src.GetLocalAddr(),

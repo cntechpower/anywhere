@@ -205,18 +205,28 @@ func (s *Server) RegisterAgent(user, agentId string, c net.Conn) (isUpdate bool)
 	return isUpdate
 }
 
-func (s *Server) ListJoinedConns(user, agentId string) (map[string][]*conn.JoinedConnListItem, error) {
-	res := make(map[string][]*conn.JoinedConnListItem, 0)
-	if agentId != "" { //only get specified agent
+func (s *Server) ListJoinedConns(user, agentId string) ([]*model.AgentConnList, error) {
+	res := make([]*model.AgentConnList, 0)
+	if user != "" && agentId != "" { //only get specified agent
 		if !s.isAgentExist(user, agentId) {
 			return nil, fmt.Errorf("no such agent id %v", agentId)
 		}
-		res[agentId] = s.agents[user][agentId].ListJoinedConns()
+		res = append(res, &model.AgentConnList{
+			UserName: user,
+			AgentId:  agentId,
+			List:     s.agents[user][agentId].ListJoinedConns(),
+		})
 		return res, nil
 	}
-	for _, user := range s.agents {
-		for _, a := range user {
-			res[agentId] = a.ListJoinedConns()
+	//get all agent's conn
+	for _, agents := range s.agents {
+		for _, a := range agents {
+			aInfo := a.Info()
+			res = append(res, &model.AgentConnList{
+				UserName: aInfo.UserName,
+				AgentId:  aInfo.Id,
+				List:     a.ListJoinedConns(),
+			})
 		}
 	}
 	return res, nil
