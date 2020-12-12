@@ -73,7 +73,7 @@ func Init(dsn string) {
 	if err != nil {
 		panic(err)
 	}
-	DB.SetConnMaxLifetime(time.Minute * 3)
+	DB.SetConnMaxLifetime(time.Minute * 120)
 	DB.SetMaxIdleConns(10)
 	_, err = DB.Exec(createTableSql)
 	if err != nil {
@@ -89,7 +89,7 @@ func Init(dsn string) {
 				header.Infof("db ping check error: %v", err)
 			}
 			cancel()
-			time.Sleep(15 * time.Second)
+			time.Sleep(30 * time.Second)
 		}
 	}()
 }
