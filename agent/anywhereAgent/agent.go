@@ -78,7 +78,7 @@ func (a *Agent) Stop() {
 	a.status = "STOPPED"
 }
 
-func (a *Agent) ListJoinedConns() []*conn.JoinedConnListItem {
+func (a *Agent) ListJoinedConns() []*model.JoinedConnListItem {
 	return a.joinedConns.List()
 }
 

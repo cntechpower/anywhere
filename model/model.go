@@ -49,6 +49,20 @@ type ServerSummary struct {
 	RefreshTime                  time.Time
 }
 
+type JoinedConnListItem struct {
+	ConnId        int
+	SrcRemoteAddr string
+	SrcLocalAddr  string
+	DstRemoteAddr string
+	DstLocalAddr  string
+}
+
+type AgentConnList struct {
+	UserName string
+	AgentId  string
+	List     []*JoinedConnListItem
+}
+
 func NewProxyConfig(userName, agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) (*ProxyConfig, error) {
 
 	if err := util.CheckPortValid(remotePort); err != nil {
