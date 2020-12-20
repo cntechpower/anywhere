@@ -11,8 +11,8 @@ type AgentInfoInServer struct {
 	Id               string
 	UserName         string
 	RemoteAddr       string
-	LastAckSend      string
-	LastAckRcv       string
+	LastAckSend      time.Time
+	LastAckRcv       time.Time
 	ProxyConfigCount int
 }
 

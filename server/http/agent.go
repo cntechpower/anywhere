@@ -1,6 +1,7 @@
 package http
 
 import (
+	"github.com/cntechpower/anywhere/constants"
 	"github.com/cntechpower/anywhere/server/restapi/api/models"
 )
 
@@ -12,8 +13,8 @@ func ListAgentV1() ([]*models.AgentListInfo, error) {
 			UserName:         agent.UserName,
 			AgentAdminAddr:   agent.RemoteAddr,
 			AgentID:          agent.Id,
-			LastAckSend:      agent.LastAckSend,
-			LastAckRcv:       agent.LastAckRcv,
+			LastAckSend:      agent.LastAckSend.Format(constants.DefaultTimeFormat),
+			LastAckRcv:       agent.LastAckRcv.Format(constants.DefaultTimeFormat),
 			ProxyConfigCount: int64(agent.ProxyConfigCount),
 		}
 		res = append(res, a)

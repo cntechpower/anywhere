@@ -99,8 +99,8 @@ func (a *Agent) Info() *model.AgentInfoInServer {
 		UserName:         a.userName,
 		Id:               a.id,
 		RemoteAddr:       a.RemoteAddr.String(),
-		LastAckRcv:       a.adminConn.LastAckRcvTime.Format(constants.DefaultTimeFormat),
-		LastAckSend:      a.adminConn.LastAckSendTime.Format(constants.DefaultTimeFormat),
+		LastAckRcv:       a.adminConn.LastAckRcvTime,
+		LastAckSend:      a.adminConn.LastAckSendTime,
 		ProxyConfigCount: a.GetProxyConfigCount(),
 	}
 }

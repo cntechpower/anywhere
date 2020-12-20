@@ -61,6 +61,9 @@ type Header struct {
 }
 
 func NewHeader(n string) *Header {
+	if globalLogger == nil {
+		panic("global logger not init")
+	}
 	return &Header{name: n}
 }
 

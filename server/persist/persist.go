@@ -27,8 +27,9 @@ func init() {
 }
 
 type WhiteListDenyItem struct {
-	Ip    string
-	Count int64
+	Ip      string
+	Address string
+	Count   int64
 }
 
 const (
@@ -41,8 +42,13 @@ create table if not exists whitelist_deny_history(
   local_addr varchar(25) NOT NULL COMMENT '内网地址',
   ctime timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   mtime timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+  address_en varchar(30) NOT NULL DEFAULT '',
+  address_cn varchar(30) NOT NULL DEFAULT '',
+  time_zone varchar(15) NOT NULL DEFAULT '',
+  country_code varchar(5) NOT NULL DEFAULT '',
   PRIMARY KEY (id),
-  KEY ix_mtime (mtime)
+  KEY ix_mtime (mtime),
+  KEY idx_ip (ip)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8 COMMENT = '防火墙拦截记录表';`
 
 	insertWhiteListHistorySql = `
@@ -51,18 +57,73 @@ insert into
 values(?, ?, ?, ?)
 `
 
-	totalDenyRankSql = `
-select
-ip,
-count(*) as deny_count
-from
-whitelist_deny_history
-group by
-ip
-order by
-deny_count desc;
+	sqlTotalDenyRankDetail = `
+SELECT ip, 
+       address_cn, 
+       count(*) AS deny_count 
+FROM   whitelist_deny_history 
+GROUP  BY ip, 
+          address_cn 
+ORDER  BY deny_count DESC limit ?; 
+`
+
+	sqlTotalDenyRankDetailCount = `
+SELECT count(*) AS deny_count 
+FROM   whitelist_deny_history; 
+`
+
+	sqlTotalDenyRankIpCount = `
+SELECT count(DISTINCT( ip )) 
+FROM   whitelist_deny_history; 
+`
+
+	sqlDailyDenyRankDetail = `
+SELECT ip, 
+       address_cn, 
+       count(*) AS deny_count 
+FROM   whitelist_deny_history 
+WHERE  date(ctime) = curdate() 
+GROUP  BY ip, 
+          address_cn 
+ORDER  BY deny_count DESC limit ?; 
+`
+
+	sqlDailyDenyRankDetailCount = `
+SELECT count(*) AS deny_count 
+FROM   whitelist_deny_history
+WHERE  date(ctime) = curdate();
+`
+
+	sqlDailyDenyRankIpCount = `
+SELECT count(DISTINCT( ip )) 
+FROM   whitelist_deny_history
+WHERE  date(ctime) = curdate(); 
 `
 )
+
+const (
+	RankTypeTotal = "total"
+	RankTypeDaily = "daily"
+)
+
+type denyRankSqls struct {
+	detailSql      string
+	ipCountSql     string
+	detailCountSql string
+}
+
+var denyRankSqlMap = map[string]*denyRankSqls{
+	RankTypeTotal: {
+		detailSql:      sqlTotalDenyRankDetail,
+		detailCountSql: sqlTotalDenyRankDetailCount,
+		ipCountSql:     sqlTotalDenyRankIpCount,
+	},
+	RankTypeDaily: {
+		detailSql:      sqlDailyDenyRankDetail,
+		detailCountSql: sqlDailyDenyRankDetailCount,
+		ipCountSql:     sqlDailyDenyRankIpCount,
+	},
+}
 
 func Init(dsn string) {
 	if dsn == "" {
@@ -109,28 +170,41 @@ func AddWhiteListDenyIp(remotePort int, agentId, localAddr, ip string) error {
 	return err
 }
 
-func GetTotalDenyRank() (res []*WhiteListDenyItem, err error) {
+func GetWhiteListDenyRank(typ string, limit int64) (details []*WhiteListDenyItem, detailCount, ipCount int64, err error) {
 	if DB == nil {
 		header.Errorf("db is not init")
-		return nil, fmt.Errorf("db is not init")
+		err = fmt.Errorf("db is not init")
+		return
+	}
+	sqls := denyRankSqlMap[typ]
+	if sqls == nil {
+		err = fmt.Errorf("no such deny rank type")
+		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
-	rows, err := DB.QueryContext(ctx, totalDenyRankSql)
+	defer cancel()
+	err = DB.QueryRow(sqls.detailCountSql).Scan(&detailCount)
 	if err != nil {
-		cancel()
+		return
+	}
+	err = DB.QueryRow(sqls.ipCountSql).Scan(&ipCount)
+	if err != nil {
+		return
+	}
+	rows, err := DB.QueryContext(ctx, sqls.detailSql, limit)
+	if err != nil {
 		persistErrorCount.WithLabelValues(stageQuery...).Inc()
 		header.Errorf("query total deny rank error: %v", err)
-		return nil, err
+		return
 	}
-	defer cancel()
-	res = make([]*WhiteListDenyItem, 0)
+	details = make([]*WhiteListDenyItem, 0)
 	for rows.Next() {
 		i := &WhiteListDenyItem{}
-		if err := rows.Scan(&i.Ip, &i.Count); err != nil {
+		if err = rows.Scan(&i.Ip, &i.Address, &i.Count); err != nil {
 			persistErrorCount.WithLabelValues(stageScan...).Inc()
-			return nil, err
+			return
 		}
-		res = append(res, i)
+		details = append(details, i)
 	}
-	return res, nil
+	return
 }
