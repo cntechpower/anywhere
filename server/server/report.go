@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cntechpower/anywhere/constants"
+
 	"github.com/cntechpower/anywhere/server/conf"
 
 	"github.com/robfig/cron/v3"
@@ -40,17 +42,25 @@ func (s *Server) SendDailyReport() {
 }
 
 func (s *Server) GetHtmlReport(h *log.Header) (string, error) {
+
+	totalWhiteList, err := s.getWhiteListHtmlReport(persist.RankTypeTotal, 10)
+	if err != nil {
+		//do not return because we still need send proxy report.
+		h.Errorf("get totalWhiteList html error: %v", err)
+	}
+	dailyWhiteList, err := s.getWhiteListHtmlReport(persist.RankTypeDaily, 10)
+	if err != nil {
+		h.Errorf("get dailyWhiteList html error: %v", err)
+	}
+	agent, err := s.getAgentsHtmlReport(10)
+	if err != nil {
+		h.Errorf("get proxy html error: %v", err)
+	}
 	proxy, err := s.getProxyConfigHtmlReport(10)
 	if err != nil {
 		h.Errorf("get proxy html error: %v", err)
-		return "", err
 	}
-	whiteList, err := s.getWhiteListHtmlReport(10)
-	if err != nil {
-		//do not return because we still need send proxy report.
-		h.Errorf("get whiteList html error: %v", err)
-	}
-	return fmt.Sprintf(template.HTMLReport, template.HTMLReportCss, whiteList, proxy), nil
+	return fmt.Sprintf(template.HTMLReport, template.HTMLReportCss, dailyWhiteList, totalWhiteList, agent, proxy), nil
 }
 
 func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error) {
@@ -108,10 +118,9 @@ func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error)
 	return configsHtmlTable.String(), nil
 }
 
-func (s *Server) getWhiteListHtmlReport(maxLines int) (html string, err error) {
+func (s *Server) getWhiteListHtmlReport(typ string, maxLines int64) (html string, err error) {
 	proxyDenyHtmlTable := strings.Builder{}
-	totalCount := int64(0)
-	proxyDenys, err := persist.GetTotalDenyRank()
+	denyDetails, detailCount, ipCount, err := persist.GetWhiteListDenyRank(typ, maxLines)
 	if err != nil {
 		proxyDenyHtmlTable.WriteString(fmt.Sprintf("<b>%v!</b>", err))
 		return proxyDenyHtmlTable.String(), err
@@ -121,31 +130,88 @@ func (s *Server) getWhiteListHtmlReport(maxLines int) (html string, err error) {
   <thead>
     <tr>
       <th>IP</th>
+      <th>所属地区</th>
       <th>拒绝次数</th>
     </tr>
   </thead>
   <tbody>`)
 
-	for idx, p := range proxyDenys {
-		totalCount += p.Count
-		if idx < maxLines {
-			proxyDenyHtmlTable.WriteString(fmt.Sprintf(`
+	for _, p := range denyDetails {
+		proxyDenyHtmlTable.WriteString(fmt.Sprintf(`
     <tr>
       <td>%v</td>
       <td>%v</td>
+      <td>%v</td>
     </tr>`,
-				p.Ip, p.Count))
-		}
+			p.Ip, p.Address, p.Count))
+
 	}
 	proxyDenyHtmlTable.WriteString(fmt.Sprintf(`
     <tfoot>
         <tr>
           <td>总数:%v </td>
+          <td>--</td>
           <td>总数:%v</td>
         </tr>
       </tfoot>
    </tbody>
 </table>`,
-		len(proxyDenys), totalCount))
+		ipCount, detailCount))
 	return proxyDenyHtmlTable.String(), nil
+}
+
+func (s *Server) getAgentsHtmlReport(maxLines int) (html string, err error) {
+	agents := s.ListAgentInfo()
+
+	configsHtmlTable := strings.Builder{}
+	configsHtmlTable.WriteString(`
+<table class="minimalistBlack">
+  <thead>
+    <tr>
+      <th>用户名</th>
+      <th>节点ID</th>
+      <th>内网地址</th>
+      <th>配置总数</th>
+      <th>心跳发送时间</th>
+      <th>心跳接收时间</th>
+      <th>延迟</th>
+    </tr>
+  </thead>
+  <tbody>`)
+
+	for idx, agent := range agents {
+		if idx < maxLines {
+			configsHtmlTable.WriteString(fmt.Sprintf(`
+    <tr>
+      <td>%v</td>
+      <td>%v</td>
+      <td>%v</td>
+      <td>%v</td>
+      <td>%v</td>
+      <td>%v</td>
+      <td>%vms</td>
+    </tr>`,
+				agent.UserName, agent.Id, agent.RemoteAddr,
+				agent.ProxyConfigCount,
+				agent.LastAckSend.Format(constants.DefaultTimeFormat),
+				agent.LastAckRcv.Format(constants.DefaultTimeFormat),
+				agent.LastAckRcv.Sub(agent.LastAckSend).Milliseconds()))
+		}
+	}
+	configsHtmlTable.WriteString(fmt.Sprintf(`
+    <tfoot>
+        <tr>
+          <td>节点数:%v </td>
+          <td>--</td>
+          <td>--</td>
+          <td>--</td>
+          <td>--</td>
+          <td>--</td>
+          <td>--</td>
+        </tr>
+      </tfoot>
+   </tbody>
+</table>`,
+		len(agents)))
+	return configsHtmlTable.String(), nil
 }

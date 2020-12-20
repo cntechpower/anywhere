@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cntechpower/anywhere/constants"
+
 	"github.com/cntechpower/anywhere/log"
 	pb "github.com/cntechpower/anywhere/server/rpc/definitions"
 	"github.com/cntechpower/anywhere/server/server"
@@ -40,8 +42,8 @@ func (h *rpcHandlers) ListAgent(ctx context.Context, empty *pb.Empty) (*pb.Agent
 			AgentUserName:         agent.UserName,
 			AgentId:               agent.Id,
 			AgentRemoteAddr:       agent.RemoteAddr,
-			AgentLastAckRcv:       agent.LastAckRcv,
-			AgentLastAckSend:      agent.LastAckSend,
+			AgentLastAckRcv:       agent.LastAckRcv.Format(constants.DefaultTimeFormat),
+			AgentLastAckSend:      agent.LastAckSend.Format(constants.DefaultTimeFormat),
 			AgentProxyConfigCount: int64(agent.ProxyConfigCount),
 		})
 	}

@@ -53,11 +53,26 @@ const HTMLReportCss = `
     font-size: 14px;
   }`
 const HTMLReport = `
+<!doctype html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Anywhere Daily Report</title>
 <style>
 %v
 </style>
+</head>
+<body class="">
 <h2>防火墙信息</h2>
+<h3>今日</h3>
+%v
+<h3>总计</h3>
+%v
+<h2>节点信息</h2>
 %v
 <h2>路由配置</h2>
 %v
+</body>
+</html>
 `
