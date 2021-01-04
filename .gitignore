@@ -9,3 +9,4 @@ credential/*
 static/*
 *.tar.gz
 .scannerwork/
+front-end/node_modules/
