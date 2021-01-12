@@ -78,7 +78,7 @@ sonar:
  	 -Dsonar.host.url=http://10.0.0.2:9999 \
  	 -Dsonar.login=fb582fcecc6a2363ca2b559e0e2bdd7ecc244903
 
-upload: upload_x86 upload_arm
+upload: upload_x86 upload_arm upload_docker_img
 upload_arm: build_arm ui
 	tar -czf anywhere-$(VERSION)-arm.tar.gz bin/ credential/ static/
 	tar -czf anywhere-latest-arm.tar.gz bin/ credential/ static/
@@ -93,6 +93,9 @@ upload_x86: build ui
 	curl -T anywhere-latest.tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
 	rm -rf anywhere-$(VERSION).tar.gz
 	rm -rf anywhere-latest.tar.gz
+upload_docker_img: build ui
+	sudo $(DOCKER) build -t 10.0.0.2:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION} -f build/Dockerfile.agent .
+	sudo $(DOCKER) push 10.0.0.2:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION}
 upload_release:
 	mv anywhere-$(VERSION).tar.gz /var/www/html/
 	rm -rf /var/www/html/anywhere-latest.tar.gz && mv anywhere-latest.tar.gz /var/www/html/

@@ -2,6 +2,7 @@
 set -e
 
 timestamp=$(date +%Y%m%d%H%M%S)
+curr_version=$(git rev-parse --short HEAD)
 
 ## Stopping Services
 kill "$(pgrep anywhere)"||true
@@ -18,6 +19,7 @@ wget -q ftp://ftp:ftp@10.0.0.2/ci/anywhere/anywhere-latest.tar.gz
 tar -xf anywhere-latest.tar.gz
 rm -rf bin/anywhered bin/test
 nohup ./bin/anywhere --user admin --pass admin -s 47.103.62.227 > anywhere.log 2>&1 &
+kubectl -n private set image deployment/anywhere-agent anywhere-agent=10.0.0.2:5000/cntechpower/anywhere-agent:$curr_version
 
 echo "Agent 10-0-0-2 Upgrade Success"
 
