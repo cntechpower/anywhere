@@ -94,7 +94,7 @@ upload_x86: build ui
 	rm -rf anywhere-$(VERSION).tar.gz
 	rm -rf anywhere-latest.tar.gz
 upload_docker_img: build ui
-	sudo $(DOCKER) build -t 10.0.0.2:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION} -f build/Dockerfile.agent .
+	sudo $(DOCKER) build -t 10.0.0.2:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION} -f docker-build/Dockerfile.agent .
 	sudo $(DOCKER) push 10.0.0.2:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION}
 upload_release:
 	mv anywhere-$(VERSION).tar.gz /var/www/html/
