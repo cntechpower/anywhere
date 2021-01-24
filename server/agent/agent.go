@@ -16,6 +16,7 @@ type Interface interface {
 	AskProxyConn(proxyAddr string) error
 	//status
 	Info() *model.AgentInfoInServer
+	IsHealthy() bool
 }
 
 type Agent struct {
@@ -121,4 +122,8 @@ func (a *Agent) handleAdminConnection() {
 			return
 		}
 	}
+}
+
+func (a *Agent) IsHealthy() bool {
+	return a.adminConn.IsValid()
 }

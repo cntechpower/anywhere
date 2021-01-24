@@ -138,10 +138,10 @@ func (s *Server) handleNewConnection(c net.Conn) {
 			return
 		}
 		if !s.isGroupExist(m.UserName, m.AgentGroup) {
-			log.Errorf(h, "got data conn register pkg from unknown user %v, agent %v", m.UserName, m.AgentId)
+			log.Errorf(h, "got data conn register pkg from unknown user %v, group %v", m.UserName, m.AgentGroup)
 			_ = c.Close()
 		} else {
-			log.Infof(h, "add data conn for %v from user %v, agent %v", m.UserName, m.LocalAddr, m.AgentId)
+			log.Infof(h, "add data conn for %v from user %v, group %v", m.UserName, m.LocalAddr, m.AgentGroup)
 			if err := s.groups[m.UserName][m.AgentGroup].PutProxyConn(m.AgentId, m.LocalAddr, c); err != nil {
 				log.Errorf(h, "put proxy conn to agent error: %v", err)
 			}
@@ -205,19 +205,19 @@ func (s *Server) ListJoinedConns(user, groupId string) ([]*model.GroupConnList, 
 			return nil, fmt.Errorf("no such group %v", groupId)
 		}
 		res = append(res, &model.GroupConnList{
-			UserName: user,
-			GroupId:  groupId,
-			List:     s.groups[user][groupId].ListJoinedConns(),
+			UserName:  user,
+			GroupName: groupId,
+			List:      s.groups[user][groupId].ListJoinedConns(),
 		})
 		return res, nil
 	}
-	//get all user's group  conn
+	//get all user's group conn
 	for userName, groups := range s.groups {
 		for groupName, g := range groups {
 			res = append(res, &model.GroupConnList{
-				UserName: userName,
-				GroupId:  groupName,
-				List:     g.ListJoinedConns(),
+				UserName:  userName,
+				GroupName: groupName,
+				List:      g.ListJoinedConns(),
 			})
 
 		}

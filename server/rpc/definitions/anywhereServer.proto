@@ -71,14 +71,14 @@ message ListConnsInput{
 }
 
 message Conn {
-    string agentId = 1;
-    int64 connId = 2;
-    string srcRemoteAddr = 3;
-    string srcLocalAddr = 4;
-    string dstRemoteAddr = 5;
-    string dstLocalAddr = 6;
-    string userName = 7;
-
+    string userName = 1;
+    string groupName = 2;
+    string agentId = 3;
+    int64 connId = 4;
+    string srcRemoteAddr = 5;
+    string srcLocalAddr = 6;
+    string dstRemoteAddr = 7;
+    string dstLocalAddr = 8;
 }
 
 message Conns{

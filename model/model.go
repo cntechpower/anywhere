@@ -52,6 +52,8 @@ type ServerSummary struct {
 
 type JoinedConnListItem struct {
 	ConnId        int
+	SrcName       string
+	DstName       string
 	SrcRemoteAddr string
 	SrcLocalAddr  string
 	DstRemoteAddr string
@@ -59,9 +61,9 @@ type JoinedConnListItem struct {
 }
 
 type GroupConnList struct {
-	UserName string
-	GroupId  string
-	List     []*JoinedConnListItem
+	UserName  string
+	GroupName string
+	List      []*JoinedConnListItem
 }
 
 func NewProxyConfig(userName, groupName string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) (*ProxyConfig, error) {

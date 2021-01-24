@@ -44,7 +44,6 @@ type Group struct {
 	agents           map[string]Interface
 	proxyConfigs     map[string]*ProxyConfig
 	proxyConfigMutex sync.Mutex
-	proxyConfigChan  chan *ProxyConfig
 	connectionPool   conn.ConnectionPool
 	errChan          chan error
 	CloseChan        chan struct{}
@@ -59,7 +58,6 @@ func NewGroup(userName, groupName string) GroupInterface {
 		agents:           make(map[string]Interface, 0),
 		proxyConfigs:     make(map[string]*ProxyConfig, 0),
 		proxyConfigMutex: sync.Mutex{},
-		proxyConfigChan:  make(chan *ProxyConfig, 1),
 		errChan:          make(chan error, 1),
 		CloseChan:        make(chan struct{}, 1),
 		joinedConns:      conn.NewJoinedConnList(),
@@ -116,7 +114,7 @@ func (g *Group) AddProxyConfig(config *model.ProxyConfig) error {
 		ProxyConfig: config,
 		closeChan:   closeChan,
 	}
-	g.proxyConfigChan <- pConfig
+	go g.handleAddProxyConfig(pConfig)
 	log.Infof(h, "add %v done", config)
 	g.proxyConfigs[key] = pConfig
 	return nil
@@ -201,32 +199,20 @@ func (g *Group) AddProxyConfigWhiteListConfig(remotePort int, localAddr, whiteCi
 
 }
 
-func (g *Group) proxyConfigHandleLoop() {
-	h := log.NewHeader("proxyConfigHandleLoop")
-	log.Infof(h, "started loop for group %v", g.groupName)
-	go func() {
-		<-g.CloseChan
-		close(g.proxyConfigChan)
-	}()
-	defer log.Infof(h, "stopped loop for group %v", g.groupName)
-	for p := range g.proxyConfigChan {
-		go g.proxyConfigHandler(p, h)
-	}
-}
-
-func (g *Group) proxyConfigHandler(config *ProxyConfig, h *log.Header) {
+func (g *Group) handleAddProxyConfig(config *ProxyConfig) {
+	h := log.NewHeader(fmt.Sprintf("tunnel-%v-(%v->%v)", config.UserName, config.RemotePort, config.LocalAddr))
+	h.Infof("starting new port listening")
 	ln, err := util.ListenTcp("0.0.0.0:" + strconv.Itoa(config.RemotePort))
 	if err != nil {
-		errMsg := fmt.Errorf("group %v proxyConfigHandler got error %v", g.groupName, err)
+		errMsg := fmt.Errorf("group %v handleAddProxyConfig got error %v", g.groupName, err)
 		log.Errorf(h, "%v", errMsg)
 		g.errChan <- errMsg
 		return
 	}
-	go g.handleTunnelConnection(ln, config)
+	go g.handleTunnelConnection(h, ln, config)
 }
 
-func (g *Group) handleTunnelConnection(ln *net.TCPListener, config *ProxyConfig) {
-	h := log.NewHeader(fmt.Sprintf("tunnel_%v_handler", config.LocalAddr))
+func (g *Group) handleTunnelConnection(h *log.Header, ln *net.TCPListener, config *ProxyConfig) {
 	closeFlag := false
 	go func() {
 		<-config.closeChan
@@ -292,8 +278,8 @@ func (g *Group) handleProxyConnection(c net.Conn, localAddr string, fnOnEnd func
 func (g *Group) chooseAgent() Interface {
 	h := log.NewHeader("chooseAgent")
 	for _, i := range g.agents {
-		if i != nil {
-			h.Infof("choose agent %v", i.Info().Id)
+		if i != nil && i.IsHealthy() {
+			h.Infof("chosen agent %v", i.Info().Id)
 			return i
 		}
 	}
@@ -304,6 +290,9 @@ func (g *Group) chooseAgent() Interface {
 func (g *Group) requestNewProxyConn(localAddr string) {
 	h := log.NewHeader("requestNewProxyConn")
 	a := g.chooseAgent()
+	if a == nil {
+		return
+	}
 	if err := a.AskProxyConn(localAddr); err != nil {
 		errMsg := fmt.Errorf("agent %v request for new proxy conn error %v", a.Info().Id, err)
 		log.Errorf(h, "%v", err)
@@ -324,17 +313,17 @@ func (g *Group) FlushJoinedConns() {
 }
 
 func (g *Group) restoreProxyConfig() error {
-	header := log.NewHeader("restoreProxyConfig_" + g.groupName)
+	header := log.NewHeader(fmt.Sprintf("restoreProxyConfig_%s_%s", g.userName, g.groupName))
 	configs, err := conf.ParseProxyConfigFile()
 	if err != nil {
 		return err
 	}
 	if err := configs.ProxyConfigIterator(func(userName string, config *model.ProxyConfig) error {
 		var err error
-		if g.groupName == config.GroupName {
+		if g.userName == config.UserName && g.groupName == config.GroupName {
 			err = g.AddProxyConfig(config)
-			header.Infof("restore config for group %v remotePort(%v), localAddr(%v), error: %v",
-				config.GroupName, config.RemotePort, config.LocalAddr, err)
+			header.Infof("restore config for user %v, group %v remotePort(%v), localAddr(%v), error: %v",
+				config.UserName, config.GroupName, config.RemotePort, config.LocalAddr, err)
 		}
 		return err
 	}); err != nil {

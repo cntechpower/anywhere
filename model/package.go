@@ -102,7 +102,7 @@ type TunnelBeginMsg struct {
 }
 
 func NewTunnelBeginMsg(userName, group, id, addr string) *RequestMsg {
-	return newRequestMsg(PkgTunnelBegin, group, id, "", &TunnelBeginMsg{UserName: userName, AgentId: id, LocalAddr: addr})
+	return newRequestMsg(PkgTunnelBegin, group, id, "", &TunnelBeginMsg{UserName: userName, AgentGroup: group, AgentId: id, LocalAddr: addr})
 }
 
 func ParseHeartBeatPkg(data []byte) (*HeartBeatMsg, error) {

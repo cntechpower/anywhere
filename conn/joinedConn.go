@@ -92,6 +92,8 @@ func (l *JoinedConnList) List() []*model.JoinedConnListItem {
 	for idx, conn := range l.list {
 		res = append(res, &model.JoinedConnListItem{
 			ConnId:        idx,
+			SrcName:       conn.src.remoteName,
+			DstName:       conn.dst.remoteName,
 			SrcRemoteAddr: conn.src.GetRemoteAddr(),
 			SrcLocalAddr:  conn.src.GetLocalAddr(),
 			DstRemoteAddr: conn.dst.GetRemoteAddr(),

@@ -134,7 +134,8 @@ func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (
 	for _, agentConns := range agentConns {
 		for _, conn := range agentConns.List {
 			res.Conn = append(res.Conn, &pb.Conn{
-				AgentId:       agentConns.GroupId,
+				AgentId:       conn.DstName,
+				GroupName:     agentConns.GroupName,
 				UserName:      agentConns.UserName,
 				ConnId:        int64(conn.ConnId),
 				SrcRemoteAddr: conn.SrcRemoteAddr,
