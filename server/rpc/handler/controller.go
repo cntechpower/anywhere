@@ -12,11 +12,11 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"google.golang.org/grpc"
 
-	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/server/conf"
 	pb "github.com/cntechpower/anywhere/server/rpc/definitions"
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/util"
+	"github.com/cntechpower/utils/log"
 )
 
 var grpcAddress string
@@ -74,15 +74,15 @@ func ListAgent() error {
 	}
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"UserName", "AgentId", "AgentAddr", "LastAckSend", "LastAckRcv"})
+	table.SetHeader([]string{"UserName", "GroupName", "AgentId", "AgentAddr", "LastAckSend", "LastAckRcv"})
 	for _, agent := range res.Agent {
-		table.Append([]string{agent.AgentUserName, agent.AgentId, agent.AgentRemoteAddr, agent.AgentLastAckSend, agent.AgentLastAckRcv})
+		table.Append([]string{agent.UserName, agent.GroupName, agent.Id, agent.RemoteAddr, agent.LastAckSend, agent.LastAckRcv})
 	}
 	table.Render()
 	return nil
 }
 
-func AddProxyConfig(userName, agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) error {
+func AddProxyConfig(userName, groupName string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) error {
 
 	client, err := NewClient(true)
 	if err != nil {
@@ -90,7 +90,7 @@ func AddProxyConfig(userName, agentId string, remotePort int, localAddr string, 
 	}
 	input := &pb.AddProxyConfigInput{Config: &pb.ProxyConfig{
 		Username:      userName,
-		AgentId:       agentId,
+		GroupName:     groupName,
 		RemotePort:    int64(remotePort),
 		LocalAddr:     localAddr,
 		IsWhiteListOn: isWhiteListOn,
@@ -115,10 +115,10 @@ func ListProxyConfigs() error {
 	}
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"AgentId", "ServerAddr", "LocalAddr", "IsWhiteListOn", "IpWhiteList", "TotalNetFlowsInMB"})
+	table.SetHeader([]string{"UserName", "GroupName", "ServerAddr", "LocalAddr", "IsWhiteListOn", "IpWhiteList", "TotalNetFlowsInMB"})
 	for _, config := range configs.Config {
 		table.Append([]string{
-			config.AgentId, strconv.Itoa(int(config.RemotePort)), config.LocalAddr,
+			config.Username, config.GroupName, strconv.Itoa(int(config.RemotePort)), config.LocalAddr,
 			util.BoolToString(config.IsWhiteListOn), config.WhiteCidrList,
 			strconv.FormatFloat(float64(config.NetworkFlowRemoteToLocalInBytes+config.NetworkFlowLocalToRemoteInBytes)/1024/1024, 'f', 5, 64),
 		})
@@ -127,14 +127,14 @@ func ListProxyConfigs() error {
 	return nil
 }
 
-func RemoveProxyConfig(userName, agentId string, remotePort int, localAddr string) error {
+func RemoveProxyConfig(userName, groupName string, remotePort int, localAddr string) error {
 	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
 	_, err = client.RemoveProxyConfig(context.Background(), &pb.RemoveProxyConfigInput{
 		UserName:   userName,
-		AgentId:    agentId,
+		GroupName:  groupName,
 		RemotePort: int64(remotePort),
 		LocalAddr:  localAddr,
 	})
@@ -159,14 +159,14 @@ func SaveProxyConfigToFile() error {
 	return err
 }
 
-func UpdateProxyConfigWhiteList(userName, agentId, localAddr, whiteCidrs string, whiteListEnable bool) error {
+func UpdateProxyConfigWhiteList(userName, groupName, localAddr, whiteCidrs string, whiteListEnable bool) error {
 	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
 	_, err = client.UpdateProxyConfigWhiteList(context.Background(), &pb.UpdateProxyConfigWhiteListInput{
 		UserName:        userName,
-		AgentId:         agentId,
+		GroupName:       groupName,
 		LocalAddr:       localAddr,
 		WhiteCidrs:      whiteCidrs,
 		WhiteListEnable: whiteListEnable,
@@ -174,13 +174,13 @@ func UpdateProxyConfigWhiteList(userName, agentId, localAddr, whiteCidrs string,
 	return err
 }
 
-func ListConns(agentId string) error {
+func ListConns(groupName string) error {
 	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
 	res, err := client.ListConns(context.Background(), &pb.ListConnsInput{
-		AgentId: agentId,
+		GroupName: groupName,
 	})
 	if err != nil {
 		return err
@@ -199,15 +199,15 @@ func ListConns(agentId string) error {
 	return nil
 }
 
-func KillConn(userName, agentId string, id int) error {
+func KillConn(userName, groupName string, id int) error {
 	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
 	_, err = client.KillConnById(context.Background(), &pb.KillConnByIdInput{
-		UserName: userName,
-		AgentId:  agentId,
-		ConnId:   int64(id),
+		UserName:  userName,
+		GroupName: groupName,
+		ConnId:    int64(id),
 	})
 	return err
 }

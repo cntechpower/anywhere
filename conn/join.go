@@ -5,7 +5,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/cntechpower/anywhere/log"
+	"github.com/cntechpower/utils/log"
 )
 
 func JoinConn(remote, local net.Conn) (uint64, uint64) {

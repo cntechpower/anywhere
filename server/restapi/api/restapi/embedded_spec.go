@@ -70,8 +70,8 @@ func init() {
           },
           {
             "type": "string",
-            "description": "agent id",
-            "name": "agent_id",
+            "description": "group name",
+            "name": "group_name",
             "in": "formData",
             "required": true
           },
@@ -132,8 +132,8 @@ func init() {
           },
           {
             "type": "string",
-            "description": "agent id",
-            "name": "agent_id",
+            "description": "group name",
+            "name": "group_name",
             "in": "formData",
             "required": true
           },
@@ -202,8 +202,8 @@ func init() {
           },
           {
             "type": "string",
-            "description": "agent id",
-            "name": "agent_id",
+            "description": "group name",
+            "name": "group_name",
             "in": "formData",
             "required": true
           },
@@ -300,6 +300,9 @@ func init() {
         "agentId": {
           "type": "string"
         },
+        "groupName": {
+          "type": "string"
+        },
         "lastAckRcv": {
           "type": "string"
         },
@@ -322,8 +325,8 @@ func init() {
       "description": "proxy config information",
       "type": "object",
       "properties": {
-        "agent_id": {
-          "description": "agent id",
+        "group_name": {
+          "description": "group name",
           "type": "string"
         },
         "is_whitelist_on": {
@@ -451,8 +454,8 @@ func init() {
           },
           {
             "type": "string",
-            "description": "agent id",
-            "name": "agent_id",
+            "description": "group name",
+            "name": "group_name",
             "in": "formData",
             "required": true
           },
@@ -513,8 +516,8 @@ func init() {
           },
           {
             "type": "string",
-            "description": "agent id",
-            "name": "agent_id",
+            "description": "group name",
+            "name": "group_name",
             "in": "formData",
             "required": true
           },
@@ -583,8 +586,8 @@ func init() {
           },
           {
             "type": "string",
-            "description": "agent id",
-            "name": "agent_id",
+            "description": "group name",
+            "name": "group_name",
             "in": "formData",
             "required": true
           },
@@ -681,6 +684,9 @@ func init() {
         "agentId": {
           "type": "string"
         },
+        "groupName": {
+          "type": "string"
+        },
         "lastAckRcv": {
           "type": "string"
         },
@@ -703,8 +709,8 @@ func init() {
       "description": "proxy config information",
       "type": "object",
       "properties": {
-        "agent_id": {
-          "description": "agent id",
+        "group_name": {
+          "description": "group name",
           "type": "string"
         },
         "is_whitelist_on": {

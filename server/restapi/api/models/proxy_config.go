@@ -15,8 +15,8 @@ import (
 // swagger:model ProxyConfig
 type ProxyConfig struct {
 
-	// agent id
-	AgentID string `json:"agent_id,omitempty"`
+	// group name
+	GroupName string `json:"group_name,omitempty"`
 
 	// is whitelist on
 	IsWhitelistOn bool `json:"is_whitelist_on,omitempty"`

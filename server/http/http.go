@@ -11,10 +11,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/server/auth"
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/util"
+	"github.com/cntechpower/utils/log"
 )
 
 var userValidator *auth.UserValidator

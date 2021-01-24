@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/cntechpower/anywhere/constants"
-	"github.com/cntechpower/anywhere/log"
+	"github.com/cntechpower/utils/log"
 )
 
 var ErrConnectionPoolFull = fmt.Errorf("connection pool is full")

@@ -14,7 +14,7 @@ import (
 
 var addr string
 var o operations.ClientService
-var agentId string
+var groupName string
 var userName string
 var errBuilder strings.Builder
 
@@ -40,7 +40,7 @@ func addProxyConfig(remotePort int64, localAddr string) error {
 	ctx, cancel := getDefaultContext()
 	_, err := o.PostV1ProxyAdd(&operations.PostV1ProxyAddParams{
 		UserName:        userName,
-		AgentID:         agentId,
+		GroupName:       groupName,
 		LocalAddr:       localAddr,
 		RemotePort:      remotePort,
 		WhiteListEnable: false,
@@ -72,7 +72,7 @@ func main() {
 			goto END
 		}
 		for _, agent := range resp.Payload {
-			agentId = agent.AgentID
+			groupName = agent.GroupName
 			userName = agent.UserName
 		}
 	}

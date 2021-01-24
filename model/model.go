@@ -9,6 +9,7 @@ import (
 
 type AgentInfoInServer struct {
 	Id               string
+	GroupName        string
 	UserName         string
 	RemoteAddr       string
 	LastAckSend      time.Time
@@ -25,7 +26,7 @@ type AgentInfoInAgent struct {
 }
 
 type ProxyConfig struct {
-	AgentId                         string `json:"agent_id"`
+	GroupName                       string `json:"group_id"`
 	UserName                        string `json:"user_name"`
 	RemotePort                      int    `json:"remote_port"`
 	LocalAddr                       string `json:"local_addr"`
@@ -57,13 +58,13 @@ type JoinedConnListItem struct {
 	DstLocalAddr  string
 }
 
-type AgentConnList struct {
+type GroupConnList struct {
 	UserName string
-	AgentId  string
+	GroupId  string
 	List     []*JoinedConnListItem
 }
 
-func NewProxyConfig(userName, agentId string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) (*ProxyConfig, error) {
+func NewProxyConfig(userName, groupName string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) (*ProxyConfig, error) {
 
 	if err := util.CheckPortValid(remotePort); err != nil {
 		return nil, fmt.Errorf("invalid remoteAddr %v in config, error: %v", localAddr, err)
@@ -73,7 +74,7 @@ func NewProxyConfig(userName, agentId string, remotePort int, localAddr string, 
 	}
 	return &ProxyConfig{
 		UserName:      userName,
-		AgentId:       agentId,
+		GroupName:     groupName,
 		RemotePort:    remotePort,
 		LocalAddr:     localAddr,
 		IsWhiteListOn: isWhiteListOn,

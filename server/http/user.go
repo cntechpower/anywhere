@@ -7,7 +7,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 
-	"github.com/cntechpower/anywhere/log"
+	"github.com/cntechpower/utils/log"
 )
 
 func redirectToLogin(c *gin.Context) {

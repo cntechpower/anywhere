@@ -3,7 +3,7 @@ package persist
 import (
 	"testing"
 
-	"github.com/cntechpower/anywhere/log"
+	"github.com/cntechpower/utils/log"
 
 	"github.com/stretchr/testify/assert"
 )

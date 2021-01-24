@@ -1,19 +1,20 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/cntechpower/anywhere/agent/anywhereAgent"
 	"github.com/cntechpower/anywhere/agent/handler"
-	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/util"
+	"github.com/cntechpower/utils/log"
 
 	"github.com/spf13/cobra"
 )
 
 var serverPort int
 var serverIp, agentId, user, password, certFile, keyFile, caFile string
-var version string
+var agentGroup, version string
 
 var grpcAddress string
 var connIdToKill int
@@ -79,8 +80,9 @@ func main() {
 	}
 	rootCmd.PersistentFlags().StringVarP(&serverIp, "server-ip", "s", "127.0.0.1", "anywhered server address")
 	rootCmd.PersistentFlags().IntVarP(&serverPort, "server-port", "p", 1111, "anywhered server port")
+	rootCmd.PersistentFlags().StringVarP(&agentGroup, "agent-group", "g", "asia-shanghai", "anywhere agent group")
 	rootCmd.PersistentFlags().StringVarP(&agentId, "agent-id", "i", "anywhere-agent-1", "anywhere agent id")
-	rootCmd.PersistentFlags().StringVarP(&grpcAddress, "grpc-address", "g", "127.0.0.1:1110", "anywhere agent grpc address")
+	rootCmd.PersistentFlags().StringVar(&grpcAddress, "grpc-address", "127.0.0.1:1110", "anywhere agent grpc address")
 	rootCmd.PersistentFlags().StringVarP(&user, "user", "u", "none", "anywhere user")
 	rootCmd.PersistentFlags().StringVarP(&password, "pass", "", "none", "anywhere password")
 	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "credential/client.crt", "cert file")
@@ -100,11 +102,13 @@ func main() {
 
 func run(_ *cobra.Command, _ []string) error {
 	h := log.NewHeader("agentMain")
-	a := anywhereAgent.InitAnyWhereAgent(agentId, serverIp, user, password, serverPort)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	a := anywhereAgent.InitAnyWhereAgent(agentGroup, agentId, serverIp, user, password, serverPort)
 	if err := a.SetCredentials(certFile, keyFile, caFile); err != nil {
 		return err
 	}
-	go a.Start()
+	go a.Start(ctx)
 
 	go util.ListenTTINSignalLoop()
 	serverExitChan := util.ListenKillSignal()
@@ -113,9 +117,10 @@ func run(_ *cobra.Command, _ []string) error {
 
 	select {
 	case err := <-rpcExitChan:
-		log.Fatalf(h, "Grpc existing unexpected: %v", err)
+		h.Fatalf("Grpc existing unexpected: %v", err)
 	case <-serverExitChan:
-		log.Infof(h, "Agent Existing")
+		h.Infof("Agent Existing")
 	}
+
 	return nil
 }

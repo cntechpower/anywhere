@@ -11,6 +11,7 @@ import (
 var ErrNilConn = fmt.Errorf("empty net.Conn")
 
 type WrappedConn struct {
+	remoteName      string
 	conn            net.Conn
 	statusMutex     sync.RWMutex
 	CreateTime      time.Time
@@ -91,8 +92,9 @@ func (c *WrappedConn) GetConn() net.Conn {
 	return c.conn
 }
 
-func NewWrappedConn(c net.Conn) *WrappedConn {
+func NewWrappedConn(remoteName string, c net.Conn) *WrappedConn {
 	return &WrappedConn{
+		remoteName:      remoteName,
 		conn:            c,
 		statusMutex:     sync.RWMutex{},
 		CreateTime:      time.Now(),

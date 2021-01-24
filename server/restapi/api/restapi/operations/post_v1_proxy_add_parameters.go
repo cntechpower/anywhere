@@ -40,11 +40,11 @@ type PostV1ProxyAddParams struct {
 	// HTTP Request Object
 	HTTPRequest *http.Request `json:"-"`
 
-	/*agent id
+	/*group name
 	  Required: true
 	  In: formData
 	*/
-	AgentID string
+	GroupName string
 	/*localAddress
 	  Required: true
 	  In: formData
@@ -90,8 +90,8 @@ func (o *PostV1ProxyAddParams) BindRequest(r *http.Request, route *middleware.Ma
 	}
 	fds := runtime.Values(r.Form)
 
-	fdAgentID, fdhkAgentID, _ := fds.GetOK("agent_id")
-	if err := o.bindAgentID(fdAgentID, fdhkAgentID, route.Formats); err != nil {
+	fdGroupName, fdhkGroupName, _ := fds.GetOK("group_name")
+	if err := o.bindGroupName(fdGroupName, fdhkGroupName, route.Formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -126,10 +126,10 @@ func (o *PostV1ProxyAddParams) BindRequest(r *http.Request, route *middleware.Ma
 	return nil
 }
 
-// bindAgentID binds and validates parameter AgentID from formData.
-func (o *PostV1ProxyAddParams) bindAgentID(rawData []string, hasKey bool, formats strfmt.Registry) error {
+// bindGroupName binds and validates parameter GroupName from formData.
+func (o *PostV1ProxyAddParams) bindGroupName(rawData []string, hasKey bool, formats strfmt.Registry) error {
 	if !hasKey {
-		return errors.Required("agent_id", "formData")
+		return errors.Required("group_name", "formData")
 	}
 	var raw string
 	if len(rawData) > 0 {
@@ -138,11 +138,11 @@ func (o *PostV1ProxyAddParams) bindAgentID(rawData []string, hasKey bool, format
 
 	// Required: true
 
-	if err := validate.RequiredString("agent_id", "formData", raw); err != nil {
+	if err := validate.RequiredString("group_name", "formData", raw); err != nil {
 		return err
 	}
 
-	o.AgentID = raw
+	o.GroupName = raw
 
 	return nil
 }

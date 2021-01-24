@@ -73,11 +73,11 @@ for the post v1 proxy update operation typically these are written to a http.Req
 */
 type PostV1ProxyUpdateParams struct {
 
-	/*AgentID
-	  agent id
+	/*GroupName
+	  group name
 
 	*/
-	AgentID string
+	GroupName string
 	/*LocalAddr
 	  localAddress
 
@@ -142,15 +142,15 @@ func (o *PostV1ProxyUpdateParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithAgentID adds the agentID to the post v1 proxy update params
-func (o *PostV1ProxyUpdateParams) WithAgentID(agentID string) *PostV1ProxyUpdateParams {
-	o.SetAgentID(agentID)
+// WithGroupName adds the groupName to the post v1 proxy update params
+func (o *PostV1ProxyUpdateParams) WithGroupName(groupName string) *PostV1ProxyUpdateParams {
+	o.SetGroupName(groupName)
 	return o
 }
 
-// SetAgentID adds the agentId to the post v1 proxy update params
-func (o *PostV1ProxyUpdateParams) SetAgentID(agentID string) {
-	o.AgentID = agentID
+// SetGroupName adds the groupName to the post v1 proxy update params
+func (o *PostV1ProxyUpdateParams) SetGroupName(groupName string) {
+	o.GroupName = groupName
 }
 
 // WithLocalAddr adds the localAddr to the post v1 proxy update params
@@ -216,11 +216,11 @@ func (o *PostV1ProxyUpdateParams) WriteToRequest(r runtime.ClientRequest, reg st
 	}
 	var res []error
 
-	// form param agent_id
-	frAgentID := o.AgentID
-	fAgentID := frAgentID
-	if fAgentID != "" {
-		if err := r.SetFormParam("agent_id", fAgentID); err != nil {
+	// form param group_name
+	frGroupName := o.GroupName
+	fGroupName := frGroupName
+	if fGroupName != "" {
+		if err := r.SetFormParam("group_name", fGroupName); err != nil {
 			return err
 		}
 	}

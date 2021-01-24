@@ -21,6 +21,9 @@ type AgentListInfo struct {
 	// agent Id
 	AgentID string `json:"agentId,omitempty"`
 
+	// group name
+	GroupName string `json:"groupName,omitempty"`
+
 	// last ack rcv
 	LastAckRcv string `json:"lastAckRcv,omitempty"`
 

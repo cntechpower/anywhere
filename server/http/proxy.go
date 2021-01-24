@@ -14,7 +14,7 @@ func ListProxyV1() ([]*models.ProxyConfig, error) {
 	for _, config := range configs {
 		res = append(res, &models.ProxyConfig{
 			UserName:                        config.UserName,
-			AgentID:                         config.AgentId,
+			GroupName:                       config.GroupName,
 			LocalAddr:                       config.LocalAddr,
 			RemotePort:                      int64(config.RemotePort),
 			IsWhitelistOn:                   config.IsWhiteListOn,
@@ -28,12 +28,12 @@ func ListProxyV1() ([]*models.ProxyConfig, error) {
 
 func AddProxyConfigV1(params v1.PostV1ProxyAddParams) (*models.ProxyConfig, error) {
 	whiteListIps := util.StringNvl(params.WhiteListIps)
-	if err := serverInst.AddProxyConfigToAgent(params.UserName, params.AgentID, int(params.RemotePort), params.LocalAddr, params.WhiteListEnable, whiteListIps); err != nil {
+	if err := serverInst.AddProxyConfig(params.UserName, params.GroupName, int(params.RemotePort), params.LocalAddr, params.WhiteListEnable, whiteListIps); err != nil {
 		return nil, err
 	}
 	return &models.ProxyConfig{
 		UserName:      params.UserName,
-		AgentID:       params.AgentID,
+		GroupName:     params.GroupName,
 		IsWhitelistOn: params.WhiteListEnable,
 		LocalAddr:     params.LocalAddr,
 		RemotePort:    params.RemotePort,
@@ -46,24 +46,24 @@ func PostV1ProxyDeleteHandler(params v1.PostV1ProxyDeleteParams) (*models.ProxyC
 	if err != nil {
 		return nil, err
 	}
-	if err := serverInst.RemoveProxyConfigFromAgent(params.UserName, remotePort, params.AgentID, params.LocalAddr); err != nil {
+	if err := serverInst.RemoveProxyConfig(params.UserName, params.GroupName, remotePort, params.LocalAddr); err != nil {
 		return nil, err
 	}
 	return &models.ProxyConfig{
 		UserName:  params.UserName,
-		AgentID:   params.AgentID,
+		GroupName: params.GroupName,
 		LocalAddr: params.LocalAddr,
 	}, nil
 }
 
 func PostV1ProxyUpdateParams(params v1.PostV1ProxyUpdateParams) (*models.ProxyConfig, error) {
 	if err := serverInst.UpdateProxyConfigWhiteList(params.UserName, int(util.Int64Nvl(params.RemotePort)),
-		params.AgentID, params.LocalAddr, util.StringNvl(params.WhiteListIps), params.WhiteListEnable); err != nil {
+		params.GroupName, params.LocalAddr, util.StringNvl(params.WhiteListIps), params.WhiteListEnable); err != nil {
 		return nil, err
 	}
 	return &models.ProxyConfig{
 		UserName:      params.UserName,
-		AgentID:       params.AgentID,
+		GroupName:     params.GroupName,
 		IsWhitelistOn: params.WhiteListEnable,
 		LocalAddr:     params.LocalAddr,
 		WhitelistIps:  util.StringNvl(params.WhiteListIps),

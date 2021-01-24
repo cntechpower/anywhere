@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/cntechpower/anywhere/constants"
-	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/util"
+	"github.com/cntechpower/utils/log"
 )
 
 var proxyConf *ProxyConfigs
@@ -30,11 +30,11 @@ func Add(config *model.ProxyConfig) error {
 	return proxyConf.Add(config)
 }
 
-func Remove(userName, agentId string, remotePort int) error {
+func Remove(userName, group string, remotePort int) error {
 	if proxyConf == nil {
 		return fmt.Errorf("config not init")
 	}
-	return proxyConf.Remove(userName, agentId, remotePort)
+	return proxyConf.Remove(userName, group, remotePort)
 }
 
 func PersistGlobalConfigLoop() {
@@ -103,7 +103,7 @@ func (c *ProxyConfigs) ProxyConfigIterator(fn func(userName string, config *mode
 	return nil
 }
 
-func (c *ProxyConfigs) IsConfigExist(userName, agentId string, remotePort int) bool {
+func (c *ProxyConfigs) IsConfigExist(userName, groupName string, remotePort int) bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
 	if _, ok := c.ProxyConfigs[userName]; !ok {
@@ -111,7 +111,7 @@ func (c *ProxyConfigs) IsConfigExist(userName, agentId string, remotePort int) b
 		return false
 	}
 	for _, config := range c.ProxyConfigs[userName] {
-		if config.AgentId == agentId &&
+		if config.GroupName == groupName &&
 			config.RemotePort == remotePort {
 			return true
 		}
@@ -120,9 +120,9 @@ func (c *ProxyConfigs) IsConfigExist(userName, agentId string, remotePort int) b
 }
 
 func (c *ProxyConfigs) Add(config *model.ProxyConfig) error {
-	if c.IsConfigExist(config.UserName, config.AgentId, config.RemotePort) {
-		return fmt.Errorf("config for user: %v, agentId: %v, remotePort: %v already exist",
-			config.UserName, config.AgentId, config.RemotePort)
+	if c.IsConfigExist(config.UserName, config.GroupName, config.RemotePort) {
+		return fmt.Errorf("config for user: %v, group: %v, remotePort: %v already exist",
+			config.UserName, config.GroupName, config.RemotePort)
 	}
 	if _, ok := c.ProxyConfigs[config.UserName]; !ok {
 		c.ProxyConfigs[config.UserName] = make([]*model.ProxyConfig, 0)
@@ -131,13 +131,13 @@ func (c *ProxyConfigs) Add(config *model.ProxyConfig) error {
 	return nil
 }
 
-func (c *ProxyConfigs) Remove(userName, agentId string, remotePort int) error {
-	if !c.IsConfigExist(userName, agentId, remotePort) {
-		return fmt.Errorf("config for user: %v, agentId: %v, remotePort: %v not exist",
-			userName, agentId, remotePort)
+func (c *ProxyConfigs) Remove(userName, groupName string, remotePort int) error {
+	if !c.IsConfigExist(userName, groupName, remotePort) {
+		return fmt.Errorf("config for user: %v, groupName: %v, remotePort: %v not exist",
+			userName, groupName, remotePort)
 	}
 	for idx, config := range c.ProxyConfigs[userName] {
-		if config.AgentId == agentId && config.RemotePort == config.RemotePort {
+		if config.GroupName == groupName && config.RemotePort == config.RemotePort {
 			c.ProxyConfigs[userName] = append(c.ProxyConfigs[userName][:idx], c.ProxyConfigs[userName][idx+1:]...)
 		}
 	}

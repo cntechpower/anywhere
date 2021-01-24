@@ -11,11 +11,11 @@ import (
 
 	"github.com/robfig/cron/v3"
 
-	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/server/persist"
 	"github.com/cntechpower/anywhere/server/template"
 	"github.com/cntechpower/anywhere/server/tool"
 	"github.com/cntechpower/anywhere/util"
+	"github.com/cntechpower/utils/log"
 )
 
 var cronTab *cron.Cron
@@ -71,7 +71,8 @@ func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error)
 <table class="minimalistBlack">
   <thead>
     <tr>
-      <th>节点名</th>
+      <th>用户名</th>
+      <th>组名</th>
       <th>外网端口</th>
       <th>内网地址</th>
       <th>白名单开关</th>
@@ -85,7 +86,7 @@ func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error)
 	for idx, config := range configs {
 		flows := float64(config.NetworkFlowRemoteToLocalInBytes+config.NetworkFlowLocalToRemoteInBytes) / 1024 / 1024
 		totalFlows += flows
-		nodeMap[config.AgentId] = struct{}{}
+		nodeMap[config.GroupName] = struct{}{}
 		if !config.IsWhiteListOn {
 			whiteListDisable++
 		}
@@ -96,9 +97,10 @@ func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error)
       <td>%v</td>
       <td>%v</td>
       <td>%v</td>
+      <td>%v</td>
       <td>%vMB</td>
     </tr>`,
-				config.AgentId, config.RemotePort, config.LocalAddr, util.BoolToString(config.IsWhiteListOn),
+				config.UserName, config.GroupName, config.RemotePort, config.LocalAddr, util.BoolToString(config.IsWhiteListOn),
 				strconv.FormatFloat(flows, 'f', 5, 64)))
 		}
 	}
@@ -169,6 +171,7 @@ func (s *Server) getAgentsHtmlReport(maxLines int) (html string, err error) {
   <thead>
     <tr>
       <th>用户名</th>
+      <th>组名</th>
       <th>节点ID</th>
       <th>内网地址</th>
       <th>配置总数</th>
@@ -189,9 +192,10 @@ func (s *Server) getAgentsHtmlReport(maxLines int) (html string, err error) {
       <td>%v</td>
       <td>%v</td>
       <td>%v</td>
+      <td>%v</td>
       <td>%vms</td>
     </tr>`,
-				agent.UserName, agent.Id, agent.RemoteAddr,
+				agent.UserName, agent.GroupName, agent.Id, agent.RemoteAddr,
 				agent.ProxyConfigCount,
 				agent.LastAckSend.Format(constants.DefaultTimeFormat),
 				agent.LastAckRcv.Format(constants.DefaultTimeFormat),

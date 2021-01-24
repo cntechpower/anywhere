@@ -3,7 +3,7 @@ package handler
 import (
 	"github.com/cntechpower/anywhere/agent/anywhereAgent"
 	pb "github.com/cntechpower/anywhere/agent/rpc/definitions"
-	"github.com/cntechpower/anywhere/log"
+	"github.com/cntechpower/utils/log"
 
 	"context"
 )
@@ -37,8 +37,6 @@ func (h *anywhereAgentRpcHandler) KillConnById(ctx context.Context, input *pb.Ki
 }
 
 func (h *anywhereAgentRpcHandler) KillAllConns(ctx context.Context, empty *pb.Empty) (*pb.Empty, error) {
-	log.Infof(h.logHeader, "calling flush conns")
-	defer log.Infof(h.logHeader, "called flush conns")
 	h.a.FlushJoinedConns()
 	return &pb.Empty{}, nil
 }

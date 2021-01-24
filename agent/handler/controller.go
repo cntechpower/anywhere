@@ -11,8 +11,8 @@ import (
 
 	"github.com/cntechpower/anywhere/agent/anywhereAgent"
 	pb "github.com/cntechpower/anywhere/agent/rpc/definitions"
-	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/util"
+	"github.com/cntechpower/utils/log"
 
 	"github.com/olekukonko/tablewriter"
 

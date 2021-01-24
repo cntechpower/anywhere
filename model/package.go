@@ -18,16 +18,18 @@ const (
 )
 
 type AgentRegisterMsg struct {
-	AgentId  string
-	UserName string
-	PassWord string
+	AgentGroup string
+	AgentId    string
+	UserName   string
+	PassWord   string
 }
 
-func NewAgentRegisterMsg(id, userName, password string) *RequestMsg {
-	return newRequestMsg(PkgControlConnRegister, id, "", &AgentRegisterMsg{
-		AgentId:  id,
-		UserName: userName,
-		PassWord: password,
+func NewAgentRegisterMsg(group, id, userName, password string) *RequestMsg {
+	return newRequestMsg(PkgControlConnRegister, group, id, "", &AgentRegisterMsg{
+		AgentGroup: group,
+		AgentId:    id,
+		UserName:   userName,
+		PassWord:   password,
 	})
 }
 
@@ -37,21 +39,23 @@ type DataConnRegisterMsg struct {
 }
 
 type RequestMsg struct {
-	Version string
-	ReqType ReqType
-	From    string
-	To      string
-	Message []byte
+	Version   string
+	ReqType   ReqType
+	FromGroup string
+	FromId    string
+	To        string
+	Message   []byte
 }
 
-func newRequestMsg(t ReqType, from, to string, msg interface{}) *RequestMsg {
+func newRequestMsg(t ReqType, fromGroup, from, to string, msg interface{}) *RequestMsg {
 	j, _ := json.Marshal(msg)
 	return &RequestMsg{
-		Version: constants.AnywhereVersion,
-		ReqType: t,
-		From:    from,
-		To:      to,
-		Message: j,
+		Version:   constants.AnywhereVersion,
+		ReqType:   t,
+		FromGroup: fromGroup,
+		FromId:    from,
+		To:        to,
+		Message:   j,
 	}
 
 }
@@ -74,16 +78,16 @@ type HeartBeatMsg struct {
 	SendTime   time.Time
 }
 
-func NewHeartBeatPingMsg(localAddr, remoteAddr, id string) *RequestMsg {
-	return newRequestMsg(PkgReqHeartBeatPing, id, "", &HeartBeatMsg{
+func NewHeartBeatPingMsg(localAddr, remoteAddr, group, id string) *RequestMsg {
+	return newRequestMsg(PkgReqHeartBeatPing, group, id, "", &HeartBeatMsg{
 		LocalAddr:  localAddr,
 		RemoteAddr: remoteAddr,
 		SendTime:   time.Now(),
 	})
 }
 
-func NewHeartBeatPongMsg(localAddr, remoteAddr, id string) *RequestMsg {
-	return newRequestMsg(PkgReqHeartBeatPong, id, "", &HeartBeatMsg{
+func NewHeartBeatPongMsg(localAddr, remoteAddr, group, id string) *RequestMsg {
+	return newRequestMsg(PkgReqHeartBeatPong, group, id, "", &HeartBeatMsg{
 		LocalAddr:  localAddr,
 		RemoteAddr: remoteAddr,
 		SendTime:   time.Now(),
@@ -91,13 +95,14 @@ func NewHeartBeatPongMsg(localAddr, remoteAddr, id string) *RequestMsg {
 }
 
 type TunnelBeginMsg struct {
-	UserName  string
-	AgentId   string
-	LocalAddr string
+	UserName   string
+	AgentGroup string
+	AgentId    string
+	LocalAddr  string
 }
 
-func NewTunnelBeginMsg(userName, id, addr string) *RequestMsg {
-	return newRequestMsg(PkgTunnelBegin, id, "", &TunnelBeginMsg{UserName: userName, AgentId: id, LocalAddr: addr})
+func NewTunnelBeginMsg(userName, group, id, addr string) *RequestMsg {
+	return newRequestMsg(PkgTunnelBegin, group, id, "", &TunnelBeginMsg{UserName: userName, AgentId: id, LocalAddr: addr})
 }
 
 func ParseHeartBeatPkg(data []byte) (*HeartBeatMsg, error) {
@@ -133,7 +138,7 @@ type AuthenticationFailMsg struct {
 }
 
 func NewAuthenticationFailMsg(errMsg string) *RequestMsg {
-	return newRequestMsg(PkgAuthenticationFail, "", "", &AuthenticationFailMsg{
+	return newRequestMsg(PkgAuthenticationFail, "", "", "", &AuthenticationFailMsg{
 		errorMsg: errMsg,
 	})
 

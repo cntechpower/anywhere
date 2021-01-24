@@ -15,8 +15,7 @@ var proxyCmd = &cobra.Command{
 }
 
 //args for add proxy config command
-var addProxyAgentId, addProxyLocalAddr, addProxyWhiteListIps string
-var addProxyRemoteAddr int
+var addProxyWhiteListIps string
 var addProxyIsWhiteListOn bool
 
 var proxyAddCmd = &cobra.Command{
@@ -24,22 +23,22 @@ var proxyAddCmd = &cobra.Command{
 	Short: "add proxy config",
 	Long:  `add a proxy config.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := handler.AddProxyConfig(userName, addProxyAgentId, addProxyRemoteAddr, addProxyLocalAddr, addProxyIsWhiteListOn, addProxyWhiteListIps); err != nil {
+		if err := handler.AddProxyConfig(userName, groupName, remotePort, localAddr, addProxyIsWhiteListOn, addProxyWhiteListIps); err != nil {
 			fmt.Printf("error adding proxy config : %v\n", err)
 		}
 	},
 }
 
 //args for del proxy config command
-var delProxyAgentId, delProxyLocalAddr string
-var delProxyRemotePort int
+var groupName, localAddr string
+var remotePort int
 
 var proxyDelCmd = &cobra.Command{
 	Use:   "del",
 	Short: "delete proxy config",
 	Long:  `delete a proxy config.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := handler.RemoveProxyConfig(userName, delProxyAgentId, delProxyRemotePort, delProxyLocalAddr); err != nil {
+		if err := handler.RemoveProxyConfig(userName, groupName, remotePort, localAddr); err != nil {
 			fmt.Printf("error deleting proxy config : %v\n", err)
 		}
 	},
@@ -95,16 +94,14 @@ var proxyUpdateCmd = &cobra.Command{
 }
 
 func GetProxyCmd() *cobra.Command {
-	proxyCmd.PersistentFlags().StringVar(&userName, "user", "", "user name ")
-	proxyAddCmd.PersistentFlags().StringVar(&addProxyAgentId, "agent-id", "", "belong to which agent")
-	proxyAddCmd.PersistentFlags().IntVar(&addProxyRemoteAddr, "remote-addr", 0, "remote port")
-	proxyAddCmd.PersistentFlags().StringVar(&addProxyLocalAddr, "local-addr", "127.0.0.1:80", "local addr")
+	proxyCmd.PersistentFlags().StringVar(&userName, "user", "", "user name")
+	proxyCmd.PersistentFlags().StringVar(&groupName, "group", "", "group name")
+	proxyAddCmd.PersistentFlags().IntVar(&remotePort, "remote-addr", 0, "remote port")
+	proxyAddCmd.PersistentFlags().StringVar(&localAddr, "local-addr", "127.0.0.1:80", "local addr")
 	proxyAddCmd.PersistentFlags().StringVar(&addProxyWhiteListIps, "white-list", "", "local port")
 	proxyAddCmd.PersistentFlags().BoolVar(&addProxyIsWhiteListOn, "enable-wl", false, "enable white list or not")
-	proxyDelCmd.PersistentFlags().StringVar(&delProxyAgentId, "agent-id", "", "del from which agent")
-	proxyDelCmd.PersistentFlags().IntVar(&delProxyRemotePort, "remote-port", 0, "del from which remotePort")
-	proxyDelCmd.PersistentFlags().StringVar(&delProxyLocalAddr, "local-addr", "", "del from which localAddr")
-	proxyUpdateCmd.PersistentFlags().StringVar(&updateProxyAgentId, "agent-id", "", "belong to which agent")
+	proxyDelCmd.PersistentFlags().IntVar(&remotePort, "remote-port", 0, "del from which remotePort")
+	proxyDelCmd.PersistentFlags().StringVar(&localAddr, "local-addr", "", "del from which localAddr")
 	proxyUpdateCmd.PersistentFlags().StringVar(&updateProxyLocalAddr, "local-addr", "127.0.0.1:80", "local addr")
 	proxyUpdateCmd.PersistentFlags().StringVar(&updateProxyWhiteListIps, "white-list", "", "local port")
 	proxyUpdateCmd.PersistentFlags().BoolVar(&updateProxyIsWhiteListOn, "enable-wl", false, "enable white list or not")

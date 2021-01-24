@@ -60,11 +60,11 @@ for the post v1 proxy delete operation typically these are written to a http.Req
 */
 type PostV1ProxyDeleteParams struct {
 
-	/*AgentID
-	  agent id
+	/*GroupName
+	  group name
 
 	*/
-	AgentID string
+	GroupName string
 	/*LocalAddr
 	  localAddress
 
@@ -119,15 +119,15 @@ func (o *PostV1ProxyDeleteParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithAgentID adds the agentID to the post v1 proxy delete params
-func (o *PostV1ProxyDeleteParams) WithAgentID(agentID string) *PostV1ProxyDeleteParams {
-	o.SetAgentID(agentID)
+// WithGroupName adds the groupName to the post v1 proxy delete params
+func (o *PostV1ProxyDeleteParams) WithGroupName(groupName string) *PostV1ProxyDeleteParams {
+	o.SetGroupName(groupName)
 	return o
 }
 
-// SetAgentID adds the agentId to the post v1 proxy delete params
-func (o *PostV1ProxyDeleteParams) SetAgentID(agentID string) {
-	o.AgentID = agentID
+// SetGroupName adds the groupName to the post v1 proxy delete params
+func (o *PostV1ProxyDeleteParams) SetGroupName(groupName string) {
+	o.GroupName = groupName
 }
 
 // WithLocalAddr adds the localAddr to the post v1 proxy delete params
@@ -171,11 +171,11 @@ func (o *PostV1ProxyDeleteParams) WriteToRequest(r runtime.ClientRequest, reg st
 	}
 	var res []error
 
-	// form param agent_id
-	frAgentID := o.AgentID
-	fAgentID := frAgentID
-	if fAgentID != "" {
-		if err := r.SetFormParam("agent_id", fAgentID); err != nil {
+	// form param group_name
+	frGroupName := o.GroupName
+	fGroupName := frGroupName
+	if fGroupName != "" {
+		if err := r.SetFormParam("group_name", fGroupName); err != nil {
 			return err
 		}
 	}
