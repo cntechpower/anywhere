@@ -20,7 +20,7 @@ type Interface interface {
 }
 
 type Agent struct {
-	group        string
+	zone         string
 	id           string
 	userName     string
 	version      string
@@ -32,9 +32,9 @@ type Agent struct {
 	connectCount uint64
 }
 
-func NewAgentInfo(userName, groupName, agentId string, c net.Conn, errChan chan error) *Agent {
+func NewAgentInfo(userName, zoneName, agentId string, c net.Conn, errChan chan error) *Agent {
 	a := &Agent{
-		group:       groupName,
+		zone:        zoneName,
 		id:          agentId,
 		userName:    userName,
 		version:     constants.AnywhereVersion,
@@ -51,7 +51,7 @@ func NewAgentInfo(userName, groupName, agentId string, c net.Conn, errChan chan 
 func (a *Agent) Info() *model.AgentInfoInServer {
 	return &model.AgentInfoInServer{
 		UserName:    a.userName,
-		GroupName:   a.group,
+		ZoneName:    a.zone,
 		Id:          a.id,
 		RemoteAddr:  a.RemoteAddr.String(),
 		LastAckRcv:  a.adminConn.LastAckRcvTime,
@@ -70,7 +70,7 @@ func (a *Agent) getProxyConfigMapKey(remotePort int, localAddr string) string {
 
 func (a *Agent) AskProxyConn(proxyAddr string) error {
 	h := log.NewHeader("agent.requestNewProxyConn")
-	if err := a.adminConn.Send(model.NewTunnelBeginMsg(a.userName, a.group, a.id, proxyAddr)); err != nil {
+	if err := a.adminConn.Send(model.NewTunnelBeginMsg(a.userName, a.zone, a.id, proxyAddr)); err != nil {
 		errMsg := fmt.Errorf("agent %v request for new proxy conn error %v", a.id, err)
 		log.Errorf(h, "%v", err)
 		return errMsg
@@ -110,7 +110,7 @@ func (a *Agent) handleAdminConnection() {
 				log.Errorf(h, "got corrupted heartbeat ping packet from agent %v admin conn, will close it", a.id)
 				return
 			}
-			if err := a.adminConn.Send(model.NewHeartBeatPongMsg(a.adminConn.GetLocalAddr(), a.adminConn.GetRemoteAddr(), a.group, a.id)); err != nil {
+			if err := a.adminConn.Send(model.NewHeartBeatPongMsg(a.adminConn.GetLocalAddr(), a.adminConn.GetRemoteAddr(), a.zone, a.id)); err != nil {
 				log.Errorf(h, "send pong msg to %v admin conn error, will close it", a.id)
 				return
 			} else {

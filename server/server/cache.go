@@ -64,7 +64,7 @@ func (s *Server) RefreshSummaryLoop() {
 		newCache := model.ServerSummary{}
 		allConfigList := make([]*model.ProxyConfig, 0, 100)
 		s.agentsRwMutex.Lock()
-		for _, groups := range s.groups {
+		for _, groups := range s.zones {
 			for _, group := range groups {
 				configs := group.ListProxyConfigs()
 				newCache.ProxyConfigTotalCount += uint64(len(configs))

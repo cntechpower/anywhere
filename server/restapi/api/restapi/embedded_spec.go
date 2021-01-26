@@ -70,8 +70,8 @@ func init() {
           },
           {
             "type": "string",
-            "description": "group name",
-            "name": "group_name",
+            "description": "zone name",
+            "name": "zone_name",
             "in": "formData",
             "required": true
           },
@@ -132,8 +132,8 @@ func init() {
           },
           {
             "type": "string",
-            "description": "group name",
-            "name": "group_name",
+            "description": "zone name",
+            "name": "zone_name",
             "in": "formData",
             "required": true
           },
@@ -202,8 +202,8 @@ func init() {
           },
           {
             "type": "string",
-            "description": "group name",
-            "name": "group_name",
+            "description": "zone name",
+            "name": "zone_name",
             "in": "formData",
             "required": true
           },
@@ -325,10 +325,6 @@ func init() {
       "description": "proxy config information",
       "type": "object",
       "properties": {
-        "group_name": {
-          "description": "group name",
-          "type": "string"
-        },
         "is_whitelist_on": {
           "description": "is whitelist on",
           "type": "boolean"
@@ -359,6 +355,10 @@ func init() {
         },
         "whitelist_ips": {
           "description": "whitelist ips",
+          "type": "string"
+        },
+        "zone_name": {
+          "description": "zone name",
           "type": "string"
         }
       }
@@ -454,8 +454,8 @@ func init() {
           },
           {
             "type": "string",
-            "description": "group name",
-            "name": "group_name",
+            "description": "zone name",
+            "name": "zone_name",
             "in": "formData",
             "required": true
           },
@@ -516,8 +516,8 @@ func init() {
           },
           {
             "type": "string",
-            "description": "group name",
-            "name": "group_name",
+            "description": "zone name",
+            "name": "zone_name",
             "in": "formData",
             "required": true
           },
@@ -586,8 +586,8 @@ func init() {
           },
           {
             "type": "string",
-            "description": "group name",
-            "name": "group_name",
+            "description": "zone name",
+            "name": "zone_name",
             "in": "formData",
             "required": true
           },
@@ -709,10 +709,6 @@ func init() {
       "description": "proxy config information",
       "type": "object",
       "properties": {
-        "group_name": {
-          "description": "group name",
-          "type": "string"
-        },
         "is_whitelist_on": {
           "description": "is whitelist on",
           "type": "boolean"
@@ -743,6 +739,10 @@ func init() {
         },
         "whitelist_ips": {
           "description": "whitelist ips",
+          "type": "string"
+        },
+        "zone_name": {
+          "description": "zone name",
           "type": "string"
         }
       }

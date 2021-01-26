@@ -60,11 +60,6 @@ for the post v1 proxy delete operation typically these are written to a http.Req
 */
 type PostV1ProxyDeleteParams struct {
 
-	/*GroupName
-	  group name
-
-	*/
-	GroupName string
 	/*LocalAddr
 	  localAddress
 
@@ -80,6 +75,11 @@ type PostV1ProxyDeleteParams struct {
 
 	*/
 	UserName string
+	/*ZoneName
+	  zone name
+
+	*/
+	ZoneName string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -119,17 +119,6 @@ func (o *PostV1ProxyDeleteParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithGroupName adds the groupName to the post v1 proxy delete params
-func (o *PostV1ProxyDeleteParams) WithGroupName(groupName string) *PostV1ProxyDeleteParams {
-	o.SetGroupName(groupName)
-	return o
-}
-
-// SetGroupName adds the groupName to the post v1 proxy delete params
-func (o *PostV1ProxyDeleteParams) SetGroupName(groupName string) {
-	o.GroupName = groupName
-}
-
 // WithLocalAddr adds the localAddr to the post v1 proxy delete params
 func (o *PostV1ProxyDeleteParams) WithLocalAddr(localAddr string) *PostV1ProxyDeleteParams {
 	o.SetLocalAddr(localAddr)
@@ -163,6 +152,17 @@ func (o *PostV1ProxyDeleteParams) SetUserName(userName string) {
 	o.UserName = userName
 }
 
+// WithZoneName adds the zoneName to the post v1 proxy delete params
+func (o *PostV1ProxyDeleteParams) WithZoneName(zoneName string) *PostV1ProxyDeleteParams {
+	o.SetZoneName(zoneName)
+	return o
+}
+
+// SetZoneName adds the zoneName to the post v1 proxy delete params
+func (o *PostV1ProxyDeleteParams) SetZoneName(zoneName string) {
+	o.ZoneName = zoneName
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *PostV1ProxyDeleteParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -170,15 +170,6 @@ func (o *PostV1ProxyDeleteParams) WriteToRequest(r runtime.ClientRequest, reg st
 		return err
 	}
 	var res []error
-
-	// form param group_name
-	frGroupName := o.GroupName
-	fGroupName := frGroupName
-	if fGroupName != "" {
-		if err := r.SetFormParam("group_name", fGroupName); err != nil {
-			return err
-		}
-	}
 
 	// form param local_addr
 	frLocalAddr := o.LocalAddr
@@ -203,6 +194,15 @@ func (o *PostV1ProxyDeleteParams) WriteToRequest(r runtime.ClientRequest, reg st
 	fUserName := frUserName
 	if fUserName != "" {
 		if err := r.SetFormParam("user_name", fUserName); err != nil {
+			return err
+		}
+	}
+
+	// form param zone_name
+	frZoneName := o.ZoneName
+	fZoneName := frZoneName
+	if fZoneName != "" {
+		if err := r.SetFormParam("zone_name", fZoneName); err != nil {
 			return err
 		}
 	}

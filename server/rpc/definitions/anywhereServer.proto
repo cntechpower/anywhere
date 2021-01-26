@@ -22,7 +22,7 @@ message Empty{}
 
 message Agent{
     string userName = 1;
-    string groupName = 2;
+    string zoneName = 2;
     string id = 3;
     string remoteAddr = 4;
     string lastAckRcv = 5;
@@ -37,7 +37,7 @@ message Agents{
 
 message ProxyConfig{
     string username = 1;
-    string groupName = 2;
+    string zoneName = 2;
     int64 remotePort = 3;
     string localAddr = 4;
     bool isWhiteListOn = 5;
@@ -60,19 +60,19 @@ message ListProxyConfigsOutput{
 
 message RemoveProxyConfigInput{
     string userName = 1;
-    string groupName = 2;
+    string zoneName = 2;
     string localAddr = 3;
     int64 remotePort = 4;
 }
 
 message ListConnsInput{
     string userName = 1;
-    string groupName = 2;
+    string zoneName = 2;
 }
 
 message Conn {
     string userName = 1;
-    string groupName = 2;
+    string zoneName = 2;
     string agentId = 3;
     int64 connId = 4;
     string srcRemoteAddr = 5;
@@ -87,13 +87,13 @@ message Conns{
 
 message KillConnByIdInput {
     string userName = 1;
-    string groupName = 2;
+    string zoneName = 2;
     int64 connId = 3;
 }
 
 message UpdateProxyConfigWhiteListInput {
     string userName = 1;
-    string groupName = 2;
+    string zoneName = 2;
     string localAddr = 3;
     string whiteCidrs = 4;
     bool whiteListEnable = 5;

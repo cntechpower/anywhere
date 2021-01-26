@@ -86,7 +86,7 @@ func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error)
 	for idx, config := range configs {
 		flows := float64(config.NetworkFlowRemoteToLocalInBytes+config.NetworkFlowLocalToRemoteInBytes) / 1024 / 1024
 		totalFlows += flows
-		nodeMap[config.GroupName] = struct{}{}
+		nodeMap[config.ZoneName] = struct{}{}
 		if !config.IsWhiteListOn {
 			whiteListDisable++
 		}
@@ -100,7 +100,7 @@ func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error)
       <td>%v</td>
       <td>%vMB</td>
     </tr>`,
-				config.UserName, config.GroupName, config.RemotePort, config.LocalAddr, util.BoolToString(config.IsWhiteListOn),
+				config.UserName, config.ZoneName, config.RemotePort, config.LocalAddr, util.BoolToString(config.IsWhiteListOn),
 				strconv.FormatFloat(flows, 'f', 5, 64)))
 		}
 	}
@@ -195,7 +195,7 @@ func (s *Server) getAgentsHtmlReport(maxLines int) (html string, err error) {
       <td>%v</td>
       <td>%vms</td>
     </tr>`,
-				agent.UserName, agent.GroupName, agent.Id, agent.RemoteAddr,
+				agent.UserName, agent.ZoneName, agent.Id, agent.RemoteAddr,
 				agent.ProxyConfigCount,
 				agent.LastAckSend.Format(constants.DefaultTimeFormat),
 				agent.LastAckRcv.Format(constants.DefaultTimeFormat),

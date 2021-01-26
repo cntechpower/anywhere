@@ -31,11 +31,6 @@ type PostV1ProxyDeleteParams struct {
 	// HTTP Request Object
 	HTTPRequest *http.Request `json:"-"`
 
-	/*group name
-	  Required: true
-	  In: formData
-	*/
-	GroupName string
 	/*localAddress
 	  Required: true
 	  In: formData
@@ -51,6 +46,11 @@ type PostV1ProxyDeleteParams struct {
 	  In: formData
 	*/
 	UserName string
+	/*zone name
+	  Required: true
+	  In: formData
+	*/
+	ZoneName string
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
@@ -71,11 +71,6 @@ func (o *PostV1ProxyDeleteParams) BindRequest(r *http.Request, route *middleware
 	}
 	fds := runtime.Values(r.Form)
 
-	fdGroupName, fdhkGroupName, _ := fds.GetOK("group_name")
-	if err := o.bindGroupName(fdGroupName, fdhkGroupName, route.Formats); err != nil {
-		res = append(res, err)
-	}
-
 	fdLocalAddr, fdhkLocalAddr, _ := fds.GetOK("local_addr")
 	if err := o.bindLocalAddr(fdLocalAddr, fdhkLocalAddr, route.Formats); err != nil {
 		res = append(res, err)
@@ -91,30 +86,14 @@ func (o *PostV1ProxyDeleteParams) BindRequest(r *http.Request, route *middleware
 		res = append(res, err)
 	}
 
+	fdZoneName, fdhkZoneName, _ := fds.GetOK("zone_name")
+	if err := o.bindZoneName(fdZoneName, fdhkZoneName, route.Formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-// bindGroupName binds and validates parameter GroupName from formData.
-func (o *PostV1ProxyDeleteParams) bindGroupName(rawData []string, hasKey bool, formats strfmt.Registry) error {
-	if !hasKey {
-		return errors.Required("group_name", "formData")
-	}
-	var raw string
-	if len(rawData) > 0 {
-		raw = rawData[len(rawData)-1]
-	}
-
-	// Required: true
-
-	if err := validate.RequiredString("group_name", "formData", raw); err != nil {
-		return err
-	}
-
-	o.GroupName = raw
-
 	return nil
 }
 
@@ -177,6 +156,27 @@ func (o *PostV1ProxyDeleteParams) bindUserName(rawData []string, hasKey bool, fo
 	}
 
 	o.UserName = raw
+
+	return nil
+}
+
+// bindZoneName binds and validates parameter ZoneName from formData.
+func (o *PostV1ProxyDeleteParams) bindZoneName(rawData []string, hasKey bool, formats strfmt.Registry) error {
+	if !hasKey {
+		return errors.Required("zone_name", "formData")
+	}
+	var raw string
+	if len(rawData) > 0 {
+		raw = rawData[len(rawData)-1]
+	}
+
+	// Required: true
+
+	if err := validate.RequiredString("zone_name", "formData", raw); err != nil {
+		return err
+	}
+
+	o.ZoneName = raw
 
 	return nil
 }

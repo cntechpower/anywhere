@@ -30,11 +30,11 @@ func Add(config *model.ProxyConfig) error {
 	return proxyConf.Add(config)
 }
 
-func Remove(userName, group string, remotePort int) error {
+func Remove(userName, zoneName string, remotePort int) error {
 	if proxyConf == nil {
 		return fmt.Errorf("config not init")
 	}
-	return proxyConf.Remove(userName, group, remotePort)
+	return proxyConf.Remove(userName, zoneName, remotePort)
 }
 
 func PersistGlobalConfigLoop() {
@@ -103,7 +103,7 @@ func (c *ProxyConfigs) ProxyConfigIterator(fn func(userName string, config *mode
 	return nil
 }
 
-func (c *ProxyConfigs) IsConfigExist(userName, groupName string, remotePort int) bool {
+func (c *ProxyConfigs) IsConfigExist(userName, zoneName string, remotePort int) bool {
 	configMu.RLock()
 	defer configMu.RUnlock()
 	if _, ok := c.ProxyConfigs[userName]; !ok {
@@ -111,7 +111,7 @@ func (c *ProxyConfigs) IsConfigExist(userName, groupName string, remotePort int)
 		return false
 	}
 	for _, config := range c.ProxyConfigs[userName] {
-		if config.GroupName == groupName &&
+		if config.ZoneName == zoneName &&
 			config.RemotePort == remotePort {
 			return true
 		}
@@ -120,9 +120,9 @@ func (c *ProxyConfigs) IsConfigExist(userName, groupName string, remotePort int)
 }
 
 func (c *ProxyConfigs) Add(config *model.ProxyConfig) error {
-	if c.IsConfigExist(config.UserName, config.GroupName, config.RemotePort) {
+	if c.IsConfigExist(config.UserName, config.ZoneName, config.RemotePort) {
 		return fmt.Errorf("config for user: %v, group: %v, remotePort: %v already exist",
-			config.UserName, config.GroupName, config.RemotePort)
+			config.UserName, config.ZoneName, config.RemotePort)
 	}
 	if _, ok := c.ProxyConfigs[config.UserName]; !ok {
 		c.ProxyConfigs[config.UserName] = make([]*model.ProxyConfig, 0)
@@ -131,13 +131,13 @@ func (c *ProxyConfigs) Add(config *model.ProxyConfig) error {
 	return nil
 }
 
-func (c *ProxyConfigs) Remove(userName, groupName string, remotePort int) error {
-	if !c.IsConfigExist(userName, groupName, remotePort) {
-		return fmt.Errorf("config for user: %v, groupName: %v, remotePort: %v not exist",
-			userName, groupName, remotePort)
+func (c *ProxyConfigs) Remove(userName, zoneName string, remotePort int) error {
+	if !c.IsConfigExist(userName, zoneName, remotePort) {
+		return fmt.Errorf("config for user: %v, zoneName: %v, remotePort: %v not exist",
+			userName, zoneName, remotePort)
 	}
 	for idx, config := range c.ProxyConfigs[userName] {
-		if config.GroupName == groupName && config.RemotePort == config.RemotePort {
+		if config.ZoneName == zoneName && config.RemotePort == config.RemotePort {
 			c.ProxyConfigs[userName] = append(c.ProxyConfigs[userName][:idx], c.ProxyConfigs[userName][idx+1:]...)
 		}
 	}

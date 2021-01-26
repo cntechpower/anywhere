@@ -64,8 +64,8 @@ paths:
           type: string
           required: true
         - in: formData
-          name: group_name
-          description: "group name"
+          name: zone_name
+          description: "zone name"
           type: string
           required: true
         - in: formData
@@ -107,8 +107,8 @@ paths:
           type: string
           required: true
         - in: formData
-          name: group_name
-          description: "group name"
+          name: zone_name
+          description: "zone name"
           type: string
           required: true
         - in: formData
@@ -149,8 +149,8 @@ paths:
           type: string
           required: true
         - in: formData
-          name: group_name
-          description: "group name"
+          name: zone_name
+          description: "zone name"
           type: string
           required: true
         - in: formData
@@ -216,8 +216,8 @@ definitions:
       user_name:
         description: "user name"
         type: string
-      group_name:
-        description: "group name"
+      zone_name:
+        description: "zone name"
         type: string
       remote_port:
         description: "anywhered server listen addr"

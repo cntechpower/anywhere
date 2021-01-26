@@ -15,9 +15,6 @@ import (
 // swagger:model ProxyConfig
 type ProxyConfig struct {
 
-	// group name
-	GroupName string `json:"group_name,omitempty"`
-
 	// is whitelist on
 	IsWhitelistOn bool `json:"is_whitelist_on,omitempty"`
 
@@ -44,6 +41,9 @@ type ProxyConfig struct {
 
 	// whitelist ips
 	WhitelistIps string `json:"whitelist_ips,omitempty"`
+
+	// zone name
+	ZoneName string `json:"zone_name,omitempty"`
 }
 
 // Validate validates this proxy config

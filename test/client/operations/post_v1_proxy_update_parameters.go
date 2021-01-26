@@ -73,11 +73,6 @@ for the post v1 proxy update operation typically these are written to a http.Req
 */
 type PostV1ProxyUpdateParams struct {
 
-	/*GroupName
-	  group name
-
-	*/
-	GroupName string
 	/*LocalAddr
 	  localAddress
 
@@ -103,6 +98,11 @@ type PostV1ProxyUpdateParams struct {
 
 	*/
 	WhiteListIps *string
+	/*ZoneName
+	  zone name
+
+	*/
+	ZoneName string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -140,17 +140,6 @@ func (o *PostV1ProxyUpdateParams) WithHTTPClient(client *http.Client) *PostV1Pro
 // SetHTTPClient adds the HTTPClient to the post v1 proxy update params
 func (o *PostV1ProxyUpdateParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
-}
-
-// WithGroupName adds the groupName to the post v1 proxy update params
-func (o *PostV1ProxyUpdateParams) WithGroupName(groupName string) *PostV1ProxyUpdateParams {
-	o.SetGroupName(groupName)
-	return o
-}
-
-// SetGroupName adds the groupName to the post v1 proxy update params
-func (o *PostV1ProxyUpdateParams) SetGroupName(groupName string) {
-	o.GroupName = groupName
 }
 
 // WithLocalAddr adds the localAddr to the post v1 proxy update params
@@ -208,6 +197,17 @@ func (o *PostV1ProxyUpdateParams) SetWhiteListIps(whiteListIps *string) {
 	o.WhiteListIps = whiteListIps
 }
 
+// WithZoneName adds the zoneName to the post v1 proxy update params
+func (o *PostV1ProxyUpdateParams) WithZoneName(zoneName string) *PostV1ProxyUpdateParams {
+	o.SetZoneName(zoneName)
+	return o
+}
+
+// SetZoneName adds the zoneName to the post v1 proxy update params
+func (o *PostV1ProxyUpdateParams) SetZoneName(zoneName string) {
+	o.ZoneName = zoneName
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *PostV1ProxyUpdateParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -215,15 +215,6 @@ func (o *PostV1ProxyUpdateParams) WriteToRequest(r runtime.ClientRequest, reg st
 		return err
 	}
 	var res []error
-
-	// form param group_name
-	frGroupName := o.GroupName
-	fGroupName := frGroupName
-	if fGroupName != "" {
-		if err := r.SetFormParam("group_name", fGroupName); err != nil {
-			return err
-		}
-	}
 
 	// form param local_addr
 	frLocalAddr := o.LocalAddr
@@ -282,6 +273,15 @@ func (o *PostV1ProxyUpdateParams) WriteToRequest(r runtime.ClientRequest, reg st
 			}
 		}
 
+	}
+
+	// form param zone_name
+	frZoneName := o.ZoneName
+	fZoneName := frZoneName
+	if fZoneName != "" {
+		if err := r.SetFormParam("zone_name", fZoneName); err != nil {
+			return err
+		}
 	}
 
 	if len(res) > 0 {

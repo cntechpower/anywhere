@@ -21,7 +21,7 @@ type Server struct {
 	serverAddr                       *net.TCPAddr
 	credential                       *_tls.Config
 	listener                         net.Listener
-	groups                           map[string] /*user*/ map[string] /*group*/ agent.GroupInterface
+	zones                            map[string] /*user*/ map[string] /*zone*/ agent.IZone
 	agentsRwMutex                    sync.RWMutex
 	ExitChan                         chan error
 	ErrChan                          chan error
@@ -47,7 +47,7 @@ func InitServerInstance(serverId string, port int, users *model.UserConfig) *Ser
 	serverInstance = &Server{
 		serverId:      serverId,
 		serverAddr:    addr,
-		groups:        make(map[string]map[string]agent.GroupInterface, 0),
+		zones:         make(map[string]map[string]agent.IZone, 0),
 		agentsRwMutex: sync.RWMutex{},
 		ExitChan:      make(chan error, 1),
 		ErrChan:       make(chan error, 10000),
@@ -137,12 +137,12 @@ func (s *Server) handleNewConnection(c net.Conn) {
 			_ = c.Close()
 			return
 		}
-		if !s.isGroupExist(m.UserName, m.AgentGroup) {
+		if !s.isZoneExist(m.UserName, m.AgentGroup) {
 			log.Errorf(h, "got data conn register pkg from unknown user %v, group %v", m.UserName, m.AgentGroup)
 			_ = c.Close()
 		} else {
 			log.Infof(h, "add data conn for %v from user %v, group %v", m.UserName, m.LocalAddr, m.AgentGroup)
-			if err := s.groups[m.UserName][m.AgentGroup].PutProxyConn(m.AgentId, m.LocalAddr, c); err != nil {
+			if err := s.zones[m.UserName][m.AgentGroup].PutProxyConn(m.AgentId, m.LocalAddr, c); err != nil {
 				log.Errorf(h, "put proxy conn to agent error: %v", err)
 			}
 		}
@@ -154,11 +154,11 @@ func (s *Server) handleNewConnection(c net.Conn) {
 
 }
 
-func (s *Server) isGroupExist(userName, groupName string) (exists bool) {
-	if _, userExist := s.groups[userName]; !userExist {
-		s.groups[userName] = make(map[string]agent.GroupInterface, 0)
+func (s *Server) isZoneExist(userName, zoneName string) (exists bool) {
+	if _, userExist := s.zones[userName]; !userExist {
+		s.zones[userName] = make(map[string]agent.IZone, 0)
 	}
-	_, exists = s.groups[userName][groupName]
+	_, exists = s.zones[userName][zoneName]
 	return exists
 }
 
@@ -166,9 +166,9 @@ func (s *Server) ListAgentInfo() []*model.AgentInfoInServer {
 	res := make([]*model.AgentInfoInServer, 0)
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
-	for _, user := range s.groups {
-		for _, g := range user {
-			res = append(res, g.Infos()...)
+	for _, zones := range s.zones {
+		for _, z := range zones {
+			res = append(res, z.Infos()...)
 		}
 	}
 	return res
@@ -179,45 +179,45 @@ func (s *Server) ListProxyConfigs() []*model.ProxyConfig {
 	res := make([]*model.ProxyConfig, 0, 100)
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
-	for _, user := range s.groups {
-		for _, a := range user {
-			res = append(res, a.ListProxyConfigs()...)
+	for _, zones := range s.zones {
+		for _, z := range zones {
+			res = append(res, z.ListProxyConfigs()...)
 		}
 	}
 	return res
 }
 
-func (s *Server) RegisterAgent(user, group, agentId string, c net.Conn) (isUpdate bool) {
-	if _, ok := s.groups[user]; !ok {
-		s.groups[user] = make(map[string]agent.GroupInterface, 0)
+func (s *Server) RegisterAgent(userName, zoneName, agentId string, c net.Conn) (isUpdate bool) {
+	if _, ok := s.zones[userName]; !ok {
+		s.zones[userName] = make(map[string]agent.IZone, 0)
 	}
-	if _, ok := s.groups[user][group]; !ok {
-		s.groups[user][group] = agent.NewGroup(user, group)
+	if _, ok := s.zones[userName][zoneName]; !ok {
+		s.zones[userName][zoneName] = agent.NewZone(userName, zoneName)
 	}
-	return s.groups[user][group].RegisterAgent(user, group, agentId, c)
+	return s.zones[userName][zoneName].RegisterAgent(agentId, c)
 
 }
 
-func (s *Server) ListJoinedConns(user, groupId string) ([]*model.GroupConnList, error) {
+func (s *Server) ListJoinedConns(userName, zoneName string) ([]*model.GroupConnList, error) {
 	res := make([]*model.GroupConnList, 0)
-	if user != "" && groupId != "" { //only get specified agent
-		if !s.isGroupExist(user, groupId) {
-			return nil, fmt.Errorf("no such group %v", groupId)
+	if userName != "" && zoneName != "" { //only get specified zone
+		if !s.isZoneExist(userName, zoneName) {
+			return nil, fmt.Errorf("no such zone %v", zoneName)
 		}
 		res = append(res, &model.GroupConnList{
-			UserName:  user,
-			GroupName: groupId,
-			List:      s.groups[user][groupId].ListJoinedConns(),
+			UserName: userName,
+			ZoneName: zoneName,
+			List:     s.zones[userName][zoneName].ListJoinedConns(),
 		})
 		return res, nil
 	}
-	//get all user's group conn
-	for userName, groups := range s.groups {
-		for groupName, g := range groups {
+	//get all userName's group conn
+	for userName, zones := range s.zones {
+		for zoneName, zone := range zones {
 			res = append(res, &model.GroupConnList{
-				UserName:  userName,
-				GroupName: groupName,
-				List:      g.ListJoinedConns(),
+				UserName: userName,
+				ZoneName: zoneName,
+				List:     zone.ListJoinedConns(),
 			})
 
 		}
@@ -225,32 +225,32 @@ func (s *Server) ListJoinedConns(user, groupId string) ([]*model.GroupConnList, 
 	return res, nil
 }
 
-func (s *Server) KillJoinedConnById(user, group string, id int) error {
-	if group == "" {
-		return fmt.Errorf("agent id is empty")
+func (s *Server) KillJoinedConnById(userName, zoneName string, id int) error {
+	if zoneName == "" {
+		return fmt.Errorf("zone is empty")
 	}
-	if !s.isGroupExist(user, group) {
-		return fmt.Errorf("no such group %v", group)
+	if !s.isZoneExist(userName, zoneName) {
+		return fmt.Errorf("no such zone %v", zoneName)
 	}
-	return s.groups[user][group].KillJoinedConnById(id)
+	return s.zones[userName][zoneName].KillJoinedConnById(id)
 }
 
 func (s *Server) FlushJoinedConns() {
-	for _, groups := range s.groups {
-		for _, g := range groups {
-			g.FlushJoinedConns()
+	for _, zones := range s.zones {
+		for _, zone := range zones {
+			zone.FlushJoinedConns()
 		}
 	}
 }
 
-func (s *Server) UpdateProxyConfigWhiteList(userName string, remotePort int, group, localAddr, whiteCidrs string, whiteListEnable bool) error {
-	if group == "" {
-		return fmt.Errorf("group is empty")
+func (s *Server) UpdateProxyConfigWhiteList(userName ,zoneName string, remotePort int, localAddr, whiteCidrs string, whiteListEnable bool) error {
+	if zoneName == "" {
+		return fmt.Errorf("zone is empty")
 	}
-	if !s.isGroupExist(userName, group) {
-		return fmt.Errorf("no such group %v", group)
+	if !s.isZoneExist(userName, zoneName) {
+		return fmt.Errorf("no such zone %v", zoneName)
 	}
-	return s.groups[userName][group].UpdateProxyConfigWhiteListConfig(remotePort, localAddr, whiteCidrs, whiteListEnable)
+	return s.zones[userName][zoneName].UpdateProxyConfigWhiteListConfig(remotePort, localAddr, whiteCidrs, whiteListEnable)
 }
 
 func (s *Server) LoadProxyConfigFile() error {

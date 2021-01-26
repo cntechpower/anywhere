@@ -17,10 +17,10 @@ import (
 	"github.com/cntechpower/utils/log"
 )
 
-type GroupInterface interface {
+type IZone interface {
 	//Agent
 	IsAgentExists(agentId string) bool
-	RegisterAgent(user, group, agentId string, c net.Conn) (isUpdate bool)
+	RegisterAgent(agentId string, c net.Conn) (isUpdate bool)
 	AddProxyConfig(config *model.ProxyConfig) error
 	RemoveProxyConfig(remotePort int, localAddr string) error
 	ListJoinedConns() []*model.JoinedConnListItem
@@ -37,8 +37,8 @@ type GroupInterface interface {
 	PutProxyConn(fromAgentId, localAddr string, c net.Conn) error
 }
 
-type Group struct {
-	groupName        string
+type Zone struct {
+	zoneName         string
 	userName         string
 	agentsRwMutex    sync.RWMutex
 	agents           map[string]Interface
@@ -51,10 +51,10 @@ type Group struct {
 	connectCount     uint64
 }
 
-func NewGroup(userName, groupName string) GroupInterface {
-	g := &Group{
+func NewZone(userName, zoneName string) IZone {
+	z := &Zone{
 		userName:         userName,
-		groupName:        groupName,
+		zoneName:         zoneName,
 		agents:           make(map[string]Interface, 0),
 		proxyConfigs:     make(map[string]*ProxyConfig, 0),
 		proxyConfigMutex: sync.Mutex{},
@@ -63,48 +63,48 @@ func NewGroup(userName, groupName string) GroupInterface {
 		joinedConns:      conn.NewJoinedConnList(),
 		connectCount:     0,
 	}
-	g.connectionPool = conn.NewConnectionPool(g.requestNewProxyConn)
-	_ = g.restoreProxyConfig()
-	return g
+	z.connectionPool = conn.NewConnectionPool(z.requestNewProxyConn)
+	_ = z.restoreProxyConfig()
+	return z
 }
 
-func (g *Group) RegisterAgent(user, group, agentId string, c net.Conn) (isUpdate bool) {
+func (g *Zone) RegisterAgent(agentId string, c net.Conn) (isUpdate bool) {
 	h := log.NewHeader("RegisterAgent")
 	g.agentsRwMutex.Lock()
 	a, ok := g.agents[agentId]
 	isUpdate = ok
 	if isUpdate {
 		//close(s.agents[info.id].CloseChan)
-		h.Info("reset admin conn for user: %v, group: %v, agentId: %v", user, group, agentId)
+		h.Info("reset admin conn for user: %v, zoneName: %v, agentId: %v", g.userName, g.zoneName, agentId)
 		a.ResetAdminConn(c)
 	} else {
-		h.Info("build admin conn for user: %v, group: %v, agentId: %v", user, group, agentId)
-		g.agents[agentId] = NewAgentInfo(user, group, agentId, c, make(chan error, 99))
+		h.Info("build admin conn for user: %v, zoneName: %v, agentId: %v", g.userName, g.zoneName, agentId)
+		g.agents[agentId] = NewAgentInfo(g.userName, g.zoneName, agentId, c, make(chan error, 99))
 	}
 	g.agentsRwMutex.Unlock()
 
 	return isUpdate
 }
 
-func (g *Group) IsAgentExists(agentId string) bool {
+func (g *Zone) IsAgentExists(agentId string) bool {
 	g.agentsRwMutex.Lock()
 	defer g.agentsRwMutex.Unlock()
 	_, ok := g.agents[agentId]
 	return ok
 }
 
-func (g *Group) GetCurrentConnectionCount() int {
+func (g *Zone) GetCurrentConnectionCount() int {
 	return g.joinedConns.Count()
 }
 
-func (g *Group) getProxyConfigMapKey(remotePort int, localAddr string) string {
+func (g *Zone) getProxyConfigMapKey(remotePort int, localAddr string) string {
 	return fmt.Sprintf("%v:%v", remotePort, localAddr)
 }
-func (g *Group) AddProxyConfig(config *model.ProxyConfig) error {
+func (g *Zone) AddProxyConfig(config *model.ProxyConfig) error {
 	h := log.NewHeader("AddProxyConfig")
 	key := g.getProxyConfigMapKey(config.RemotePort, config.LocalAddr)
 	if _, exist := g.proxyConfigs[key]; exist {
-		return fmt.Errorf("proxy config %v is already exist in group  %v", key, g.groupName)
+		return fmt.Errorf("proxy config %v is already exist in zone  %v", key, g.zoneName)
 	}
 	g.proxyConfigMutex.Lock()
 	defer g.proxyConfigMutex.Unlock()
@@ -120,7 +120,7 @@ func (g *Group) AddProxyConfig(config *model.ProxyConfig) error {
 	return nil
 }
 
-func (g *Group) RemoveProxyConfig(remotePort int, localAddr string) error {
+func (g *Zone) RemoveProxyConfig(remotePort int, localAddr string) error {
 	key := g.getProxyConfigMapKey(remotePort, localAddr)
 	c, ok := g.proxyConfigs[key]
 	if !ok {
@@ -133,7 +133,7 @@ func (g *Group) RemoveProxyConfig(remotePort int, localAddr string) error {
 	return nil
 }
 
-func (g *Group) Infos() (res []*model.AgentInfoInServer) {
+func (g *Zone) Infos() (res []*model.AgentInfoInServer) {
 	res = make([]*model.AgentInfoInServer, 0)
 	for _, a := range g.agents {
 		res = append(res, a.Info())
@@ -141,13 +141,13 @@ func (g *Group) Infos() (res []*model.AgentInfoInServer) {
 	return
 }
 
-func (g *Group) GetProxyConfigCount() int {
+func (g *Zone) GetProxyConfigCount() int {
 	g.proxyConfigMutex.Lock()
 	defer g.proxyConfigMutex.Unlock()
 	return len(g.proxyConfigs)
 }
 
-func (g *Group) ListProxyConfigs() []*model.ProxyConfig {
+func (g *Zone) ListProxyConfigs() []*model.ProxyConfig {
 	g.proxyConfigMutex.Lock()
 	defer g.proxyConfigMutex.Unlock()
 	if len(g.proxyConfigs) == 0 {
@@ -159,7 +159,7 @@ func (g *Group) ListProxyConfigs() []*model.ProxyConfig {
 		//fmt.Printf("ListProxyConfigs: %v\n", config.NetworkFlowRemoteToLocalInBytes)
 		res = append(res, &model.ProxyConfig{
 			UserName:                        g.userName,
-			GroupName:                       g.groupName,
+			ZoneName:                        g.zoneName,
 			RemotePort:                      config.RemotePort,
 			LocalAddr:                       config.LocalAddr,
 			IsWhiteListOn:                   config.IsWhiteListOn,
@@ -173,11 +173,11 @@ func (g *Group) ListProxyConfigs() []*model.ProxyConfig {
 	return res
 }
 
-func (g *Group) UpdateProxyConfigWhiteListConfig(remotePort int, localAddr, whiteCidrs string, whiteListEnable bool) error {
+func (g *Zone) UpdateProxyConfigWhiteListConfig(remotePort int, localAddr, whiteCidrs string, whiteListEnable bool) error {
 	key := g.getProxyConfigMapKey(remotePort, localAddr)
 	config, ok := g.proxyConfigs[key]
 	if !ok {
-		return fmt.Errorf("no such proxy config %v in group %v", localAddr, g.groupName)
+		return fmt.Errorf("no such proxy config %v in zone %v", localAddr, g.zoneName)
 	}
 	config.acl.SetEnable(whiteListEnable)
 	err := config.acl.AddCidrToList(whiteCidrs, true)
@@ -189,22 +189,22 @@ func (g *Group) UpdateProxyConfigWhiteListConfig(remotePort int, localAddr, whit
 
 }
 
-func (g *Group) AddProxyConfigWhiteListConfig(remotePort int, localAddr, whiteCidrs string) error {
+func (g *Zone) AddProxyConfigWhiteListConfig(remotePort int, localAddr, whiteCidrs string) error {
 	key := g.getProxyConfigMapKey(remotePort, localAddr)
 	config, ok := g.proxyConfigs[key]
 	if !ok {
-		return fmt.Errorf("no such proxy config %v in group %v", localAddr, g.groupName)
+		return fmt.Errorf("no such proxy config %v in zone %v", localAddr, g.zoneName)
 	}
 	return config.acl.AddCidrToList(whiteCidrs, false)
 
 }
 
-func (g *Group) handleAddProxyConfig(config *ProxyConfig) {
+func (g *Zone) handleAddProxyConfig(config *ProxyConfig) {
 	h := log.NewHeader(fmt.Sprintf("tunnel-%v-(%v->%v)", config.UserName, config.RemotePort, config.LocalAddr))
 	h.Infof("starting new port listening")
 	ln, err := util.ListenTcp("0.0.0.0:" + strconv.Itoa(config.RemotePort))
 	if err != nil {
-		errMsg := fmt.Errorf("group %v handleAddProxyConfig got error %v", g.groupName, err)
+		errMsg := fmt.Errorf("zone %v handleAddProxyConfig got error %v", g.zoneName, err)
 		log.Errorf(h, "%v", errMsg)
 		g.errChan <- errMsg
 		return
@@ -212,7 +212,7 @@ func (g *Group) handleAddProxyConfig(config *ProxyConfig) {
 	go g.handleTunnelConnection(h, ln, config)
 }
 
-func (g *Group) handleTunnelConnection(h *log.Header, ln *net.TCPListener, config *ProxyConfig) {
+func (g *Zone) handleTunnelConnection(h *log.Header, ln *net.TCPListener, config *ProxyConfig) {
 	closeFlag := false
 	go func() {
 		<-config.closeChan
@@ -221,7 +221,7 @@ func (g *Group) handleTunnelConnection(h *log.Header, ln *net.TCPListener, confi
 	}()
 
 	//always try to get a whitelist
-	whiteList, err := auth.NewWhiteListValidator(config.RemotePort, config.GroupName, config.LocalAddr, config.WhiteCidrList, config.IsWhiteListOn)
+	whiteList, err := auth.NewWhiteListValidator(config.RemotePort, config.ZoneName, config.LocalAddr, config.WhiteCidrList, config.IsWhiteListOn)
 	if err != nil {
 		log.Errorf(h, "init white list error: %v", err)
 		return
@@ -257,7 +257,7 @@ func (g *Group) handleTunnelConnection(h *log.Header, ln *net.TCPListener, confi
 	}
 }
 
-func (g *Group) handleProxyConnection(c net.Conn, localAddr string, fnOnEnd func(localToRemoteBytes, remoteToLocalBytes uint64)) {
+func (g *Zone) handleProxyConnection(c net.Conn, localAddr string, fnOnEnd func(localToRemoteBytes, remoteToLocalBytes uint64)) {
 	h := log.NewHeader(fmt.Sprintf("proxy: %v->%v", c.RemoteAddr().String(), localAddr))
 	dst, err := g.connectionPool.Get(localAddr)
 	if err != nil {
@@ -275,7 +275,7 @@ func (g *Group) handleProxyConnection(c net.Conn, localAddr string, fnOnEnd func
 
 }
 
-func (g *Group) chooseAgent() Interface {
+func (g *Zone) chooseAgent() Interface {
 	h := log.NewHeader("chooseAgent")
 	for _, i := range g.agents {
 		if i != nil && i.IsHealthy() {
@@ -287,7 +287,7 @@ func (g *Group) chooseAgent() Interface {
 	return nil
 }
 
-func (g *Group) requestNewProxyConn(localAddr string) {
+func (g *Zone) requestNewProxyConn(localAddr string) {
 	h := log.NewHeader("requestNewProxyConn")
 	a := g.chooseAgent()
 	if a == nil {
@@ -300,30 +300,30 @@ func (g *Group) requestNewProxyConn(localAddr string) {
 	}
 }
 
-func (g *Group) ListJoinedConns() []*model.JoinedConnListItem {
+func (g *Zone) ListJoinedConns() []*model.JoinedConnListItem {
 	return g.joinedConns.List()
 }
 
-func (g *Group) KillJoinedConnById(id int) error {
+func (g *Zone) KillJoinedConnById(id int) error {
 	return g.joinedConns.KillById(id)
 }
 
-func (g *Group) FlushJoinedConns() {
+func (g *Zone) FlushJoinedConns() {
 	g.joinedConns.Flush()
 }
 
-func (g *Group) restoreProxyConfig() error {
-	header := log.NewHeader(fmt.Sprintf("restoreProxyConfig_%s_%s", g.userName, g.groupName))
+func (g *Zone) restoreProxyConfig() error {
+	header := log.NewHeader(fmt.Sprintf("restoreProxyConfig_%s_%s", g.userName, g.zoneName))
 	configs, err := conf.ParseProxyConfigFile()
 	if err != nil {
 		return err
 	}
 	if err := configs.ProxyConfigIterator(func(userName string, config *model.ProxyConfig) error {
 		var err error
-		if g.userName == config.UserName && g.groupName == config.GroupName {
+		if g.userName == config.UserName && g.zoneName == config.ZoneName {
 			err = g.AddProxyConfig(config)
-			header.Infof("restore config for user %v, group %v remotePort(%v), localAddr(%v), error: %v",
-				config.UserName, config.GroupName, config.RemotePort, config.LocalAddr, err)
+			header.Infof("restore config for user %v, zone %v remotePort(%v), localAddr(%v), error: %v",
+				config.UserName, config.ZoneName, config.RemotePort, config.LocalAddr, err)
 		}
 		return err
 	}); err != nil {
@@ -332,6 +332,6 @@ func (g *Group) restoreProxyConfig() error {
 	return nil
 }
 
-func (g *Group) PutProxyConn(fromAgentId, localAddr string, c net.Conn) error {
+func (g *Zone) PutProxyConn(fromAgentId, localAddr string, c net.Conn) error {
 	return g.connectionPool.Put(localAddr, conn.NewWrappedConn(fromAgentId, c))
 }

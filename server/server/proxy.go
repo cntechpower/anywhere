@@ -24,8 +24,8 @@ func (s *Server) listenPort(addr string) *net.TCPListener {
 	return ln
 }
 
-func (s *Server) AddProxyConfig(userName, groupName string, remotePort int, localAddr string, isWhiteListOn bool, whiteList string) error {
-	pkg, err := model.NewProxyConfig(userName, groupName, remotePort, localAddr, isWhiteListOn, whiteList)
+func (s *Server) AddProxyConfig(userName, zoneName string, remotePort int, localAddr string, isWhiteListOn bool, whiteList string) error {
+	pkg, err := model.NewProxyConfig(userName, zoneName, remotePort, localAddr, isWhiteListOn, whiteList)
 	if err != nil {
 		return err
 	}
@@ -37,19 +37,19 @@ func (s *Server) AddProxyConfig(userName, groupName string, remotePort int, loca
 }
 
 func (s *Server) AddProxyConfigByModel(config *model.ProxyConfig) error {
-	if !s.isGroupExist(config.UserName, config.GroupName) {
-		return fmt.Errorf("group %v not exist", config.GroupName)
+	if !s.isZoneExist(config.UserName, config.ZoneName) {
+		return fmt.Errorf("group %v not exist", config.ZoneName)
 	}
 	s.agentsRwMutex.Lock()
 	defer s.agentsRwMutex.Unlock()
-	if err := s.groups[config.UserName][config.GroupName].AddProxyConfig(config); err != nil {
+	if err := s.zones[config.UserName][config.ZoneName].AddProxyConfig(config); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (s *Server) RemoveProxyConfig(userName string, group string, remotePort int, localAddr string) error {
-	if !s.isGroupExist(userName, group) {
+	if !s.isZoneExist(userName, group) {
 		return fmt.Errorf("group %v not exist", group)
 	}
 	if err := util.CheckAddrValid(localAddr); err != nil {
@@ -57,7 +57,7 @@ func (s *Server) RemoveProxyConfig(userName string, group string, remotePort int
 	}
 	s.agentsRwMutex.Lock()
 	defer s.agentsRwMutex.Unlock()
-	if err := s.groups[userName][group].RemoveProxyConfig(remotePort, localAddr); err != nil {
+	if err := s.zones[userName][group].RemoveProxyConfig(remotePort, localAddr); err != nil {
 		return err
 	}
 	return conf.Remove(userName, group, remotePort)

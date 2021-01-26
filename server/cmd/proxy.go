@@ -23,14 +23,14 @@ var proxyAddCmd = &cobra.Command{
 	Short: "add proxy config",
 	Long:  `add a proxy config.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := handler.AddProxyConfig(userName, groupName, remotePort, localAddr, addProxyIsWhiteListOn, addProxyWhiteListIps); err != nil {
+		if err := handler.AddProxyConfig(userName, zoneName, remotePort, localAddr, addProxyIsWhiteListOn, addProxyWhiteListIps); err != nil {
 			fmt.Printf("error adding proxy config : %v\n", err)
 		}
 	},
 }
 
 //args for del proxy config command
-var groupName, localAddr string
+var zoneName, localAddr string
 var remotePort int
 
 var proxyDelCmd = &cobra.Command{
@@ -38,7 +38,7 @@ var proxyDelCmd = &cobra.Command{
 	Short: "delete proxy config",
 	Long:  `delete a proxy config.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := handler.RemoveProxyConfig(userName, groupName, remotePort, localAddr); err != nil {
+		if err := handler.RemoveProxyConfig(userName, zoneName, remotePort, localAddr); err != nil {
 			fmt.Printf("error deleting proxy config : %v\n", err)
 		}
 	},
@@ -95,7 +95,7 @@ var proxyUpdateCmd = &cobra.Command{
 
 func GetProxyCmd() *cobra.Command {
 	proxyCmd.PersistentFlags().StringVar(&userName, "user", "", "user name")
-	proxyCmd.PersistentFlags().StringVar(&groupName, "group", "", "group name")
+	proxyCmd.PersistentFlags().StringVar(&zoneName, "zone", "", "zone name")
 	proxyAddCmd.PersistentFlags().IntVar(&remotePort, "remote-addr", 0, "remote port")
 	proxyAddCmd.PersistentFlags().StringVar(&localAddr, "local-addr", "127.0.0.1:80", "local addr")
 	proxyAddCmd.PersistentFlags().StringVar(&addProxyWhiteListIps, "white-list", "", "local port")

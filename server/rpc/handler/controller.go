@@ -74,15 +74,15 @@ func ListAgent() error {
 	}
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"UserName", "GroupName", "AgentId", "AgentAddr", "LastAckSend", "LastAckRcv"})
+	table.SetHeader([]string{"UserName", "ZoneName", "AgentId", "AgentAddr", "LastAckSend", "LastAckRcv"})
 	for _, agent := range res.Agent {
-		table.Append([]string{agent.UserName, agent.GroupName, agent.Id, agent.RemoteAddr, agent.LastAckSend, agent.LastAckRcv})
+		table.Append([]string{agent.UserName, agent.ZoneName, agent.Id, agent.RemoteAddr, agent.LastAckSend, agent.LastAckRcv})
 	}
 	table.Render()
 	return nil
 }
 
-func AddProxyConfig(userName, groupName string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) error {
+func AddProxyConfig(userName, zoneName string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) error {
 
 	client, err := NewClient(true)
 	if err != nil {
@@ -90,7 +90,7 @@ func AddProxyConfig(userName, groupName string, remotePort int, localAddr string
 	}
 	input := &pb.AddProxyConfigInput{Config: &pb.ProxyConfig{
 		Username:      userName,
-		GroupName:     groupName,
+		ZoneName:      zoneName,
 		RemotePort:    int64(remotePort),
 		LocalAddr:     localAddr,
 		IsWhiteListOn: isWhiteListOn,
@@ -115,10 +115,10 @@ func ListProxyConfigs() error {
 	}
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"UserName", "GroupName", "ServerAddr", "LocalAddr", "IsWhiteListOn", "IpWhiteList", "TotalNetFlowsInMB"})
+	table.SetHeader([]string{"UserName", "ZoneName", "ServerAddr", "LocalAddr", "IsWhiteListOn", "IpWhiteList", "TotalNetFlowsInMB"})
 	for _, config := range configs.Config {
 		table.Append([]string{
-			config.Username, config.GroupName, strconv.Itoa(int(config.RemotePort)), config.LocalAddr,
+			config.Username, config.ZoneName, strconv.Itoa(int(config.RemotePort)), config.LocalAddr,
 			util.BoolToString(config.IsWhiteListOn), config.WhiteCidrList,
 			strconv.FormatFloat(float64(config.NetworkFlowRemoteToLocalInBytes+config.NetworkFlowLocalToRemoteInBytes)/1024/1024, 'f', 5, 64),
 		})
@@ -127,14 +127,14 @@ func ListProxyConfigs() error {
 	return nil
 }
 
-func RemoveProxyConfig(userName, groupName string, remotePort int, localAddr string) error {
+func RemoveProxyConfig(userName, zoneName string, remotePort int, localAddr string) error {
 	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
 	_, err = client.RemoveProxyConfig(context.Background(), &pb.RemoveProxyConfigInput{
 		UserName:   userName,
-		GroupName:  groupName,
+		ZoneName:   zoneName,
 		RemotePort: int64(remotePort),
 		LocalAddr:  localAddr,
 	})
@@ -159,14 +159,14 @@ func SaveProxyConfigToFile() error {
 	return err
 }
 
-func UpdateProxyConfigWhiteList(userName, groupName, localAddr, whiteCidrs string, whiteListEnable bool) error {
+func UpdateProxyConfigWhiteList(userName, zoneName, localAddr, whiteCidrs string, whiteListEnable bool) error {
 	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
 	_, err = client.UpdateProxyConfigWhiteList(context.Background(), &pb.UpdateProxyConfigWhiteListInput{
 		UserName:        userName,
-		GroupName:       groupName,
+		ZoneName:        zoneName,
 		LocalAddr:       localAddr,
 		WhiteCidrs:      whiteCidrs,
 		WhiteListEnable: whiteListEnable,
@@ -174,13 +174,13 @@ func UpdateProxyConfigWhiteList(userName, groupName, localAddr, whiteCidrs strin
 	return err
 }
 
-func ListConns(groupName string) error {
+func ListConns(zoneName string) error {
 	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
 	res, err := client.ListConns(context.Background(), &pb.ListConnsInput{
-		GroupName: groupName,
+		ZoneName: zoneName,
 	})
 	if err != nil {
 		return err
@@ -191,23 +191,23 @@ func ListConns(groupName string) error {
 	}
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"UserName", "GroupName", "AgentId", "ConnId", "SrcRemoteAddr", "SrcLocalAddr", "DstRemoteAddr", "DstLocalAddr"})
+	table.SetHeader([]string{"UserName", "ZoneName", "AgentId", "ConnId", "SrcRemoteAddr", "SrcLocalAddr", "DstRemoteAddr", "DstLocalAddr"})
 	for _, conn := range res.Conn {
-		table.Append([]string{conn.UserName, conn.GroupName, conn.AgentId, strconv.Itoa(int(conn.ConnId)), conn.SrcRemoteAddr, conn.SrcLocalAddr, conn.DstRemoteAddr, conn.DstLocalAddr})
+		table.Append([]string{conn.UserName, conn.ZoneName, conn.AgentId, strconv.Itoa(int(conn.ConnId)), conn.SrcRemoteAddr, conn.SrcLocalAddr, conn.DstRemoteAddr, conn.DstLocalAddr})
 	}
 	table.Render()
 	return nil
 }
 
-func KillConn(userName, groupName string, id int) error {
+func KillConn(userName, zoneName string, id int) error {
 	client, err := NewClient(true)
 	if err != nil {
 		return err
 	}
 	_, err = client.KillConnById(context.Background(), &pb.KillConnByIdInput{
-		UserName:  userName,
-		GroupName: groupName,
-		ConnId:    int64(id),
+		UserName: userName,
+		ZoneName: zoneName,
+		ConnId:   int64(id),
 	})
 	return err
 }

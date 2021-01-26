@@ -41,7 +41,7 @@ func (h *rpcHandlers) ListAgent(ctx context.Context, empty *pb.Empty) (*pb.Agent
 		res.Agent = append(res.Agent, &pb.Agent{
 			UserName:         agent.UserName,
 			Id:               agent.Id,
-			GroupName:        agent.GroupName,
+			ZoneName:        agent.ZoneName,
 			RemoteAddr:       agent.RemoteAddr,
 			LastAckRcv:       agent.LastAckRcv.Format(constants.DefaultTimeFormat),
 			LastAckSend:      agent.LastAckSend.Format(constants.DefaultTimeFormat),
@@ -67,7 +67,7 @@ func (h *rpcHandlers) AddProxyConfig(ctx context.Context, input *pb.AddProxyConf
 	if err := util.CheckAddrValid(config.LocalAddr); err != nil {
 		return &pb.Empty{}, fmt.Errorf("invalid localAddr %v in config, error: %v", config.LocalAddr, err)
 	}
-	if err := s.AddProxyConfig(config.Username, config.GroupName, int(config.RemotePort), config.LocalAddr, config.IsWhiteListOn, config.WhiteCidrList); err != nil {
+	if err := s.AddProxyConfig(config.Username, config.ZoneName, int(config.RemotePort), config.LocalAddr, config.IsWhiteListOn, config.WhiteCidrList); err != nil {
 		return nil, err
 	}
 	return &pb.Empty{}, nil
@@ -85,7 +85,7 @@ func (h *rpcHandlers) ListProxyConfigs(ctx context.Context, input *pb.Empty) (*p
 	for _, config := range configs {
 		res.Config = append(res.Config, &pb.ProxyConfig{
 			Username:                        config.UserName,
-			GroupName:                       config.GroupName,
+			ZoneName:                       config.ZoneName,
 			RemotePort:                      int64(config.RemotePort),
 			LocalAddr:                       config.LocalAddr,
 			IsWhiteListOn:                   config.IsWhiteListOn,
@@ -102,7 +102,7 @@ func (h *rpcHandlers) RemoveProxyConfig(ctx context.Context, input *pb.RemovePro
 	if s == nil {
 		return &pb.Empty{}, ErrServerNotInit
 	}
-	return &pb.Empty{}, s.RemoveProxyConfig(input.UserName, input.GroupName, int(input.RemotePort), input.LocalAddr)
+	return &pb.Empty{}, s.RemoveProxyConfig(input.UserName, input.ZoneName, int(input.RemotePort), input.LocalAddr)
 }
 
 func (h *rpcHandlers) LoadProxyConfigFile(ctx context.Context, input *pb.Empty) (*pb.Empty, error) {
@@ -123,7 +123,7 @@ func (h *rpcHandlers) SaveProxyConfigToFile(ctx context.Context, input *pb.Empty
 }
 
 func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (*pb.Conns, error) {
-	agentConns, err := h.s.ListJoinedConns("", input.GroupName)
+	agentConns, err := h.s.ListJoinedConns("", input.ZoneName)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (
 		for _, conn := range agentConns.List {
 			res.Conn = append(res.Conn, &pb.Conn{
 				AgentId:       conn.DstName,
-				GroupName:     agentConns.GroupName,
+				ZoneName:     agentConns.ZoneName,
 				UserName:      agentConns.UserName,
 				ConnId:        int64(conn.ConnId),
 				SrcRemoteAddr: conn.SrcRemoteAddr,
@@ -151,7 +151,7 @@ func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (
 }
 
 func (h *rpcHandlers) KillConnById(ctx context.Context, input *pb.KillConnByIdInput) (*pb.Empty, error) {
-	return &pb.Empty{}, h.s.KillJoinedConnById(input.UserName, input.GroupName, int(input.ConnId))
+	return &pb.Empty{}, h.s.KillJoinedConnById(input.UserName, input.ZoneName, int(input.ConnId))
 }
 
 func (h *rpcHandlers) KillAllConns(ctx context.Context, empty *pb.Empty) (*pb.Empty, error) {
@@ -160,7 +160,7 @@ func (h *rpcHandlers) KillAllConns(ctx context.Context, empty *pb.Empty) (*pb.Em
 }
 
 func (h *rpcHandlers) UpdateProxyConfigWhiteList(ctx context.Context, input *pb.UpdateProxyConfigWhiteListInput) (*pb.Empty, error) {
-	return &pb.Empty{}, h.s.UpdateProxyConfigWhiteList(input.UserName, int(input.RemotePort), input.GroupName, input.LocalAddr, input.WhiteCidrs, input.WhiteListEnable)
+	return &pb.Empty{}, h.s.UpdateProxyConfigWhiteList(input.UserName,input.ZoneName, int(input.RemotePort),  input.LocalAddr, input.WhiteCidrs, input.WhiteListEnable)
 }
 
 func (h *rpcHandlers) GetSummary(ctx context.Context, empty *pb.Empty) (*pb.GetSummaryOutput, error) {
@@ -174,7 +174,7 @@ func (h *rpcHandlers) GetSummary(ctx context.Context, empty *pb.Empty) (*pb.GetS
 	}
 	for _, c := range s.ProxyNetworkFlowTop10 {
 		res.ConfigNetFlowTop10 = append(res.ConfigNetFlowTop10, &pb.ProxyConfig{
-			GroupName:                       c.GroupName,
+			ZoneName:                       c.ZoneName,
 			RemotePort:                      int64(c.RemotePort),
 			LocalAddr:                       c.LocalAddr,
 			IsWhiteListOn:                   c.IsWhiteListOn,
@@ -188,7 +188,7 @@ func (h *rpcHandlers) GetSummary(ctx context.Context, empty *pb.Empty) (*pb.GetS
 
 	for _, c := range s.ProxyConnectRejectCountTop10 {
 		res.ConfigConnectFailTop10 = append(res.ConfigConnectFailTop10, &pb.ProxyConfig{
-			GroupName:                       c.GroupName,
+			ZoneName:                       c.ZoneName,
 			RemotePort:                      int64(c.RemotePort),
 			LocalAddr:                       c.LocalAddr,
 			IsWhiteListOn:                   c.IsWhiteListOn,
