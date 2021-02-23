@@ -31,6 +31,7 @@ echo "Agent Pi Upgrade Success"
 # shellcheck disable=SC2029
 ssh aliyun "mv /usr/local/anywhere  /usr/local/anywhere_$timestamp"
 ssh aliyun "mkdir -p /usr/local/anywhere"
+wget -q ftp://ftp:ftp@10.0.0.2/ci/anywhere/anywhere-latest.tar.gz
 scp anywhere-latest.tar.gz aliyun:/usr/local/anywhere
 ssh aliyun "cd /usr/local/anywhere && tar -xf anywhere-latest.tar.gz && rm -rf anywhere-latest.tar.gz"
 ssh aliyun "cd /usr/local/anywhere && rm -rf bin/anywhere && rm -rf bin/test"
