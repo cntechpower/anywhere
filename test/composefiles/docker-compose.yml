@@ -35,7 +35,7 @@ services:
         ipv4_address: 172.90.101.14
     environment:
       - SERVER_ADDR=172.90.101.11
-      - AGENT_ID=anywhere-agent-1
+      - AGENT_ID=anywhere-agent-3
     depends_on:
       - anywhered
 
