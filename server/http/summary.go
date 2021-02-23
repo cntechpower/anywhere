@@ -29,7 +29,8 @@ func GetSummaryV1() (*models.SummaryStatistic, error) {
 	}
 	for _, p := range s.ConfigConnectFailTop10 {
 		res.ProxyConnectRejectCountTop10 = append(res.ProxyConnectRejectCountTop10, &models.ProxyConfig{
-			AgentID:                         p.AgentId,
+			UserName:                        p.Username,
+			ZoneName:                       p.ZoneName,
 			IsWhitelistOn:                   p.IsWhiteListOn,
 			LocalAddr:                       p.LocalAddr,
 			NetworkFlowLocalToRemoteInBytes: p.NetworkFlowLocalToRemoteInBytes,
@@ -43,7 +44,8 @@ func GetSummaryV1() (*models.SummaryStatistic, error) {
 
 	for _, p := range s.ConfigNetFlowTop10 {
 		res.ProxyNetworkFlowTop10 = append(res.ProxyNetworkFlowTop10, &models.ProxyConfig{
-			AgentID:                         p.AgentId,
+			UserName:                        p.Username,
+			ZoneName:                       p.ZoneName,
 			IsWhitelistOn:                   p.IsWhiteListOn,
 			LocalAddr:                       p.LocalAddr,
 			NetworkFlowLocalToRemoteInBytes: p.NetworkFlowLocalToRemoteInBytes,

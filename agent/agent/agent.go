@@ -1,19 +1,21 @@
-package anywhereAgent
+package agent
 
 import (
+	"context"
 	_tls "crypto/tls"
 	"net"
 	"time"
 
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/constants"
-	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/tls"
 	"github.com/cntechpower/anywhere/util"
+	"github.com/cntechpower/utils/log"
 )
 
 type Agent struct {
+	group           string
 	id              string
 	user            string
 	password        string
@@ -29,7 +31,7 @@ type Agent struct {
 
 var agentInstance *Agent
 
-func InitAnyWhereAgent(id, ip, user, password string, port int) *Agent {
+func InitAnyWhereAgent(group, id, ip, user, password string, port int) *Agent {
 	if agentInstance != nil {
 		panic("agent already init")
 	}
@@ -38,6 +40,7 @@ func InitAnyWhereAgent(id, ip, user, password string, port int) *Agent {
 		panic(err)
 	}
 	agentInstance = &Agent{
+		group:       group,
 		id:          id,
 		user:        user,
 		password:    password,
@@ -58,15 +61,14 @@ func (a *Agent) SetCredentials(certFile, keyFile, caFile string) error {
 	return nil
 }
 
-func (a *Agent) Start() {
+func (a *Agent) Start(ctx context.Context) {
 	if a.status == "RUNNING" {
 		panic("try to start a agent which is already started")
 	}
 	a.initControlConn(1)
 
-	heartBeatExitChan := make(chan error, 0)
-	go a.ControlConnHeartBeatSendLoop(1, heartBeatExitChan)
-	go a.handleAdminConnection()
+	go a.ControlConnHeartBeatSendLoop(1, ctx)
+	go a.handleAdminConnection(ctx)
 }
 
 func (a *Agent) Stop() {

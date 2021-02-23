@@ -13,12 +13,12 @@ import (
 
 	"github.com/cntechpower/anywhere/server/conf"
 
-	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/server/cmd"
 	"github.com/cntechpower/anywhere/server/rpc/handler"
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/tls"
 	"github.com/cntechpower/anywhere/util"
+	"github.com/cntechpower/utils/log"
 
 	"github.com/spf13/cobra"
 )
@@ -91,6 +91,7 @@ func run(_ *cobra.Command, _ []string) error {
 	restServer.ConfigureAPI()
 	restHandler := restServer.GetHandler()
 	webExitChan := make(chan error, 0)
+	//TODO: passthroughs config directly to http.StartUIAndAPIService
 	if conf.Conf.UiConfig.IsWebEnable {
 		go http.StartUIAndAPIService(restHandler, s, conf.Conf.UiConfig.WebAddr, webExitChan,
 			conf.Conf.UiConfig.SkipLogin, conf.Conf.UiConfig.DebugMode, conf.Conf.ReportWhiteCidrs)

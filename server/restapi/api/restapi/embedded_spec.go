@@ -70,8 +70,8 @@ func init() {
           },
           {
             "type": "string",
-            "description": "agent id",
-            "name": "agent_id",
+            "description": "zone name",
+            "name": "zone_name",
             "in": "formData",
             "required": true
           },
@@ -132,8 +132,8 @@ func init() {
           },
           {
             "type": "string",
-            "description": "agent id",
-            "name": "agent_id",
+            "description": "zone name",
+            "name": "zone_name",
             "in": "formData",
             "required": true
           },
@@ -202,8 +202,8 @@ func init() {
           },
           {
             "type": "string",
-            "description": "agent id",
-            "name": "agent_id",
+            "description": "zone name",
+            "name": "zone_name",
             "in": "formData",
             "required": true
           },
@@ -311,6 +311,9 @@ func init() {
         },
         "userName": {
           "type": "string"
+        },
+        "zoneName": {
+          "type": "string"
         }
       }
     },
@@ -322,10 +325,6 @@ func init() {
       "description": "proxy config information",
       "type": "object",
       "properties": {
-        "agent_id": {
-          "description": "agent id",
-          "type": "string"
-        },
         "is_whitelist_on": {
           "description": "is whitelist on",
           "type": "boolean"
@@ -356,6 +355,10 @@ func init() {
         },
         "whitelist_ips": {
           "description": "whitelist ips",
+          "type": "string"
+        },
+        "zone_name": {
+          "description": "zone name",
           "type": "string"
         }
       }
@@ -451,8 +454,8 @@ func init() {
           },
           {
             "type": "string",
-            "description": "agent id",
-            "name": "agent_id",
+            "description": "zone name",
+            "name": "zone_name",
             "in": "formData",
             "required": true
           },
@@ -513,8 +516,8 @@ func init() {
           },
           {
             "type": "string",
-            "description": "agent id",
-            "name": "agent_id",
+            "description": "zone name",
+            "name": "zone_name",
             "in": "formData",
             "required": true
           },
@@ -583,8 +586,8 @@ func init() {
           },
           {
             "type": "string",
-            "description": "agent id",
-            "name": "agent_id",
+            "description": "zone name",
+            "name": "zone_name",
             "in": "formData",
             "required": true
           },
@@ -692,6 +695,9 @@ func init() {
         },
         "userName": {
           "type": "string"
+        },
+        "zoneName": {
+          "type": "string"
         }
       }
     },
@@ -703,10 +709,6 @@ func init() {
       "description": "proxy config information",
       "type": "object",
       "properties": {
-        "agent_id": {
-          "description": "agent id",
-          "type": "string"
-        },
         "is_whitelist_on": {
           "description": "is whitelist on",
           "type": "boolean"
@@ -737,6 +739,10 @@ func init() {
         },
         "whitelist_ips": {
           "description": "whitelist ips",
+          "type": "string"
+        },
+        "zone_name": {
+          "description": "zone name",
           "type": "string"
         }
       }

@@ -24,7 +24,6 @@ rpc:
 	protoc --go_out=plugins=grpc:. agent/rpc/definitions/*.proto
 api:
 	swagger23 generate server -t server/restapi/api --exclude-main -f server/restapi/definition/anywhere.yml
-	swagger23 generate client -t test  -f server/restapi/definition/anywhere.yml
 build_server:
 	mkdir -p bin/
 	rm -rf bin/anywhered
@@ -39,15 +38,16 @@ build_agent/arm:
 	rm -rf bin/anywhere
 	GOARCH=arm64 GOARM=7 go build ${LDFLAGS} -o bin/anywhere agent/main.go
 
-build_test_agent:
-	mkdir -p bin/
-	go build ${LDFLAGS} -o bin/test test/main.go
 
-build_test_image: build ui
-	sudo $(DOCKER) build -t anywhered-test-image:latest -f test/dockerfiles/Dockerfile.server .
-	sudo $(DOCKER) build -t anywhere-test-image:latest -f test/dockerfiles/Dockerfile.agent .
+build_docker_image: build ui
+	sudo $(DOCKER) build -t anywhered-test-image:latest -f docker-build/Dockerfile.server .
+	sudo $(DOCKER) build -t anywhere-test-image:latest -f docker-build/Dockerfile.agent .
 
-docker_test: docker_test_clean build_test_image
+upload_docker_img: build ui
+	sudo $(DOCKER) build -t 10.0.0.2:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION} -f docker-build/Dockerfile.agent .
+	sudo $(DOCKER) push 10.0.0.2:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION}
+
+docker_test: docker_test_clean build_docker_image
 	sudo $(DOCKER-COMPOSE) -f test/composefiles/docker-compose.yml up -d
 	sleep 20 #wait mysql init
 	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.2:5000/mysql/mysql_client:8.0.19 -h172.90.101.11 -P4444 -proot -e "select @@version"
@@ -57,7 +57,9 @@ docker_test: docker_test_clean build_test_image
 	sudo $(DOCKER) exec -t composefiles_anywhered_1 bash -c "/usr/local/anywhere/bin/anywhered agent list"
 	sudo $(DOCKER) exec -t composefiles_anywhered_1 bash -c "/usr/local/anywhere/bin/anywhered proxy list"
 	sudo $(DOCKER) logs composefiles_anywhered_1
-	sudo $(DOCKER) logs composefiles_anywhere_1
+	sudo $(DOCKER) logs composefiles_anywhere-1_1
+	sudo $(DOCKER) logs composefiles_anywhere-2_1
+	sudo $(DOCKER) logs composefiles_anywhere-3_1
 	sudo $(DOCKER-COMPOSE) -f test/composefiles/docker-compose.yml down
 	sudo $(DOCKER) rmi anywhere-test-image:latest
 	sudo $(DOCKER) rmi anywhered-test-image:latest
@@ -93,9 +95,6 @@ upload_x86: build ui
 	curl -T anywhere-latest.tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
 	rm -rf anywhere-$(VERSION).tar.gz
 	rm -rf anywhere-latest.tar.gz
-upload_docker_img: build ui
-	sudo $(DOCKER) build -t 10.0.0.2:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION} -f docker-build/Dockerfile.agent .
-	sudo $(DOCKER) push 10.0.0.2:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION}
 upload_release:
 	mv anywhere-$(VERSION).tar.gz /var/www/html/
 	rm -rf /var/www/html/anywhere-latest.tar.gz && mv anywhere-latest.tar.gz /var/www/html/
@@ -103,8 +102,8 @@ upload_release:
 clean:
 	rm -rf bin/
 	rm -rf *.tar.gz
-build: vet build_server build_agent build_test_agent
-build_arm: vet build_server build_agent/arm build_test_agent
+build: vet build_server build_agent
+build_arm: vet build_server build_agent/arm
 
 build_release: vet build_server build_agent newkey ui
 	tar -czvf anywhere-$(VERSION).tar.gz bin/ credential/ static/

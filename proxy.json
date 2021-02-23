@@ -2,7 +2,7 @@
     "ProxyConfigs": {
         "admin": [
             {
-                "agent_id": "anywhere-agent-1",
+                "group_id": "asia-shanghai",
                 "user_name": "admin",
                 "remote_port": 9495,
                 "local_addr": "10.0.0.2:80",

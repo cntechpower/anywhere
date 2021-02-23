@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/cntechpower/anywhere/constants"
-	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/model"
+	"github.com/cntechpower/utils/log"
 )
 
 func SortDescAndLimitUsingHeap(a []*model.ProxyConfig, less func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool, limit int) []*model.ProxyConfig {
@@ -64,9 +64,9 @@ func (s *Server) RefreshSummaryLoop() {
 		newCache := model.ServerSummary{}
 		allConfigList := make([]*model.ProxyConfig, 0, 100)
 		s.agentsRwMutex.Lock()
-		for _, user := range s.agents {
-			for _, agent := range user {
-				configs := agent.ListProxyConfigs()
+		for _, groups := range s.zones {
+			for _, group := range groups {
+				configs := group.ListProxyConfigs()
 				newCache.ProxyConfigTotalCount += uint64(len(configs))
 				allConfigList = append(allConfigList, configs...)
 				newCache.AgentTotalCount++

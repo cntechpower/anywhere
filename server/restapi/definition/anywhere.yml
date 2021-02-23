@@ -64,8 +64,8 @@ paths:
           type: string
           required: true
         - in: formData
-          name: agent_id
-          description: "agent id"
+          name: zone_name
+          description: "zone name"
           type: string
           required: true
         - in: formData
@@ -107,8 +107,8 @@ paths:
           type: string
           required: true
         - in: formData
-          name: agent_id
-          description: "agent id"
+          name: zone_name
+          description: "zone name"
           type: string
           required: true
         - in: formData
@@ -149,8 +149,8 @@ paths:
           type: string
           required: true
         - in: formData
-          name: agent_id
-          description: "agent id"
+          name: zone_name
+          description: "zone name"
           type: string
           required: true
         - in: formData
@@ -196,6 +196,8 @@ definitions:
     properties:
       userName:
         type: string
+      zoneName:
+        type: string
       agentId:
         type: string
       agentAdminAddr:
@@ -214,8 +216,8 @@ definitions:
       user_name:
         description: "user name"
         type: string
-      agent_id:
-        description: "agent id"
+      zone_name:
+        description: "zone name"
         type: string
       remote_port:
         description: "anywhered server listen addr"

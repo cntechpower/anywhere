@@ -11,17 +11,9 @@ ssh pi "kill \$(pgrep anywhere)||true"
 
 ## Upgrading Services
 # Agent
-mv /usr/local/anywhere  /usr/local/anywhere_"$timestamp"
-mkdir -p /usr/local/anywhere
-cd /usr/local/anywhere
-rm -rf anywhere-latest.tar.gz
-wget -q ftp://ftp:ftp@10.0.0.2/ci/anywhere/anywhere-latest.tar.gz
-tar -xf anywhere-latest.tar.gz
-rm -rf bin/anywhered bin/test
-nohup ./bin/anywhere --user admin --pass admin -s 47.103.62.227 > anywhere.log 2>&1 &
 kubectl -n private set image deployment/anywhere-agent anywhere-agent=10.0.0.2:5000/cntechpower/anywhere-agent:$curr_version
 
-echo "Agent 10-0-0-2 Upgrade Success"
+echo "K8s Agent Upgrade Success"
 
 # Agent Pi
 ssh pi "mv /usr/local/anywhere  /usr/local/anywhere_$timestamp"
@@ -31,7 +23,7 @@ wget -q ftp://ftp:ftp@10.0.0.2/ci/anywhere/anywhere-latest-arm.tar.gz
 scp anywhere-latest-arm.tar.gz pi:/usr/local/anywhere
 ssh pi "cd /usr/local/anywhere && tar -xf anywhere-latest-arm.tar.gz && rm -rf anywhere-latest-arm.tar.gz"
 ssh pi "cd /usr/local/anywhere && rm -rf bin/anywhered bin/test"
-ssh pi "cd /usr/local/anywhere; nohup ./bin/anywhere  -i anywhere-agent-pi --user admin --pass admin -s 47.103.62.227 > anywhere.log 2>&1 &"
+ssh pi "cd /usr/local/anywhere; nohup ./bin/anywhere -z asia-shanghai -i anywhere-agent-pi --user admin --pass admin -s 47.103.62.227 > anywhere.log 2>&1 &"
 
 echo "Agent Pi Upgrade Success"
 

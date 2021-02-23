@@ -32,6 +32,9 @@ type AgentListInfo struct {
 
 	// user name
 	UserName string `json:"userName,omitempty"`
+
+	// zone name
+	ZoneName string `json:"zoneName,omitempty"`
 }
 
 // Validate validates this agent list info

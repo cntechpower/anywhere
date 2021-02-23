@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: anywhere-agent
+  namespace: private
+  labels:
+    app: anywhere-agent
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: anywhere-agent
+  template:
+    metadata:
+      labels:
+        app: anywhere-agent
+    spec:
+      containers:
+        - name: anywhere-agent
+          image: 10.0.0.2:5000/cntechpower/anywhere-agent:3bf53b8
+          env:
+            - name: SERVER_ADDR
+              value: 47.103.62.227
+            - name: SERVER_ADDR
+              value: 47.103.62.227
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: 1
+            requests:
+              memory: 256Mi
+              cpu: "0.5"

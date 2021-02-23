@@ -9,8 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/util"
+	"github.com/cntechpower/utils/log"
 )
 
 var whiteListDenyCount = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -28,29 +28,30 @@ func init() {
 
 type WhiteListValidator struct {
 	*util.WhiteList
-	remotePort int
-	agentId    string
-	localAddr  string
-	logHeader  *log.Header
+	logHeader *log.Header
+	//port, name, localAddr are used for prometheus metrics lables
+	port      int
+	name      string
+	localAddr string
 }
 
-func NewWhiteListValidator(remotePort int, agentId, localAddr, whiteCidrs string, enable bool) (*WhiteListValidator, error) {
-	wl, err := util.NewWhiteList(remotePort, agentId, localAddr, whiteCidrs, enable)
+func NewWhiteListValidator(port int, name, localAddr, whiteCidrs string, enable bool) (*WhiteListValidator, error) {
+	wl, err := util.NewWhiteList(port, name, localAddr, whiteCidrs, enable)
 	if err != nil {
 		return nil, err
 	}
 	return &WhiteListValidator{
-		WhiteList:  wl,
-		remotePort: remotePort,
-		agentId:    agentId,
-		localAddr:  localAddr,
-		logHeader:  log.NewHeader("WhiteListValidator"),
+		WhiteList: wl,
+		port:      port,
+		name:      name,
+		localAddr: localAddr,
+		logHeader: log.NewHeader("WhiteListValidator"),
 	}, nil
 }
 
 func (v *WhiteListValidator) AddrInWhiteList(addr string) bool {
 	ok := v.WhiteList.AddrInWhiteList(addr)
-	labels := []string{strconv.Itoa(v.remotePort), v.agentId, v.localAddr,
+	labels := []string{strconv.Itoa(v.port), v.name, v.localAddr,
 		strings.Split(addr, ":")[0]}
 	if !ok {
 		whiteListDenyCount.WithLabelValues(labels...).Add(1)

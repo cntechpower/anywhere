@@ -6,10 +6,12 @@ RUN sed -i.backup 's/^enabled=1/enabled=0/' /etc/yum/pluginconf.d/fastestmirror.
 COPY bin/* /usr/local/anywhere/bin/
 COPY credential/* /usr/local/anywhere/credential/
 COPY static/* /usr/local/anywhere/static/
-COPY test/dockerfiles/Dockerfile.agent /docker-build/
-ENV SERVER_ADDR=172.90.101.11
+COPY docker-build/Dockerfile.server /docker-build/
+# Config files
+COPY test/config/anywhered.json /usr/local/anywhere/anywhered.json
+COPY test/config/proxy.json /usr/local/anywhere/proxy.json
 
 WORKDIR /usr/local/anywhere/
 
 
-CMD ["sh","-c","./bin/anywhere -s $SERVER_ADDR -u admin --pass admin"]
+CMD ["./bin/anywhered","start"]

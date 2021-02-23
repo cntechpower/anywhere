@@ -1,8 +1,8 @@
 package auth
 
 import (
-	"github.com/cntechpower/anywhere/log"
 	"github.com/cntechpower/anywhere/model"
+	"github.com/cntechpower/utils/log"
 
 	"github.com/pquerna/otp/totp"
 )

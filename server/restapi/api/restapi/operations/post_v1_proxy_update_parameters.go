@@ -40,11 +40,6 @@ type PostV1ProxyUpdateParams struct {
 	// HTTP Request Object
 	HTTPRequest *http.Request `json:"-"`
 
-	/*agent id
-	  Required: true
-	  In: formData
-	*/
-	AgentID string
 	/*localAddress
 	  Required: true
 	  In: formData
@@ -69,6 +64,11 @@ type PostV1ProxyUpdateParams struct {
 	  Default: ""
 	*/
 	WhiteListIps *string
+	/*zone name
+	  Required: true
+	  In: formData
+	*/
+	ZoneName string
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
@@ -88,11 +88,6 @@ func (o *PostV1ProxyUpdateParams) BindRequest(r *http.Request, route *middleware
 		}
 	}
 	fds := runtime.Values(r.Form)
-
-	fdAgentID, fdhkAgentID, _ := fds.GetOK("agent_id")
-	if err := o.bindAgentID(fdAgentID, fdhkAgentID, route.Formats); err != nil {
-		res = append(res, err)
-	}
 
 	fdLocalAddr, fdhkLocalAddr, _ := fds.GetOK("local_addr")
 	if err := o.bindLocalAddr(fdLocalAddr, fdhkLocalAddr, route.Formats); err != nil {
@@ -119,30 +114,14 @@ func (o *PostV1ProxyUpdateParams) BindRequest(r *http.Request, route *middleware
 		res = append(res, err)
 	}
 
+	fdZoneName, fdhkZoneName, _ := fds.GetOK("zone_name")
+	if err := o.bindZoneName(fdZoneName, fdhkZoneName, route.Formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-// bindAgentID binds and validates parameter AgentID from formData.
-func (o *PostV1ProxyUpdateParams) bindAgentID(rawData []string, hasKey bool, formats strfmt.Registry) error {
-	if !hasKey {
-		return errors.Required("agent_id", "formData")
-	}
-	var raw string
-	if len(rawData) > 0 {
-		raw = rawData[len(rawData)-1]
-	}
-
-	// Required: true
-
-	if err := validate.RequiredString("agent_id", "formData", raw); err != nil {
-		return err
-	}
-
-	o.AgentID = raw
-
 	return nil
 }
 
@@ -250,6 +229,27 @@ func (o *PostV1ProxyUpdateParams) bindWhiteListIps(rawData []string, hasKey bool
 	}
 
 	o.WhiteListIps = &raw
+
+	return nil
+}
+
+// bindZoneName binds and validates parameter ZoneName from formData.
+func (o *PostV1ProxyUpdateParams) bindZoneName(rawData []string, hasKey bool, formats strfmt.Registry) error {
+	if !hasKey {
+		return errors.Required("zone_name", "formData")
+	}
+	var raw string
+	if len(rawData) > 0 {
+		raw = rawData[len(rawData)-1]
+	}
+
+	// Required: true
+
+	if err := validate.RequiredString("zone_name", "formData", raw); err != nil {
+		return err
+	}
+
+	o.ZoneName = raw
 
 	return nil
 }

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cntechpower/anywhere/log"
+	"github.com/cntechpower/utils/log"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/prometheus/client_golang/prometheus"
 )

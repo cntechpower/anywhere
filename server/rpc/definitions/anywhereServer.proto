@@ -21,12 +21,14 @@ service AnywhereServer {
 message Empty{}
 
 message Agent{
-    string agentId = 1;
-    string agentRemoteAddr = 2;
-    string agentLastAckRcv = 3;
-    string agentLastAckSend = 4;
-    int64 agentProxyConfigCount = 5;
-    string agentUserName = 6;
+    string userName = 1;
+    string zoneName = 2;
+    string id = 3;
+    string remoteAddr = 4;
+    string lastAckRcv = 5;
+    string lastAckSend = 6;
+    int64 proxyConfigCount = 7;
+
 }
 
 message Agents{
@@ -34,16 +36,17 @@ message Agents{
 }
 
 message ProxyConfig{
-    string agentId = 1;
-    int64 remotePort = 2;
-    string localAddr = 3;
-    bool isWhiteListOn = 4;
-    string WhiteCidrList = 5;
-    int64 NetworkFlowRemoteToLocalInBytes = 6;
-    int64 NetworkFlowLocalToRemoteInBytes = 7;
-	  int64 ProxyConnectCount = 8;
-    int64 ProxyConnectRejectCount = 9;
-    string username=10;
+    string username = 1;
+    string zoneName = 2;
+    int64 remotePort = 3;
+    string localAddr = 4;
+    bool isWhiteListOn = 5;
+    string WhiteCidrList = 6;
+    int64 NetworkFlowRemoteToLocalInBytes = 7;
+    int64 NetworkFlowLocalToRemoteInBytes = 8;
+    int64 ProxyConnectCount = 9;
+    int64 ProxyConnectRejectCount = 10;
+
 }
 
 message AddProxyConfigInput{
@@ -56,26 +59,26 @@ message ListProxyConfigsOutput{
 }
 
 message RemoveProxyConfigInput{
-    string agentId = 1;
-    string localAddr = 2;
-    int64 remotePort = 3;
-    string userName = 4;
+    string userName = 1;
+    string zoneName = 2;
+    string localAddr = 3;
+    int64 remotePort = 4;
 }
 
 message ListConnsInput{
-    string agentId = 1;
-    string userName = 2;
+    string userName = 1;
+    string zoneName = 2;
 }
 
 message Conn {
-    string agentId = 1;
-    int64 connId = 2;
-    string srcRemoteAddr = 3;
-    string srcLocalAddr = 4;
-    string dstRemoteAddr = 5;
-    string dstLocalAddr = 6;
-    string userName = 7;
-
+    string userName = 1;
+    string zoneName = 2;
+    string agentId = 3;
+    int64 connId = 4;
+    string srcRemoteAddr = 5;
+    string srcLocalAddr = 6;
+    string dstRemoteAddr = 7;
+    string dstLocalAddr = 8;
 }
 
 message Conns{
@@ -83,18 +86,19 @@ message Conns{
 }
 
 message KillConnByIdInput {
-    string agentId = 1;
-    int64 connId = 2;
-    string userName = 3;
+    string userName = 1;
+    string zoneName = 2;
+    int64 connId = 3;
 }
 
 message UpdateProxyConfigWhiteListInput {
-    string agentId = 1;
-    string localAddr = 2;
-    string whiteCidrs = 3;
-    bool whiteListEnable = 4;
-    int64 remotePort = 5;
-    string userName = 6;
+    string userName = 1;
+    string zoneName = 2;
+    string localAddr = 3;
+    string whiteCidrs = 4;
+    bool whiteListEnable = 5;
+    int64 remotePort = 6;
+
 }
 message GetSummaryOutput {
     int64 agentCount = 1;
@@ -105,4 +109,5 @@ message GetSummaryOutput {
     repeated ProxyConfig configNetFlowTop10  = 6;
     repeated ProxyConfig configConnectFailTop10  = 7;
     int64 adminWebUiAuthFailCount =8;
+    int64 groupCount =9;
 }
