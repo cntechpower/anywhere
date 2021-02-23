@@ -72,7 +72,7 @@ func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error)
   <thead>
     <tr>
       <th>用户名</th>
-      <th>组名</th>
+      <th>网络区域</th>
       <th>外网端口</th>
       <th>内网地址</th>
       <th>白名单开关</th>
@@ -171,7 +171,7 @@ func (s *Server) getAgentsHtmlReport(maxLines int) (html string, err error) {
   <thead>
     <tr>
       <th>用户名</th>
-      <th>组名</th>
+      <th>网络区域</th>
       <th>节点ID</th>
       <th>内网地址</th>
       <th>配置总数</th>
