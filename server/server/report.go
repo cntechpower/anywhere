@@ -82,11 +82,11 @@ func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error)
   <tbody>`)
 	totalFlows := float64(0)
 	whiteListDisable := 0
-	nodeMap := make(map[string]struct{}, 0)
+	zoneMap := make(map[string]struct{}, 0)
 	for idx, config := range configs {
 		flows := float64(config.NetworkFlowRemoteToLocalInBytes+config.NetworkFlowLocalToRemoteInBytes) / 1024 / 1024
 		totalFlows += flows
-		nodeMap[config.ZoneName] = struct{}{}
+		zoneMap[config.ZoneName] = struct{}{}
 		if !config.IsWhiteListOn {
 			whiteListDisable++
 		}
@@ -107,7 +107,8 @@ func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error)
 	configsHtmlTable.WriteString(fmt.Sprintf(`
     <tfoot>
         <tr>
-          <td>节点数:%v </td>
+          <td>网络区域数:%v </td>
+          <td>--</td>
           <td>--</td>
           <td>--</td>
           <td>未开启: %v</td>
@@ -116,7 +117,7 @@ func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error)
       </tfoot>
    </tbody>
 </table>`,
-		len(nodeMap), whiteListDisable, strconv.FormatFloat(totalFlows, 'f', 5, 64)))
+		len(zoneMap), whiteListDisable, strconv.FormatFloat(totalFlows, 'f', 5, 64)))
 	return configsHtmlTable.String(), nil
 }
 
@@ -206,6 +207,7 @@ func (s *Server) getAgentsHtmlReport(maxLines int) (html string, err error) {
     <tfoot>
         <tr>
           <td>节点数:%v </td>
+          <td>--</td>
           <td>--</td>
           <td>--</td>
           <td>--</td>
