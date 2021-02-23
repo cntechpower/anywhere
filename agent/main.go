@@ -14,7 +14,7 @@ import (
 
 var serverPort int
 var serverIp, agentId, user, password, certFile, keyFile, caFile string
-var agentGroup, version string
+var zoneName, version string
 
 var grpcAddress string
 var connIdToKill int
@@ -80,7 +80,7 @@ func main() {
 	}
 	rootCmd.PersistentFlags().StringVarP(&serverIp, "server-ip", "s", "127.0.0.1", "anywhered server address")
 	rootCmd.PersistentFlags().IntVarP(&serverPort, "server-port", "p", 1111, "anywhered server port")
-	rootCmd.PersistentFlags().StringVarP(&agentGroup, "agent-group", "g", "asia-shanghai", "anywhere agent group")
+	rootCmd.PersistentFlags().StringVarP(&zoneName, "zone-name", "z", "asia-shanghai", "anywhere agent group")
 	rootCmd.PersistentFlags().StringVarP(&agentId, "agent-id", "i", "anywhere-agent-1", "anywhere agent id")
 	rootCmd.PersistentFlags().StringVar(&grpcAddress, "grpc-address", "127.0.0.1:1110", "anywhere agent grpc address")
 	rootCmd.PersistentFlags().StringVarP(&user, "user", "u", "none", "anywhere user")
@@ -104,7 +104,7 @@ func run(_ *cobra.Command, _ []string) error {
 	h := log.NewHeader("agentMain")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	a := agent.InitAnyWhereAgent(agentGroup, agentId, serverIp, user, password, serverPort)
+	a := agent.InitAnyWhereAgent(zoneName, agentId, serverIp, user, password, serverPort)
 	if err := a.SetCredentials(certFile, keyFile, caFile); err != nil {
 		return err
 	}

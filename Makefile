@@ -39,11 +39,15 @@ build_agent/arm:
 	GOARCH=arm64 GOARM=7 go build ${LDFLAGS} -o bin/anywhere agent/main.go
 
 
-build_test_image: build ui
-	sudo $(DOCKER) build -t anywhered-test-image:latest -f test/dockerfiles/Dockerfile.server .
-	sudo $(DOCKER) build -t anywhere-test-image:latest -f test/dockerfiles/Dockerfile.agent .
+build_docker_image: build ui
+	sudo $(DOCKER) build -t anywhered-test-image:latest -f docker-build/Dockerfile.server .
+	sudo $(DOCKER) build -t anywhere-test-image:latest -f docker-build/Dockerfile.agent .
 
-docker_test: docker_test_clean build_test_image
+upload_docker_img: build ui
+	sudo $(DOCKER) build -t 10.0.0.2:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION} -f docker-build/Dockerfile.agent .
+	sudo $(DOCKER) push 10.0.0.2:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION}
+
+docker_test: docker_test_clean build_docker_image
 	sudo $(DOCKER-COMPOSE) -f test/composefiles/docker-compose.yml up -d
 	sleep 20 #wait mysql init
 	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.2:5000/mysql/mysql_client:8.0.19 -h172.90.101.11 -P4444 -proot -e "select @@version"
@@ -91,9 +95,6 @@ upload_x86: build ui
 	curl -T anywhere-latest.tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
 	rm -rf anywhere-$(VERSION).tar.gz
 	rm -rf anywhere-latest.tar.gz
-upload_docker_img: build ui
-	sudo $(DOCKER) build -t 10.0.0.2:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION} -f docker-build/Dockerfile.agent .
-	sudo $(DOCKER) push 10.0.0.2:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION}
 upload_release:
 	mv anywhere-$(VERSION).tar.gz /var/www/html/
 	rm -rf /var/www/html/anywhere-latest.tar.gz && mv anywhere-latest.tar.gz /var/www/html/
