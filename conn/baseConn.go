@@ -12,21 +12,24 @@ var ErrNilConn = fmt.Errorf("empty net.Conn")
 
 type WrappedConn struct {
 	remoteName      string
+	connRwMu        sync.RWMutex
 	conn            net.Conn
-	statusMutex     sync.RWMutex
+	statusRwMutex   sync.RWMutex
 	CreateTime      time.Time
 	LastAckSendTime time.Time
 	LastAckRcvTime  time.Time
 }
 
 func (c *WrappedConn) SetAck(sendTime, rcvTime time.Time) {
-	c.statusMutex.Lock()
-	defer c.statusMutex.Unlock()
+	c.statusRwMutex.Lock()
+	defer c.statusRwMutex.Unlock()
 	c.LastAckSendTime = sendTime
 	c.LastAckRcvTime = rcvTime
 }
 
 func (c *WrappedConn) Send(m interface{}) error {
+	c.connRwMu.RLock()
+	defer c.connRwMu.RUnlock()
 	if c.conn == nil {
 		return ErrNilConn
 	}
@@ -41,6 +44,8 @@ func (c *WrappedConn) Send(m interface{}) error {
 }
 
 func (c *WrappedConn) Receive(rsp interface{}) error {
+	c.connRwMu.RLock()
+	defer c.connRwMu.RUnlock()
 	if c.conn == nil {
 		return ErrNilConn
 	}
@@ -52,6 +57,8 @@ func (c *WrappedConn) Receive(rsp interface{}) error {
 }
 
 func (c *WrappedConn) Close() error {
+	c.connRwMu.Lock()
+	defer c.connRwMu.Unlock()
 	if c.conn == nil {
 		return nil
 	}
@@ -96,7 +103,7 @@ func NewWrappedConn(remoteName string, c net.Conn) *WrappedConn {
 	return &WrappedConn{
 		remoteName:      remoteName,
 		conn:            c,
-		statusMutex:     sync.RWMutex{},
+		statusRwMutex:   sync.RWMutex{},
 		CreateTime:      time.Now(),
 		LastAckSendTime: time.Time{},
 		LastAckRcvTime:  time.Time{},

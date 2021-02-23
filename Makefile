@@ -53,7 +53,9 @@ docker_test: docker_test_clean build_test_image
 	sudo $(DOCKER) exec -t composefiles_anywhered_1 bash -c "/usr/local/anywhere/bin/anywhered agent list"
 	sudo $(DOCKER) exec -t composefiles_anywhered_1 bash -c "/usr/local/anywhere/bin/anywhered proxy list"
 	sudo $(DOCKER) logs composefiles_anywhered_1
-	sudo $(DOCKER) logs composefiles_anywhere_1
+	sudo $(DOCKER) logs composefiles_anywhere-1_1
+	sudo $(DOCKER) logs composefiles_anywhere-2_1
+	sudo $(DOCKER) logs composefiles_anywhere-3_1
 	sudo $(DOCKER-COMPOSE) -f test/composefiles/docker-compose.yml down
 	sudo $(DOCKER) rmi anywhere-test-image:latest
 	sudo $(DOCKER) rmi anywhered-test-image:latest
