@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cntechpower/anywhere/agent/anywhereAgent"
+	"github.com/cntechpower/anywhere/agent/agent"
 	pb "github.com/cntechpower/anywhere/agent/rpc/definitions"
 	"github.com/cntechpower/anywhere/util"
 	"github.com/cntechpower/utils/log"
@@ -19,7 +19,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func StartRpcServer(agent *anywhereAgent.Agent, addr string, errChan chan error) {
+func StartRpcServer(agent *agent.Agent, addr string, errChan chan error) {
 	if err := util.CheckAddrValid(addr); err != nil {
 		errChan <- err
 		return

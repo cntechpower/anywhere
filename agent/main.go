@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cntechpower/anywhere/agent/anywhereAgent"
+	"github.com/cntechpower/anywhere/agent/agent"
 	"github.com/cntechpower/anywhere/agent/handler"
 	"github.com/cntechpower/anywhere/util"
 	"github.com/cntechpower/utils/log"
@@ -104,7 +104,7 @@ func run(_ *cobra.Command, _ []string) error {
 	h := log.NewHeader("agentMain")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	a := anywhereAgent.InitAnyWhereAgent(agentGroup, agentId, serverIp, user, password, serverPort)
+	a := agent.InitAnyWhereAgent(agentGroup, agentId, serverIp, user, password, serverPort)
 	if err := a.SetCredentials(certFile, keyFile, caFile); err != nil {
 		return err
 	}

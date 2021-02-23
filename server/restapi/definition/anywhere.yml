@@ -196,7 +196,7 @@ definitions:
     properties:
       userName:
         type: string
-      groupName:
+      zoneName:
         type: string
       agentId:
         type: string

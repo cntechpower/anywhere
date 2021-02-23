@@ -300,9 +300,6 @@ func init() {
         "agentId": {
           "type": "string"
         },
-        "groupName": {
-          "type": "string"
-        },
         "lastAckRcv": {
           "type": "string"
         },
@@ -313,6 +310,9 @@ func init() {
           "type": "integer"
         },
         "userName": {
+          "type": "string"
+        },
+        "zoneName": {
           "type": "string"
         }
       }
@@ -684,9 +684,6 @@ func init() {
         "agentId": {
           "type": "string"
         },
-        "groupName": {
-          "type": "string"
-        },
         "lastAckRcv": {
           "type": "string"
         },
@@ -697,6 +694,9 @@ func init() {
           "type": "integer"
         },
         "userName": {
+          "type": "string"
+        },
+        "zoneName": {
           "type": "string"
         }
       }

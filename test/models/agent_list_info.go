@@ -21,9 +21,6 @@ type AgentListInfo struct {
 	// agent Id
 	AgentID string `json:"agentId,omitempty"`
 
-	// group name
-	GroupName string `json:"groupName,omitempty"`
-
 	// last ack rcv
 	LastAckRcv string `json:"lastAckRcv,omitempty"`
 
@@ -35,6 +32,9 @@ type AgentListInfo struct {
 
 	// user name
 	UserName string `json:"userName,omitempty"`
+
+	// zone name
+	ZoneName string `json:"zoneName,omitempty"`
 }
 
 // Validate validates this agent list info

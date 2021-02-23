@@ -6,16 +6,11 @@ import (
 	"crypto/tls"
 	"net/http"
 
-	handler "github.com/cntechpower/anywhere/server/http"
-	"github.com/cntechpower/anywhere/server/restapi/api/models"
-
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
 
 	"github.com/cntechpower/anywhere/server/restapi/api/restapi/operations"
-
-	"github.com/rs/cors"
 )
 
 //go:generate swagger generate server --target ../../api --name AnywhereServer --spec ../../definition/anywhere.yml --exclude-main
@@ -34,63 +29,47 @@ func configureAPI(api *operations.AnywhereServerAPI) http.Handler {
 	// Example:
 	// api.Logger = log.Printf
 
-	//api.JSONConsumer = runtime.JSONConsumer()
+	api.UrlformConsumer = runtime.DiscardConsumer
 
 	api.JSONProducer = runtime.JSONProducer()
 
-	api.GetV1AgentListHandler = operations.GetV1AgentListHandlerFunc(func(params operations.GetV1AgentListParams) middleware.Responder {
-		res, err := handler.ListAgentV1()
-		if err != nil {
-			return operations.NewGetV1AgentListDefault(500).WithPayload(models.GenericErrors(err.Error()))
-		} else {
-			return operations.NewGetV1AgentListOK().WithPayload(res)
-		}
+	if api.GetV1AgentListHandler == nil {
+		api.GetV1AgentListHandler = operations.GetV1AgentListHandlerFunc(func(params operations.GetV1AgentListParams) middleware.Responder {
+			return middleware.NotImplemented("operation operations.GetV1AgentList has not yet been implemented")
+		})
+	}
+	if api.GetV1ProxyListHandler == nil {
+		api.GetV1ProxyListHandler = operations.GetV1ProxyListHandlerFunc(func(params operations.GetV1ProxyListParams) middleware.Responder {
+			return middleware.NotImplemented("operation operations.GetV1ProxyList has not yet been implemented")
+		})
+	}
+	if api.GetV1SummaryHandler == nil {
+		api.GetV1SummaryHandler = operations.GetV1SummaryHandlerFunc(func(params operations.GetV1SummaryParams) middleware.Responder {
+			return middleware.NotImplemented("operation operations.GetV1Summary has not yet been implemented")
+		})
+	}
+	if api.GetV1SupportIPHandler == nil {
+		api.GetV1SupportIPHandler = operations.GetV1SupportIPHandlerFunc(func(params operations.GetV1SupportIPParams) middleware.Responder {
+			return middleware.NotImplemented("operation operations.GetV1SupportIP has not yet been implemented")
+		})
+	}
+	if api.PostV1ProxyAddHandler == nil {
+		api.PostV1ProxyAddHandler = operations.PostV1ProxyAddHandlerFunc(func(params operations.PostV1ProxyAddParams) middleware.Responder {
+			return middleware.NotImplemented("operation operations.PostV1ProxyAdd has not yet been implemented")
+		})
+	}
+	if api.PostV1ProxyDeleteHandler == nil {
+		api.PostV1ProxyDeleteHandler = operations.PostV1ProxyDeleteHandlerFunc(func(params operations.PostV1ProxyDeleteParams) middleware.Responder {
+			return middleware.NotImplemented("operation operations.PostV1ProxyDelete has not yet been implemented")
+		})
+	}
+	if api.PostV1ProxyUpdateHandler == nil {
+		api.PostV1ProxyUpdateHandler = operations.PostV1ProxyUpdateHandlerFunc(func(params operations.PostV1ProxyUpdateParams) middleware.Responder {
+			return middleware.NotImplemented("operation operations.PostV1ProxyUpdate has not yet been implemented")
+		})
+	}
 
-	})
-	api.GetV1ProxyListHandler = operations.GetV1ProxyListHandlerFunc(func(params operations.GetV1ProxyListParams) middleware.Responder {
-		res, err := handler.ListProxyV1()
-		if err != nil {
-			return operations.NewGetV1ProxyListDefault(500).WithPayload(models.GenericErrors(err.Error()))
-		} else {
-			return operations.NewGetV1ProxyListOK().WithPayload(res)
-		}
-	})
-	api.PostV1ProxyAddHandler = operations.PostV1ProxyAddHandlerFunc(func(params operations.PostV1ProxyAddParams) middleware.Responder {
-		res, err := handler.AddProxyConfigV1(params)
-		if err != nil {
-			return operations.NewPostV1ProxyAddDefault(500).WithPayload(models.GenericErrors(err.Error()))
-		} else {
-			return operations.NewPostV1ProxyAddOK().WithPayload(res)
-		}
-	})
-	api.GetV1SupportIPHandler = operations.GetV1SupportIPHandlerFunc(func(params operations.GetV1SupportIPParams) middleware.Responder {
-		res, err := handler.GetV1SupportIP(params)
-		if err != nil {
-			return operations.NewGetV1SupportIPDefault(500).WithPayload(models.GenericErrors(err.Error()))
-		}
-		return operations.NewGetV1SupportIPOK().WithPayload(res)
-	})
-	api.PostV1ProxyUpdateHandler = operations.PostV1ProxyUpdateHandlerFunc(func(params operations.PostV1ProxyUpdateParams) middleware.Responder {
-		res, err := handler.PostV1ProxyUpdateParams(params)
-		if err != nil {
-			return operations.NewPostV1ProxyAddDefault(500).WithPayload(models.GenericErrors(err.Error()))
-		}
-		return operations.NewPostV1ProxyAddOK().WithPayload(res)
-	})
-	api.PostV1ProxyDeleteHandler = operations.PostV1ProxyDeleteHandlerFunc(func(params operations.PostV1ProxyDeleteParams) middleware.Responder {
-		res, err := handler.PostV1ProxyDeleteHandler(params)
-		if err != nil {
-			return operations.NewPostV1ProxyDeleteDefault(500).WithPayload(models.GenericErrors(err.Error()))
-		}
-		return operations.NewPostV1ProxyDeleteOK().WithPayload(res)
-	})
-	api.GetV1SummaryHandler = operations.GetV1SummaryHandlerFunc(func(params operations.GetV1SummaryParams) middleware.Responder {
-		res, err := handler.GetSummaryV1()
-		if err != nil {
-			return operations.NewGetV1SummaryDefault(500).WithPayload(models.GenericErrors(err.Error()))
-		}
-		return operations.NewGetV1SummaryOK().WithPayload(res)
-	})
+	api.PreServerShutdown = func() {}
 
 	api.ServerShutdown = func() {}
 
@@ -118,5 +97,5 @@ func setupMiddlewares(handler http.Handler) http.Handler {
 // The middleware configuration happens before anything, this middleware also applies to serving the swagger.json document.
 // So this is a good place to plug in a panic handling middleware, logging and metrics
 func setupGlobalMiddleware(handler http.Handler) http.Handler {
-	return cors.AllowAll().Handler(handler)
+	return handler
 }

@@ -24,7 +24,6 @@ rpc:
 	protoc --go_out=plugins=grpc:. agent/rpc/definitions/*.proto
 api:
 	swagger23 generate server -t server/restapi/api --exclude-main -f server/restapi/definition/anywhere.yml
-	swagger23 generate client -t test  -f server/restapi/definition/anywhere.yml
 build_server:
 	mkdir -p bin/
 	rm -rf bin/anywhered
@@ -39,9 +38,6 @@ build_agent/arm:
 	rm -rf bin/anywhere
 	GOARCH=arm64 GOARM=7 go build ${LDFLAGS} -o bin/anywhere agent/main.go
 
-build_test_agent:
-	mkdir -p bin/
-	go build ${LDFLAGS} -o bin/test test/main.go
 
 build_test_image: build ui
 	sudo $(DOCKER) build -t anywhered-test-image:latest -f test/dockerfiles/Dockerfile.server .
@@ -103,8 +99,8 @@ upload_release:
 clean:
 	rm -rf bin/
 	rm -rf *.tar.gz
-build: vet build_server build_agent build_test_agent
-build_arm: vet build_server build_agent/arm build_test_agent
+build: vet build_server build_agent
+build_arm: vet build_server build_agent/arm
 
 build_release: vet build_server build_agent newkey ui
 	tar -czvf anywhere-$(VERSION).tar.gz bin/ credential/ static/

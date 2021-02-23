@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"github.com/cntechpower/anywhere/agent/anywhereAgent"
+	"github.com/cntechpower/anywhere/agent/agent"
 	pb "github.com/cntechpower/anywhere/agent/rpc/definitions"
 	"github.com/cntechpower/utils/log"
 
@@ -9,7 +9,7 @@ import (
 )
 
 type anywhereAgentRpcHandler struct {
-	a         *anywhereAgent.Agent
+	a         *agent.Agent
 	logHeader *log.Header
 }
 

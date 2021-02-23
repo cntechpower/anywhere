@@ -1,4 +1,4 @@
-package anywhereAgent
+package agent
 
 import (
 	"fmt"
