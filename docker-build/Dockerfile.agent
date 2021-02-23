@@ -6,7 +6,7 @@ RUN sed -i.backup 's/^enabled=1/enabled=0/' /etc/yum/pluginconf.d/fastestmirror.
 COPY bin/* /usr/local/anywhere/bin/
 COPY credential/* /usr/local/anywhere/credential/
 COPY static/* /usr/local/anywhere/static/
-COPY test/dockerfiles/Dockerfile.agent /docker-build/
+COPY docker-build/Dockerfile.agent /docker-build/
 ENV SERVER_ADDR=172.90.101.11
 ENV ZONE_NAME=asia-shanghai
 ENV USER_NAME=admin
