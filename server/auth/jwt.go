@@ -24,8 +24,10 @@ func NewJwtValidator() *JwtValidator {
 func (v *JwtValidator) Generate(userName string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user": userName,
-		"nbf":  time.Now(),
-		"exp":  time.Now().Add(8 * time.Hour),
+		//Not Before
+		"nbf": time.Now().Unix(),
+		//Expire Time
+		"exp": time.Now().Add(30 * time.Second).Unix(),
 	})
 	log.Infof(v.logHeader, "generate jwt for user %v", userName)
 	return token.SignedString(v.jwtKey)
@@ -33,17 +35,39 @@ func (v *JwtValidator) Generate(userName string) (string, error) {
 
 func (v *JwtValidator) Validate(userName string, auth string) bool {
 	if auth == "" {
-		log.Infof(v.logHeader, "validate jwt fail because jwt is empty")
+		v.logHeader.Errorf("validate jwt fail because jwt is empty")
 		return false
 	}
-	_, err := jwt.Parse(auth, func(token *jwt.Token) (i interface{}, e error) {
+	claims := jwt.MapClaims{}
+	_, err := jwt.ParseWithClaims(auth, claims, func(token *jwt.Token) (i interface{}, e error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return v.jwtKey, nil
 	})
 	if err != nil {
+		v.logHeader.Errorf("parse jwt with claims error: %v", err)
 		return false
 	}
+
+	//check userName
+	if userName != "" {
+		userNameI := claims["user"]
+		if userNameI == nil {
+			v.logHeader.Errorf("expected userName=%v, got nil", userName)
+			return false
+		}
+
+		userNameStr, ok := userNameI.(string)
+		if !ok {
+			v.logHeader.Errorf("expected userName=%v, got empty", userName)
+			return false
+		}
+		if userNameStr != userName {
+			v.logHeader.Errorf("expected userName=%v, got %v", userName, userNameStr)
+			return false
+		}
+	}
+
 	return true
 }

@@ -39,7 +39,7 @@ func (v *UserValidator) ValidateUserPass(userName, auth string) bool {
 
 func (v *UserValidator) ValidateOtp(userName, otpCode string) bool {
 	user, ok := v.userPassMap[userName]
-	if !ok || !totp.Validate(user.OtpCode, otpCode) {
+	if !ok || (user.OtpEnable && !totp.Validate(user.OtpCode, otpCode)) {
 		log.Infof(v.logHeader, "validate totp for user %v fail", userName)
 		return false
 	}

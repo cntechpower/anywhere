@@ -24,7 +24,8 @@ func sessionFilter(c *gin.Context) {
 	if c.Request.URL.Path == "/user/login" ||
 		c.Request.URL.Path == "/user_login" ||
 		c.Request.URL.Path == "/report" ||
-		c.Request.URL.Path == "/metrics" {
+		c.Request.URL.Path == "/metrics" ||
+		c.Request.URL.Path == "/manifest.json" {
 		c.Next()
 		return
 	}
@@ -32,12 +33,15 @@ func sessionFilter(c *gin.Context) {
 	authHeader := session.Get("auth")
 	tokenString, ok := authHeader.(string)
 	if !ok {
+		h.Warnf("get empty auth")
 		redirectToLogin(c)
+		return
 	}
 
 	if !jwtValidator.Validate("", tokenString) {
-		log.Warnf(h, "validate jwt for %s fail", c.ClientIP())
+		h.Warnf("validate jwt for %s fail", c.ClientIP())
 		redirectToLogin(c)
+		return
 	}
 }
 
@@ -75,4 +79,6 @@ func userLogin(c *gin.Context) {
 	_ = session.Save() //ignore session save error
 	c.Header("Access-Control-Allow-Origin", "*")
 	c.JSON(http.StatusOK, gin.H{"message": "login success"})
+	c.Next()
+	return
 }
