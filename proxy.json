@@ -2,8 +2,8 @@
     "ProxyConfigs": {
         "admin": [
             {
-                "group_id": "asia-shanghai",
                 "user_name": "admin",
+                "zone_name": "asia-shanghai",
                 "remote_port": 9495,
                 "local_addr": "10.0.0.2:80",
                 "is_white_list_enable": true,
