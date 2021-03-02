@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/contrib/static"
@@ -23,8 +24,19 @@ var jwtValidator *auth.JwtValidator
 var serverInst *server.Server
 
 var (
-	ErrUserPassIsRequired = gin.H{"message": "username/password/otp_code is required"}
-	ErrUserPassWrong      = gin.H{"message": "username/password wrong"}
+	RespUserPassIsRequired = gin.H{
+		"code": http.StatusBadRequest,
+		"data": "用户名/密码/动态码不能为空",
+	}
+	RespUserPassWrong = gin.H{
+		"code": http.StatusUnauthorized,
+		"data": "用户名或密码错误",
+	}
+
+	RespUserLoginSuccess = gin.H{
+		"code": http.StatusOK,
+		"data": "登陆成功",
+	}
 )
 
 func addUIRouter(router *gin.Engine) error {
@@ -71,6 +83,13 @@ func StartUIAndAPIService(restHandler http.Handler, serverI *server.Server, addr
 			},
 			Output:    nil,
 			SkipPaths: []string{"/static"},
+		}))
+		router.Use(cors.New(cors.Config{
+			AllowAllOrigins:        true,
+			AllowWildcard:          true,
+			AllowBrowserExtensions: true,
+			AllowWebSockets:        true,
+			AllowFiles:             true,
 		}))
 	} else {
 		gin.SetMode(gin.ReleaseMode)

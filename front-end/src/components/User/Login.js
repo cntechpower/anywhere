@@ -41,9 +41,7 @@ class NormalLoginForm extends React.Component {
           <Result
             status="error"
             title="登陆失败"
-            subTitle={
-              this.props.error.message + "    " + this.props.error.response
-            }
+            subTitle={this.props.error.response.data.data || ""}
             extra={[
               <Button
                 type="primary"

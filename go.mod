@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/cntechpower/utils v0.0.0-20210114162751-4711c3f01d0b
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/sessions v0.0.3
 	github.com/gin-gonic/contrib v0.0.0-20201101042839-6a891bf89f19
 	github.com/gin-gonic/gin v1.6.3
@@ -24,7 +25,6 @@ require (
 	github.com/pquerna/otp v1.2.0
 	github.com/prometheus/client_golang v1.9.0
 	github.com/robfig/cron/v3 v3.0.0
-	github.com/rs/cors v1.7.0
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.6.1
