@@ -17,8 +17,8 @@ import (
 	"github.com/cntechpower/anywhere/server/rpc/handler"
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/tls"
-	"github.com/cntechpower/anywhere/util"
 	"github.com/cntechpower/utils/log"
+	"github.com/cntechpower/utils/os"
 
 	"github.com/spf13/cobra"
 )
@@ -99,13 +99,13 @@ func run(_ *cobra.Command, _ []string) error {
 	}
 
 	//wait for os kill signal. TODO: graceful shutdown
-	go util.ListenTTINSignalLoop()
+	go os.ListenTTINSignalLoop()
 	//delay init of persist
 	go func() {
 		time.Sleep(20 * time.Second)
 		persist.Init(conf.Conf.MysqlDSN)
 	}()
-	serverExitChan := util.ListenKillSignal()
+	serverExitChan := os.ListenKillSignal()
 	select {
 	case <-serverExitChan:
 		log.Infof(h, "Server Existing")

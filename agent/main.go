@@ -6,8 +6,8 @@ import (
 
 	"github.com/cntechpower/anywhere/agent/agent"
 	"github.com/cntechpower/anywhere/agent/handler"
-	"github.com/cntechpower/anywhere/util"
 	"github.com/cntechpower/utils/log"
+	"github.com/cntechpower/utils/os"
 
 	"github.com/spf13/cobra"
 )
@@ -110,8 +110,8 @@ func run(_ *cobra.Command, _ []string) error {
 	}
 	go a.Start(ctx)
 
-	go util.ListenTTINSignalLoop()
-	serverExitChan := util.ListenKillSignal()
+	go os.ListenTTINSignalLoop()
+	serverExitChan := os.ListenKillSignal()
 	rpcExitChan := make(chan error, 0)
 	go handler.StartRpcServer(a, grpcAddress, rpcExitChan)
 
