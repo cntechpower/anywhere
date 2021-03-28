@@ -9,7 +9,11 @@ import (
 )
 
 func TestWhiteList(t *testing.T) {
-	log.InitLogger("")
+	log.Init(
+		log.WithStd(log.OutputTypeText),
+		log.WithEs("anywhere-unittest", "http://10.0.0.2:9200"),
+	)
+	defer log.Close()
 	Init("anywhere:anywhere@tcp(10.0.0.2:3306)/anywhere_test?charset=utf8mb4&parseTime=True&loc=Local&readTimeout=5s&timeout=5s")
 	_, err := DB.Exec("truncate table whitelist_deny_history")
 	assert.Equal(t, nil, err)
