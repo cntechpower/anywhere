@@ -26,7 +26,7 @@ var connIdToKill int
 func main() {
 	log.Init(
 		log.WithStd(log.OutputTypeText),
-		log.WithEs(app, "http://127.0.0.1:9200"),
+		log.WithEs(app, "http://10.0.0.2:9200"),
 	)
 	defer log.Close()
 	var rootCmd = &cobra.Command{
