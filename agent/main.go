@@ -26,7 +26,7 @@ var connIdToKill int
 func main() {
 	log.Init(
 		log.WithStd(log.OutputTypeText),
-		log.WithEs(app, "http://10.0.0.2:9200"),
+		log.WithKafka(app, "10.0.0.2:9093", "AsyncLogging"),
 	)
 	defer log.Close()
 	var rootCmd = &cobra.Command{
