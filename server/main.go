@@ -23,11 +23,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	app = "main.anywhered"
+)
+
 //server global config
 var version string
 
 func main() {
-	log.InitLogger("")
+	log.Init(
+		log.WithStd(log.OutputTypeText),
+		//log.WithKafka(app, "127.0.0.1:9094", "AsyncLogging"),
+	)
+	defer log.Close()
 	var rootCmd = &cobra.Command{
 		Use:   "anywhered",
 		Short: "This is A Proxy Server ",

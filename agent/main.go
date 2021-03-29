@@ -12,6 +12,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	app = "main.anywhere-agent"
+)
+
 var serverPort int
 var serverIp, agentId, user, password, certFile, keyFile, caFile string
 var zoneName, version string
@@ -20,7 +24,11 @@ var grpcAddress string
 var connIdToKill int
 
 func main() {
-	log.InitLogger("")
+	log.Init(
+		log.WithStd(log.OutputTypeText),
+		log.WithKafka(app, "10.0.0.2:9093", "AsyncLogging"),
+	)
+	defer log.Close()
 	var rootCmd = &cobra.Command{
 		Use:   "anywhere --help",
 		Short: "This is A Proxy Agent ",

@@ -3,7 +3,7 @@ module github.com/cntechpower/anywhere
 go 1.14
 
 require (
-	github.com/cntechpower/utils v0.0.0-20210114162751-4711c3f01d0b
+	github.com/cntechpower/utils v0.0.0-20210329153331-8b5c70bea91d
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/sessions v0.0.3
@@ -27,7 +27,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20200625001655-4c5254603344
 	google.golang.org/grpc v1.34.0
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect

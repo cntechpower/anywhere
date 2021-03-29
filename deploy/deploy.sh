@@ -5,7 +5,6 @@ timestamp=$(date +%Y%m%d%H%M%S)
 curr_version=$(git rev-parse --short HEAD)
 
 ## Stopping Services
-kill "$(pgrep anywhere)"||true
 ssh aliyun "kill \$(pgrep anywhere)||true"
 ssh pi "kill \$(pgrep anywhere)||true"
 
