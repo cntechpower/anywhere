@@ -33,7 +33,7 @@ var version string
 func main() {
 	log.Init(
 		log.WithStd(log.OutputTypeText),
-		log.WithKafka(app, "127.0.0.1:9094", "AsyncLogging"),
+		//log.WithKafka(app, "127.0.0.1:9094", "AsyncLogging"),
 	)
 	defer log.Close()
 	var rootCmd = &cobra.Command{
