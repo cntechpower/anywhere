@@ -10,34 +10,37 @@ import (
 	"github.com/cntechpower/utils/log"
 )
 
-func sessionFilter(c *gin.Context) {
-	h := log.NewHeader("sessionFilter")
-	if strings.HasPrefix(c.Request.URL.Path, "/static/") {
-		c.Next()
-		return
-	}
-	if c.Request.URL.Path == "/user/login" ||
-		c.Request.URL.Path == "/user_login" ||
-		c.Request.URL.Path == "/report" ||
-		c.Request.URL.Path == "/metrics" ||
-		c.Request.URL.Path == "/manifest.json" {
-		c.Next()
-		return
-	}
-	session := sessions.Default(c)
-	authHeader := session.Get("auth")
-	tokenString, ok := authHeader.(string)
-	if !ok {
-		h.Warnf("get empty auth")
-		rejectNoLogin(c)
-		return
+func loginCheck(onReject func(c *gin.Context)) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		h := log.NewHeader("loginCheck")
+		if strings.HasPrefix(c.Request.URL.Path, "/static/") {
+			c.Next()
+			return
+		}
+		if c.Request.URL.Path == "/user/login" ||
+			c.Request.URL.Path == "/user_login" ||
+			c.Request.URL.Path == "/report" ||
+			c.Request.URL.Path == "/metrics" ||
+			c.Request.URL.Path == "/manifest.json" {
+			c.Next()
+			return
+		}
+		session := sessions.Default(c)
+		authHeader := session.Get("auth")
+		tokenString, ok := authHeader.(string)
+		if !ok {
+			h.Warnf("get empty auth")
+			onReject(c)
+			return
+		}
+
+		if !jwtValidator.Validate("", tokenString) {
+			h.Warnf("validate jwt for %s fail", c.ClientIP())
+			onReject(c)
+			return
+		}
 	}
 
-	if !jwtValidator.Validate("", tokenString) {
-		h.Warnf("validate jwt for %s fail", c.ClientIP())
-		rejectNoLogin(c)
-		return
-	}
 }
 
 func userLogin(c *gin.Context) {
