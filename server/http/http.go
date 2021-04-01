@@ -45,20 +45,22 @@ func addUIRouter(router *gin.Engine, skipLogin bool) error {
 	}
 	staticHandler := static.Serve("/", static.LocalFile("./static", true))
 	router.Use(staticHandler)
-	opts := []gin.HandlerFunc{func(c *gin.Context) { c.File("./static/index.html") }}
+	opts := make([]gin.HandlerFunc, 0)
 	if !skipLogin {
 		opts = append(opts, loginCheck(redirectToLogin))
 	}
+	opts = append(opts, func(c *gin.Context) { c.File("./static/index.html") })
 	router.NoRoute(opts...)
 	return nil
 }
 
 func addAPIRouter(router *gin.Engine, restHandler http.Handler, skipLogin bool) error {
 	apiRouter := router.Group("/api")
-	opts := []gin.HandlerFunc{gin.WrapH(restHandler)}
+	opts := make([]gin.HandlerFunc, 0)
 	if !skipLogin {
 		opts = append(opts, loginCheck(rejectNoLogin))
 	}
+	opts = append(opts, gin.WrapH(restHandler))
 	apiRouter.Any("/*any", opts...)
 	return nil
 }
