@@ -39,27 +39,22 @@ var (
 	}
 )
 
-func addUIRouter(router *gin.Engine, skipLogin bool) error {
+func addUIRouter(router *gin.Engine) error {
 	if !util.CheckPathExist("./static") {
 		return fmt.Errorf("static dir not found")
 	}
 	staticHandler := static.Serve("/", static.LocalFile("./static", true))
 	router.Use(staticHandler)
-	opts := []gin.HandlerFunc{func(c *gin.Context) { c.File("./static/index.html") }}
-	if !skipLogin {
-		opts = append(opts, loginCheck(redirectToLogin))
-	}
-	router.NoRoute(opts...)
+	router.NoRoute(func(c *gin.Context) {
+		c.File("./static/index.html")
+	})
+
 	return nil
 }
 
-func addAPIRouter(router *gin.Engine, restHandler http.Handler, skipLogin bool) error {
+func addAPIRouter(router *gin.Engine, restHandler http.Handler) error {
 	apiRouter := router.Group("/api")
-	opts := []gin.HandlerFunc{gin.WrapH(restHandler)}
-	if !skipLogin {
-		opts = append(opts, loginCheck(rejectNoLogin))
-	}
-	apiRouter.Any("/*any", opts...)
+	apiRouter.Any("/*any", gin.WrapH(restHandler))
 	return nil
 }
 
@@ -105,12 +100,16 @@ func StartUIAndAPIService(restHandler http.Handler, serverI *server.Server, addr
 	//session auth
 	store := cookie.NewStore([]byte(util.RandString(16)))
 	router.Use(sessions.Sessions("anywhere", store))
+	//support frontend development
+	if !skipLogin {
+		router.Use(sessionFilter)
+	}
 
 	router.POST("/user_login", userLogin)
-	if err := addUIRouter(router, skipLogin); err != nil {
+	if err := addUIRouter(router); err != nil {
 		errChan <- err
 	}
-	if err := addAPIRouter(router, restHandler, skipLogin); err != nil {
+	if err := addAPIRouter(router, restHandler); err != nil {
 		errChan <- err
 	}
 	_, port, _ := util.GetIpPortByAddr(addr)
