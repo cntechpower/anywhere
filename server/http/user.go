@@ -29,13 +29,13 @@ func sessionFilter(c *gin.Context) {
 	tokenString, ok := authHeader.(string)
 	if !ok {
 		h.Warnf("get empty auth")
-		rejectNoLogin(c)
+		redirectToLogin(c)
 		return
 	}
 
 	if !jwtValidator.Validate("", tokenString) {
 		h.Warnf("validate jwt for %s fail", c.ClientIP())
-		rejectNoLogin(c)
+		redirectToLogin(c)
 		return
 	}
 }
