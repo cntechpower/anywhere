@@ -17,6 +17,7 @@ type Interface interface {
 	//status
 	Info() *model.AgentInfoInServer
 	IsHealthy() bool
+	LastAckTime() time.Time
 }
 
 type Agent struct {
@@ -126,4 +127,8 @@ func (a *Agent) handleAdminConnection() {
 
 func (a *Agent) IsHealthy() bool {
 	return a.adminConn.IsValid()
+}
+
+func (a *Agent) LastAckTime() time.Time {
+	return a.adminConn.LastAckRcvTime
 }
