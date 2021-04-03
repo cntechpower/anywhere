@@ -65,101 +65,114 @@ func NewZone(userName, zoneName string) IZone {
 	}
 	z.connectionPool = conn.NewConnectionPool(z.requestNewProxyConn)
 	_ = z.restoreProxyConfig()
+	go z.houseKeepLoop()
 	return z
 }
 
-func (g *Zone) RegisterAgent(agentId string, c net.Conn) (isUpdate bool) {
+func (z *Zone) houseKeepLoop() {
+	ticker := time.NewTicker(time.Second * 60)
+	for range ticker.C {
+		z.agentsRwMutex.Lock()
+		for name, agent := range z.agents {
+			if agent.LastAckTime().Add(time.Minute * 5).Before(time.Now()) {
+				delete(z.agents, name)
+			}
+		}
+	}
+}
+
+func (z *Zone) RegisterAgent(agentId string, c net.Conn) (isUpdate bool) {
 	h := log.NewHeader("RegisterAgent")
-	g.agentsRwMutex.Lock()
-	a, ok := g.agents[agentId]
+	z.agentsRwMutex.Lock()
+	a, ok := z.agents[agentId]
 	isUpdate = ok
 	if isUpdate {
 		//close(s.agents[info.id].CloseChan)
-		h.Info("reset admin conn for user: %v, zoneName: %v, agentId: %v", g.userName, g.zoneName, agentId)
+		h.Info("reset admin conn for user: %v, zoneName: %v, agentId: %v", z.userName, z.zoneName, agentId)
 		a.ResetAdminConn(c)
 	} else {
-		h.Info("build admin conn for user: %v, zoneName: %v, agentId: %v", g.userName, g.zoneName, agentId)
-		g.agents[agentId] = NewAgentInfo(g.userName, g.zoneName, agentId, c, make(chan error, 99))
+		h.Info("build admin conn for user: %v, zoneName: %v, agentId: %v", z.userName, z.zoneName, agentId)
+		z.agents[agentId] = NewAgentInfo(z.userName, z.zoneName, agentId, c, make(chan error, 99))
 	}
-	g.agentsRwMutex.Unlock()
+	z.agentsRwMutex.Unlock()
 
 	return isUpdate
 }
 
-func (g *Zone) IsAgentExists(agentId string) bool {
-	g.agentsRwMutex.Lock()
-	defer g.agentsRwMutex.Unlock()
-	_, ok := g.agents[agentId]
+func (z *Zone) IsAgentExists(agentId string) bool {
+	z.agentsRwMutex.Lock()
+	defer z.agentsRwMutex.Unlock()
+	_, ok := z.agents[agentId]
 	return ok
 }
 
-func (g *Zone) GetCurrentConnectionCount() int {
-	return g.joinedConns.Count()
+func (z *Zone) GetCurrentConnectionCount() int {
+	return z.joinedConns.Count()
 }
 
-func (g *Zone) getProxyConfigMapKey(remotePort int, localAddr string) string {
+func (z *Zone) getProxyConfigMapKey(remotePort int, localAddr string) string {
 	return fmt.Sprintf("%v:%v", remotePort, localAddr)
 }
-func (g *Zone) AddProxyConfig(config *model.ProxyConfig) error {
+func (z *Zone) AddProxyConfig(config *model.ProxyConfig) error {
 	h := log.NewHeader("AddProxyConfig")
-	key := g.getProxyConfigMapKey(config.RemotePort, config.LocalAddr)
-	if _, exist := g.proxyConfigs[key]; exist {
-		return fmt.Errorf("proxy config %v is already exist in zone  %v", key, g.zoneName)
+	key := z.getProxyConfigMapKey(config.RemotePort, config.LocalAddr)
+	if _, exist := z.proxyConfigs[key]; exist {
+		return fmt.Errorf("proxy config %v is already exist in zone  %v", key, z.zoneName)
 	}
-	g.proxyConfigMutex.Lock()
-	defer g.proxyConfigMutex.Unlock()
+	z.proxyConfigMutex.Lock()
+	defer z.proxyConfigMutex.Unlock()
 	log.Infof(h, "adding proxy config: %v", config)
 	closeChan := make(chan struct{}, 0)
 	pConfig := &ProxyConfig{
 		ProxyConfig: config,
 		closeChan:   closeChan,
 	}
-	go g.handleAddProxyConfig(pConfig)
+	go z.handleAddProxyConfig(pConfig)
 	log.Infof(h, "add %v done", config)
-	g.proxyConfigs[key] = pConfig
+	z.proxyConfigs[key] = pConfig
 	return nil
 }
 
-func (g *Zone) RemoveProxyConfig(remotePort int, localAddr string) error {
-	key := g.getProxyConfigMapKey(remotePort, localAddr)
-	c, ok := g.proxyConfigs[key]
+func (z *Zone) RemoveProxyConfig(remotePort int, localAddr string) error {
+	key := z.getProxyConfigMapKey(remotePort, localAddr)
+	c, ok := z.proxyConfigs[key]
 	if !ok {
 		return fmt.Errorf("no such proxy config")
 	}
 	close(c.closeChan)
-	g.proxyConfigMutex.Lock()
-	defer g.proxyConfigMutex.Unlock()
-	delete(g.proxyConfigs, key)
+	z.proxyConfigMutex.Lock()
+	defer z.proxyConfigMutex.Unlock()
+	delete(z.proxyConfigs, key)
 	return nil
 }
 
-func (g *Zone) Infos() (res []*model.AgentInfoInServer) {
+func (z *Zone) Infos() (res []*model.AgentInfoInServer) {
 	res = make([]*model.AgentInfoInServer, 0)
-	for _, a := range g.agents {
+	for _, a := range z.agents {
 		res = append(res, a.Info())
 	}
 	return
 }
 
-func (g *Zone) GetProxyConfigCount() int {
-	g.proxyConfigMutex.Lock()
-	defer g.proxyConfigMutex.Unlock()
-	return len(g.proxyConfigs)
+func (z *Zone) GetProxyConfigCount() int {
+	z.proxyConfigMutex.Lock()
+	defer z.proxyConfigMutex.Unlock()
+	return len(z.proxyConfigs)
 }
 
-func (g *Zone) ListProxyConfigs() []*model.ProxyConfig {
-	g.proxyConfigMutex.Lock()
-	defer g.proxyConfigMutex.Unlock()
-	if len(g.proxyConfigs) == 0 {
+func (z *Zone) ListProxyConfigs() []*model.ProxyConfig {
+	z.proxyConfigMutex.Lock()
+	defer z.proxyConfigMutex.Unlock()
+	if len(z.proxyConfigs) == 0 {
 		return nil
 	}
-	res := make([]*model.ProxyConfig, 0, len(g.proxyConfigs))
-	for _, config := range g.proxyConfigs {
+	res := make([]*model.ProxyConfig, 0, len(z.proxyConfigs))
+	for _, config := range z.proxyConfigs {
 		//fmt.Printf("ListProxyConfigs: %v\n", config.NetworkFlowLocalToRemoteInBytes)
 		//fmt.Printf("ListProxyConfigs: %v\n", config.NetworkFlowRemoteToLocalInBytes)
 		res = append(res, &model.ProxyConfig{
-			UserName:                        g.userName,
-			ZoneName:                        g.zoneName,
+			UserName:                        z.userName,
+			ZoneName:                        z.zoneName,
 			RemotePort:                      config.RemotePort,
 			LocalAddr:                       config.LocalAddr,
 			IsWhiteListOn:                   config.IsWhiteListOn,
@@ -173,11 +186,11 @@ func (g *Zone) ListProxyConfigs() []*model.ProxyConfig {
 	return res
 }
 
-func (g *Zone) UpdateProxyConfigWhiteListConfig(remotePort int, localAddr, whiteCidrs string, whiteListEnable bool) error {
-	key := g.getProxyConfigMapKey(remotePort, localAddr)
-	config, ok := g.proxyConfigs[key]
+func (z *Zone) UpdateProxyConfigWhiteListConfig(remotePort int, localAddr, whiteCidrs string, whiteListEnable bool) error {
+	key := z.getProxyConfigMapKey(remotePort, localAddr)
+	config, ok := z.proxyConfigs[key]
 	if !ok {
-		return fmt.Errorf("no such proxy config %v in zone %v", localAddr, g.zoneName)
+		return fmt.Errorf("no such proxy config %v in zone %v", localAddr, z.zoneName)
 	}
 	config.acl.SetEnable(whiteListEnable)
 	err := config.acl.AddCidrToList(whiteCidrs, true)
@@ -189,30 +202,30 @@ func (g *Zone) UpdateProxyConfigWhiteListConfig(remotePort int, localAddr, white
 
 }
 
-func (g *Zone) AddProxyConfigWhiteListConfig(remotePort int, localAddr, whiteCidrs string) error {
-	key := g.getProxyConfigMapKey(remotePort, localAddr)
-	config, ok := g.proxyConfigs[key]
+func (z *Zone) AddProxyConfigWhiteListConfig(remotePort int, localAddr, whiteCidrs string) error {
+	key := z.getProxyConfigMapKey(remotePort, localAddr)
+	config, ok := z.proxyConfigs[key]
 	if !ok {
-		return fmt.Errorf("no such proxy config %v in zone %v", localAddr, g.zoneName)
+		return fmt.Errorf("no such proxy config %v in zone %v", localAddr, z.zoneName)
 	}
 	return config.acl.AddCidrToList(whiteCidrs, false)
 
 }
 
-func (g *Zone) handleAddProxyConfig(config *ProxyConfig) {
+func (z *Zone) handleAddProxyConfig(config *ProxyConfig) {
 	h := log.NewHeader(fmt.Sprintf("tunnel-%v-(%v->%v)", config.UserName, config.RemotePort, config.LocalAddr))
 	h.Infof("starting new port listening")
 	ln, err := util.ListenTcp("0.0.0.0:" + strconv.Itoa(config.RemotePort))
 	if err != nil {
-		errMsg := fmt.Errorf("zone %v handleAddProxyConfig got error %v", g.zoneName, err)
+		errMsg := fmt.Errorf("zone %v handleAddProxyConfig got error %v", z.zoneName, err)
 		log.Errorf(h, "%v", errMsg)
-		g.errChan <- errMsg
+		z.errChan <- errMsg
 		return
 	}
-	go g.handleTunnelConnection(h, ln, config)
+	go z.handleTunnelConnection(h, ln, config)
 }
 
-func (g *Zone) handleTunnelConnection(h *log.Header, ln *net.TCPListener, config *ProxyConfig) {
+func (z *Zone) handleTunnelConnection(h *log.Header, ln *net.TCPListener, config *ProxyConfig) {
 	closeFlag := false
 	go func() {
 		<-config.closeChan
@@ -252,32 +265,32 @@ func (g *Zone) handleTunnelConnection(h *log.Header, ln *net.TCPListener, config
 			config.AddConnectRejectedCount(1)
 			continue
 		}
-		go g.handleProxyConnection(c, config.LocalAddr, onConnectionEnd)
+		go z.handleProxyConnection(c, config.LocalAddr, onConnectionEnd)
 
 	}
 }
 
-func (g *Zone) handleProxyConnection(c net.Conn, localAddr string, fnOnEnd func(localToRemoteBytes, remoteToLocalBytes uint64)) {
+func (z *Zone) handleProxyConnection(c net.Conn, localAddr string, fnOnEnd func(localToRemoteBytes, remoteToLocalBytes uint64)) {
 	h := log.NewHeader(fmt.Sprintf("proxy: %v->%v", c.RemoteAddr().String(), localAddr))
-	dst, err := g.connectionPool.Get(localAddr)
+	dst, err := z.connectionPool.Get(localAddr)
 	if err != nil {
 		log.Infof(h, "get conn error: %v", err)
 		_ = c.Close()
 		return
 	}
-	idx := g.joinedConns.Add(conn.NewWrappedConn("other", c), dst)
+	idx := z.joinedConns.Add(conn.NewWrappedConn("other", c), dst)
 	localToRemoteBytes, remoteToLocalBytes := conn.JoinConn(dst.GetConn(), c)
 	fnOnEnd(localToRemoteBytes, remoteToLocalBytes)
-	if err := g.joinedConns.Remove(idx); err != nil {
+	if err := z.joinedConns.Remove(idx); err != nil {
 		log.Errorf(h, "remove conn from list error: %v", err)
 	}
 	log.Infof(h, "proxy conn closed")
 
 }
 
-func (g *Zone) chooseAgent() Interface {
+func (z *Zone) chooseAgent() Interface {
 	h := log.NewHeader("chooseAgent")
-	for _, i := range g.agents {
+	for _, i := range z.agents {
 		if i != nil && i.IsHealthy() {
 			h.Infof("chosen agent %v", i.Info().Id)
 			return i
@@ -287,41 +300,41 @@ func (g *Zone) chooseAgent() Interface {
 	return nil
 }
 
-func (g *Zone) requestNewProxyConn(localAddr string) {
+func (z *Zone) requestNewProxyConn(localAddr string) {
 	h := log.NewHeader("requestNewProxyConn")
-	a := g.chooseAgent()
+	a := z.chooseAgent()
 	if a == nil {
 		return
 	}
 	if err := a.AskProxyConn(localAddr); err != nil {
 		errMsg := fmt.Errorf("agent %v request for new proxy conn error %v", a.Info().Id, err)
 		log.Errorf(h, "%v", err)
-		g.errChan <- errMsg
+		z.errChan <- errMsg
 	}
 }
 
-func (g *Zone) ListJoinedConns() []*model.JoinedConnListItem {
-	return g.joinedConns.List()
+func (z *Zone) ListJoinedConns() []*model.JoinedConnListItem {
+	return z.joinedConns.List()
 }
 
-func (g *Zone) KillJoinedConnById(id int) error {
-	return g.joinedConns.KillById(id)
+func (z *Zone) KillJoinedConnById(id int) error {
+	return z.joinedConns.KillById(id)
 }
 
-func (g *Zone) FlushJoinedConns() {
-	g.joinedConns.Flush()
+func (z *Zone) FlushJoinedConns() {
+	z.joinedConns.Flush()
 }
 
-func (g *Zone) restoreProxyConfig() error {
-	header := log.NewHeader(fmt.Sprintf("restoreProxyConfig_%s_%s", g.userName, g.zoneName))
+func (z *Zone) restoreProxyConfig() error {
+	header := log.NewHeader(fmt.Sprintf("restoreProxyConfig_%s_%s", z.userName, z.zoneName))
 	configs, err := conf.ParseProxyConfigFile()
 	if err != nil {
 		return err
 	}
 	if err := configs.ProxyConfigIterator(func(userName string, config *model.ProxyConfig) error {
 		var err error
-		if g.userName == config.UserName && g.zoneName == config.ZoneName {
-			err = g.AddProxyConfig(config)
+		if z.userName == config.UserName && z.zoneName == config.ZoneName {
+			err = z.AddProxyConfig(config)
 			header.Infof("restore config for user %v, zone %v remotePort(%v), localAddr(%v), error: %v",
 				config.UserName, config.ZoneName, config.RemotePort, config.LocalAddr, err)
 		}
@@ -332,6 +345,6 @@ func (g *Zone) restoreProxyConfig() error {
 	return nil
 }
 
-func (g *Zone) PutProxyConn(fromAgentId, localAddr string, c net.Conn) error {
-	return g.connectionPool.Put(localAddr, conn.NewWrappedConn(fromAgentId, c))
+func (z *Zone) PutProxyConn(fromAgentId, localAddr string, c net.Conn) error {
+	return z.connectionPool.Put(localAddr, conn.NewWrappedConn(fromAgentId, c))
 }
