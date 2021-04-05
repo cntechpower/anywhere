@@ -76,7 +76,7 @@ func (z *Zone) houseKeepLoop() {
 		z.agentsRwMutex.Lock()
 		for name, agent := range z.agents {
 			if agent.LastAckRcvTime().Add(time.Minute * 5).Before(time.Now()) {
-				h.Infof("agent %v not receive ack for 5 min, will be delete")
+				h.Infof("agent %v not receive ack for 5 min, will be delete", name)
 				delete(z.agents, name)
 			}
 		}
