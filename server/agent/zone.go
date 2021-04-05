@@ -41,7 +41,7 @@ type Zone struct {
 	zoneName         string
 	userName         string
 	agentsRwMutex    sync.RWMutex
-	agents           map[string]Interface
+	agents           map[string]IAgent
 	proxyConfigs     map[string]*ProxyConfig
 	proxyConfigMutex sync.Mutex
 	connectionPool   conn.ConnectionPool
@@ -55,7 +55,7 @@ func NewZone(userName, zoneName string) IZone {
 	z := &Zone{
 		userName:         userName,
 		zoneName:         zoneName,
-		agents:           make(map[string]Interface, 0),
+		agents:           make(map[string]IAgent, 0),
 		proxyConfigs:     make(map[string]*ProxyConfig, 0),
 		proxyConfigMutex: sync.Mutex{},
 		errChan:          make(chan error, 1),
@@ -71,10 +71,12 @@ func NewZone(userName, zoneName string) IZone {
 
 func (z *Zone) houseKeepLoop() {
 	ticker := time.NewTicker(time.Second * 60)
+	h := log.NewHeader("houseKeepLoop")
 	for range ticker.C {
 		z.agentsRwMutex.Lock()
 		for name, agent := range z.agents {
-			if agent.LastAckTime().Add(time.Minute * 5).Before(time.Now()) {
+			if agent.LastAckRcvTime().Add(time.Minute * 5).Before(time.Now()) {
+				h.Infof("agent %v not receive ack for 5 min, will be delete")
 				delete(z.agents, name)
 			}
 		}
@@ -289,7 +291,7 @@ func (z *Zone) handleProxyConnection(c net.Conn, localAddr string, fnOnEnd func(
 
 }
 
-func (z *Zone) chooseAgent() Interface {
+func (z *Zone) chooseAgent() IAgent {
 	h := log.NewHeader("chooseAgent")
 	for _, i := range z.agents {
 		if i != nil && i.IsHealthy() {
