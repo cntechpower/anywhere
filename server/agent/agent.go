@@ -11,13 +11,13 @@ import (
 	"github.com/cntechpower/utils/log"
 )
 
-type Interface interface {
+type IAgent interface {
 	ResetAdminConn(c net.Conn)
 	AskProxyConn(proxyAddr string) error
 	//status
 	Info() *model.AgentInfoInServer
 	IsHealthy() bool
-	LastAckTime() time.Time
+	LastAckRcvTime() time.Time
 }
 
 type Agent struct {
@@ -129,6 +129,6 @@ func (a *Agent) IsHealthy() bool {
 	return a.adminConn.IsValid()
 }
 
-func (a *Agent) LastAckTime() time.Time {
+func (a *Agent) LastAckRcvTime() time.Time {
 	return a.adminConn.LastAckRcvTime
 }
