@@ -78,6 +78,7 @@ func (z *Zone) houseKeepLoop() {
 				delete(z.agents, name)
 			}
 		}
+		z.agentsRwMutex.Unlock()
 	}
 }
 
