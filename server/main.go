@@ -3,19 +3,23 @@ package main
 import (
 	"time"
 
-	"github.com/cntechpower/anywhere/server/cmd"
-	"github.com/cntechpower/anywhere/server/conf"
-	"github.com/cntechpower/anywhere/server/http"
-	"github.com/cntechpower/anywhere/server/persist"
 	"github.com/cntechpower/anywhere/server/restapi/api/restapi"
 	"github.com/cntechpower/anywhere/server/restapi/api/restapi/operations"
+	"github.com/go-openapi/loads"
+
+	"github.com/cntechpower/anywhere/server/http"
+
+	"github.com/cntechpower/anywhere/server/persist"
+
+	"github.com/cntechpower/anywhere/server/conf"
+
+	"github.com/cntechpower/anywhere/server/cmd"
 	"github.com/cntechpower/anywhere/server/rpc/handler"
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/tls"
 	"github.com/cntechpower/utils/log"
 	"github.com/cntechpower/utils/os"
 
-	"github.com/go-openapi/loads"
 	"github.com/spf13/cobra"
 )
 
@@ -29,7 +33,7 @@ var version string
 func main() {
 	log.Init(
 		log.WithStd(log.OutputTypeText),
-		log.WithEs(app, "http://127.0.0.1:9200"),
+		//log.WithKafka(app, "127.0.0.1:9094", "AsyncLogging"),
 	)
 	defer log.Close()
 	var rootCmd = &cobra.Command{
