@@ -117,7 +117,6 @@ func ListProxyConfigs() error {
 	table.SetAutoFormatHeaders(false)
 	table.SetHeader([]string{"UserName", "ZoneName", "ServerPort", "LocalAddr", "IsWhiteListOn", "IpWhiteList", "ConnectCount", "ConnectRejectCount", "TotalNetFlowsInMB"})
 	for _, config := range configs.Config {
-		fmt.Println(config.NetworkFlowRemoteToLocalInBytes)
 		table.Append([]string{
 			config.Username, config.ZoneName, strconv.FormatInt(config.RemotePort, 10),
 			config.LocalAddr, util.BoolToString(config.IsWhiteListOn), config.WhiteCidrList,
