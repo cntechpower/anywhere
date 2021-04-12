@@ -76,12 +76,16 @@ func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error)
       <th>外网端口</th>
       <th>内网地址</th>
       <th>白名单开关</th>
+      <th>连接次数</th>
+      <th>拒绝次数</th>
       <th>流量</th>
     </tr>
   </thead>
   <tbody>`)
 	totalFlows := float64(0)
 	whiteListDisable := 0
+	totalConnectCount := uint64(0)
+	totalConnectRejectCount := uint64(0)
 	zoneMap := make(map[string]struct{}, 0)
 	for idx, config := range configs {
 		flows := float64(config.NetworkFlowRemoteToLocalInBytes+config.NetworkFlowLocalToRemoteInBytes) / 1024 / 1024
@@ -90,6 +94,9 @@ func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error)
 		if !config.IsWhiteListOn {
 			whiteListDisable++
 		}
+		totalConnectCount += config.ProxyConnectCount
+		totalConnectRejectCount += config.ProxyConnectRejectCount
+
 		if idx < maxLines {
 			configsHtmlTable.WriteString(fmt.Sprintf(`
     <tr>
@@ -98,9 +105,13 @@ func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error)
       <td>%v</td>
       <td>%v</td>
       <td>%v</td>
+      <td>%v</td>
+      <td>%v</td>
       <td>%vMB</td>
     </tr>`,
-				config.UserName, config.ZoneName, config.RemotePort, config.LocalAddr, util.BoolToString(config.IsWhiteListOn),
+				config.UserName, config.ZoneName, config.RemotePort,
+				config.LocalAddr, util.BoolToString(config.IsWhiteListOn),
+				config.ProxyConnectCount, config.ProxyConnectRejectCount,
 				strconv.FormatFloat(flows, 'f', 5, 64)))
 		}
 	}
@@ -112,12 +123,16 @@ func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error)
           <td>--</td>
           <td>--</td>
           <td>未开启: %v</td>
+          <td>总连接次数: %v</td>
+          <td>总拒绝次数: %v</td>
           <td>总流量: %vMB</td>
         </tr>
       </tfoot>
    </tbody>
 </table>`,
-		len(zoneMap), whiteListDisable, strconv.FormatFloat(totalFlows, 'f', 5, 64)))
+		len(zoneMap), whiteListDisable,
+		totalConnectCount, totalConnectRejectCount,
+		strconv.FormatFloat(totalFlows, 'f', 5, 64)))
 	return configsHtmlTable.String(), nil
 }
 
