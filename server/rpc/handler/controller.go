@@ -115,13 +115,14 @@ func ListProxyConfigs() error {
 	}
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"UserName", "ZoneName", "ServerAddr", "LocalAddr", "IsWhiteListOn", "IpWhiteList", "ConnectCount", "ConnectRejectCount", "TotalNetFlowsInMB"})
+	table.SetHeader([]string{"UserName", "ZoneName", "ServerPort", "LocalAddr", "IsWhiteListOn", "IpWhiteList", "ConnectCount", "ConnectRejectCount", "TotalNetFlowsInMB"})
 	for _, config := range configs.Config {
+		fmt.Println(config.NetworkFlowRemoteToLocalInBytes)
 		table.Append([]string{
-			config.Username, config.ZoneName, strconv.Itoa(int(config.RemotePort)),
+			config.Username, config.ZoneName, strconv.FormatInt(config.RemotePort, 10),
 			config.LocalAddr, util.BoolToString(config.IsWhiteListOn), config.WhiteCidrList,
 			strconv.FormatInt(config.ProxyConnectCount, 10), strconv.FormatInt(config.ProxyConnectRejectCount, 10),
-			strconv.FormatInt((config.NetworkFlowRemoteToLocalInBytes+config.NetworkFlowLocalToRemoteInBytes)/1024/1024, 10),
+			strconv.FormatFloat(float64(config.NetworkFlowRemoteToLocalInBytes+config.NetworkFlowLocalToRemoteInBytes)/1024/1024, 'f', 5, 64),
 		})
 	}
 	table.Render()
