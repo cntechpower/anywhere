@@ -110,7 +110,7 @@ func run(_ *cobra.Command, _ []string) error {
 	go os.ListenTTINSignalLoop()
 	//delay init of persist
 	go func() {
-		time.Sleep(20 * time.Second)
+		time.Sleep(5 * time.Second)
 		persist.Init(conf.Conf.MysqlDSN)
 	}()
 	serverExitChan := os.ListenKillSignal()
