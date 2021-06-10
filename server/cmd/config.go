@@ -24,7 +24,7 @@ var resetConfigCmd = &cobra.Command{
 	},
 }
 
-func GetConfigCmd() *cobra.Command {
+func Config() *cobra.Command {
 	configCmd.AddCommand(resetConfigCmd)
 	return configCmd
 }

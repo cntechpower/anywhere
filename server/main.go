@@ -55,19 +55,19 @@ func main() {
 	//main service
 	rootCmd.AddCommand(startCmd)
 	//agent cmd
-	rootCmd.AddCommand(cmd.GetAgentCmd())
+	rootCmd.AddCommand(cmd.Agent())
 
 	//proxy cmd
-	rootCmd.AddCommand(cmd.GetProxyCmd())
+	rootCmd.AddCommand(cmd.Proxy())
 
 	//config file manage cmd
-	rootCmd.AddCommand(cmd.GetConfigCmd())
+	rootCmd.AddCommand(cmd.Config())
 
 	//conn cmd
-	rootCmd.AddCommand(cmd.GetConnCmd())
+	rootCmd.AddCommand(cmd.Conn())
 
 	//status cmd
-	rootCmd.AddCommand(cmd.GetStatusCmd())
+	rootCmd.AddCommand(cmd.Status())
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)
 	}

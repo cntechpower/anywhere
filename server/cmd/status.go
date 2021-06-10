@@ -24,7 +24,7 @@ var emailCmd = &cobra.Command{
 	},
 }
 
-func GetStatusCmd() *cobra.Command {
+func Status() *cobra.Command {
 	statusCmd.AddCommand(emailCmd)
 	return statusCmd
 }

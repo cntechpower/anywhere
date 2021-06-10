@@ -50,7 +50,7 @@ var connFlushCmd = &cobra.Command{
 	},
 }
 
-func GetConnCmd() *cobra.Command {
+func Conn() *cobra.Command {
 	connCmd.PersistentFlags().StringVar(&userName, "user", "", "user name ")
 	connListCmd.PersistentFlags().StringVar(&agentId, "agent-id", "", "agent id to list, leave blank to list all agent")
 	connCmd.AddCommand(connListCmd)

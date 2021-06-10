@@ -24,7 +24,7 @@ var agentListCmd = &cobra.Command{
 	},
 }
 
-func GetAgentCmd() *cobra.Command {
+func Agent() *cobra.Command {
 	agentCmd.AddCommand(agentListCmd)
 	return agentCmd
 }

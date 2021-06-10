@@ -93,7 +93,7 @@ var proxyUpdateCmd = &cobra.Command{
 	},
 }
 
-func GetProxyCmd() *cobra.Command {
+func Proxy() *cobra.Command {
 	proxyCmd.PersistentFlags().StringVar(&userName, "user", "", "user name")
 	proxyCmd.PersistentFlags().StringVar(&zoneName, "zone", "", "zone name")
 	proxyAddCmd.PersistentFlags().IntVar(&remotePort, "remote-addr", 0, "remote port")
