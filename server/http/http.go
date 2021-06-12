@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/cntechpower/anywhere/server/conf"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -128,6 +130,5 @@ func StartUIAndAPIService(restHandler http.Handler, serverI *server.Server, addr
 		ctx.String(http.StatusOK, html)
 	})
 	router.GET("/metrics", whiteListValidator.GinHandler, gin.WrapH(promhttp.Handler()))
-	errChan <- router.Run(addr)
-
+	errChan <- router.RunTLS(addr, conf.Conf.HttpSSL.CertFile, conf.Conf.HttpSSL.KeyFile)
 }

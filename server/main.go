@@ -78,7 +78,7 @@ func run(_ *cobra.Command, _ []string) error {
 	h := log.NewHeader("serverMain")
 	conf.Init()
 	s := server.InitServerInstance(conf.Conf.ServerId, conf.Conf.MainPort, conf.Conf.User)
-	tlsConfig, err := tls.ParseTlsConfig(conf.Conf.Ssl.CertFile, conf.Conf.Ssl.KeyFile, conf.Conf.Ssl.CaFile)
+	tlsConfig, err := tls.ParseTlsConfig(conf.Conf.AgentSsl.CertFile, conf.Conf.AgentSsl.KeyFile, conf.Conf.AgentSsl.CaFile)
 	if err != nil {
 		return err
 	}

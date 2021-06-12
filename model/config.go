@@ -6,7 +6,8 @@ type SystemConfig struct {
 	ReportCron       string      `json:"report_cron"`
 	ReportWhiteCidrs string      `json:"report_white_cidrs"`
 	MysqlDSN         string      `json:"mysql_dsn"`
-	Ssl              *SslConfig  `json:"ssl_config"`
+	HttpSSL          *SslConfig  `json:"http_ssl_config"`
+	AgentSsl         *SslConfig  `json:"ssl_config"`
 	UiConfig         *UiConfig   `json:"ui_config"`
 	User             *UserConfig `json:"user_config"`
 	SmtpConfig       *SmtpConfig `json:"smtp_config"`

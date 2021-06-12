@@ -151,7 +151,7 @@ var (
 		MainPort:         1111,
 		ReportCron:       "20 9 * * *",
 		ReportWhiteCidrs: "180.168.0.0/16,101.86.210.116/16,223.88.249.186/16,120.253.0.0/16",
-		Ssl: &model.SslConfig{
+		AgentSsl: &model.SslConfig{
 			CertFile: "credential/server.crt",
 			KeyFile:  "credential/server.key",
 			CaFile:   "credential/ca.crt",
@@ -272,15 +272,15 @@ func parseSystemConfigFile() (*model.SystemConfig, error) {
 		}
 	}
 
-	if config.Ssl != nil {
-		if !util.CheckPathExist(config.Ssl.CaFile) {
-			return nil, newConfigIllegalError("Ssl", "CaFile", fmt.Errorf("file not exist"))
+	if config.AgentSsl != nil {
+		if !util.CheckPathExist(config.AgentSsl.CaFile) {
+			return nil, newConfigIllegalError("AgentSsl", "CaFile", fmt.Errorf("file not exist"))
 		}
-		if !util.CheckPathExist(config.Ssl.KeyFile) {
-			return nil, newConfigIllegalError("Ssl", "KeyFile", fmt.Errorf("file not exist"))
+		if !util.CheckPathExist(config.AgentSsl.KeyFile) {
+			return nil, newConfigIllegalError("AgentSsl", "KeyFile", fmt.Errorf("file not exist"))
 		}
-		if !util.CheckPathExist(config.Ssl.CertFile) {
-			return nil, newConfigIllegalError("Ssl", "CertFile", fmt.Errorf("file not exist"))
+		if !util.CheckPathExist(config.AgentSsl.CertFile) {
+			return nil, newConfigIllegalError("AgentSsl", "CertFile", fmt.Errorf("file not exist"))
 		}
 	}
 
