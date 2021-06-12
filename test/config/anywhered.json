@@ -8,6 +8,11 @@
     "key_file_path": "credential/server.key",
     "ca_file_path": "credential/ca.crt"
   },
+  "http_ssl_config": {
+    "cert_file_path": "credential/http.crt",
+    "key_file_path": "credential/http.key",
+    "ca_file_path": "credential/ca.crt"
+  },
   "ui_config": {
     "skip_login": true,
     "grpc_addr": "127.0.0.1:1113",
