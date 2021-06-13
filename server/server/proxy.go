@@ -48,18 +48,18 @@ func (s *Server) AddProxyConfigByModel(config *model.ProxyConfig) error {
 	return nil
 }
 
-func (s *Server) RemoveProxyConfig(userName string, group string, remotePort int, localAddr string) error {
-	if !s.isZoneExist(userName, group) {
-		return fmt.Errorf("group %v not exist", group)
+func (s *Server) RemoveProxyConfig(userName string, zoneName string, remotePort int, localAddr string) error {
+	if !s.isZoneExist(userName, zoneName) {
+		return fmt.Errorf("zoneName %v not exist", zoneName)
 	}
 	if err := util.CheckAddrValid(localAddr); err != nil {
 		return fmt.Errorf("invalid localAddr %v, error: %v", localAddr, err)
 	}
 	s.agentsRwMutex.Lock()
 	defer s.agentsRwMutex.Unlock()
-	if err := s.zones[userName][group].RemoveProxyConfig(remotePort, localAddr); err != nil {
+	if err := s.zones[userName][zoneName].RemoveProxyConfig(remotePort, localAddr); err != nil {
 		return err
 	}
-	return conf.Remove(userName, group, remotePort)
+	return conf.Remove(userName, zoneName, remotePort)
 
 }

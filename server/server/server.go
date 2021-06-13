@@ -187,6 +187,19 @@ func (s *Server) ListProxyConfigs() []*model.ProxyConfig {
 	return res
 }
 
+func (s *Server) ListZones() []*model.ZoneInfo {
+	// we assume that we had 100 proxy config.
+	res := make([]*model.ZoneInfo, 0, 100)
+	s.agentsRwMutex.RLock()
+	defer s.agentsRwMutex.RUnlock()
+	for _, zones := range s.zones {
+		for _, z := range zones {
+			res = append(res, z.Info())
+		}
+	}
+	return res
+}
+
 func (s *Server) RegisterAgent(userName, zoneName, agentId string, c net.Conn) (isUpdate bool) {
 	if _, ok := s.zones[userName]; !ok {
 		s.zones[userName] = make(map[string]agent.IZone, 0)
@@ -243,14 +256,18 @@ func (s *Server) FlushJoinedConns() {
 	}
 }
 
-func (s *Server) UpdateProxyConfigWhiteList(userName ,zoneName string, remotePort int, localAddr, whiteCidrs string, whiteListEnable bool) error {
+func (s *Server) UpdateProxyConfigWhiteList(userName, zoneName string, remotePort int, localAddr, whiteCidrs string, whiteListEnable bool) (err error) {
 	if zoneName == "" {
 		return fmt.Errorf("zone is empty")
 	}
 	if !s.isZoneExist(userName, zoneName) {
 		return fmt.Errorf("no such zone %v", zoneName)
 	}
-	return s.zones[userName][zoneName].UpdateProxyConfigWhiteListConfig(remotePort, localAddr, whiteCidrs, whiteListEnable)
+	err = s.zones[userName][zoneName].UpdateProxyConfigWhiteListConfig(remotePort, localAddr, whiteCidrs, whiteListEnable)
+	if err == nil {
+		err = conf.Update(userName, zoneName, remotePort, localAddr, whiteCidrs, whiteListEnable)
+	}
+	return
 }
 
 func (s *Server) LoadProxyConfigFile() error {

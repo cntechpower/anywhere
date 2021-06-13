@@ -55,6 +55,21 @@ paths:
           schema:
             $ref: '#/definitions/GenericErrors'
 
+  /v1/zone/list:
+    get:
+      summary: Returns a list of all zones.
+      responses:
+        200:
+          description: A JSON array of zone
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Zone'
+        default:
+          description: 'generic errors'
+          schema:
+            $ref: '#/definitions/GenericErrors'
+
   /v1/proxy/add:
     post:
       parameters:
@@ -124,7 +139,6 @@ paths:
           name: white_list_enable
           description: "white_list_enable"
           type: boolean
-          required: true
         - in: formData
           name: white_list_ips
           description: "white_list_ips"
@@ -207,6 +221,20 @@ definitions:
       lastAckRcv:
         type: string
       proxyConfigCount:
+        type: integer
+
+  Zone:
+    type: object
+    description: zone information
+    properties:
+      user_name:
+        description: "user_name"
+        type: string
+      zone_name:
+        description: "zone_name"
+        type: string
+      agent_count:
+        description: "agent count"
         type: integer
 
   ProxyConfig:

@@ -53,6 +53,9 @@ func NewAnywhereServerAPI(spec *loads.Document) *AnywhereServerAPI {
 		GetV1SupportIPHandler: GetV1SupportIPHandlerFunc(func(params GetV1SupportIPParams) middleware.Responder {
 			return middleware.NotImplemented("operation GetV1SupportIP has not yet been implemented")
 		}),
+		GetV1ZoneListHandler: GetV1ZoneListHandlerFunc(func(params GetV1ZoneListParams) middleware.Responder {
+			return middleware.NotImplemented("operation GetV1ZoneList has not yet been implemented")
+		}),
 		PostV1ProxyAddHandler: PostV1ProxyAddHandlerFunc(func(params PostV1ProxyAddParams) middleware.Responder {
 			return middleware.NotImplemented("operation PostV1ProxyAdd has not yet been implemented")
 		}),
@@ -103,6 +106,8 @@ type AnywhereServerAPI struct {
 	GetV1SummaryHandler GetV1SummaryHandler
 	// GetV1SupportIPHandler sets the operation handler for the get v1 support IP operation
 	GetV1SupportIPHandler GetV1SupportIPHandler
+	// GetV1ZoneListHandler sets the operation handler for the get v1 zone list operation
+	GetV1ZoneListHandler GetV1ZoneListHandler
 	// PostV1ProxyAddHandler sets the operation handler for the post v1 proxy add operation
 	PostV1ProxyAddHandler PostV1ProxyAddHandler
 	// PostV1ProxyDeleteHandler sets the operation handler for the post v1 proxy delete operation
@@ -186,6 +191,9 @@ func (o *AnywhereServerAPI) Validate() error {
 	}
 	if o.GetV1SupportIPHandler == nil {
 		unregistered = append(unregistered, "GetV1SupportIPHandler")
+	}
+	if o.GetV1ZoneListHandler == nil {
+		unregistered = append(unregistered, "GetV1ZoneListHandler")
 	}
 	if o.PostV1ProxyAddHandler == nil {
 		unregistered = append(unregistered, "PostV1ProxyAddHandler")
@@ -300,6 +308,10 @@ func (o *AnywhereServerAPI) initHandlerCache() {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/v1/support/ip"] = NewGetV1SupportIP(o.context, o.GetV1SupportIPHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/v1/zone/list"] = NewGetV1ZoneList(o.context, o.GetV1ZoneListHandler)
 	if o.handlers["POST"] == nil {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}

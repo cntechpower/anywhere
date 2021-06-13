@@ -1,28 +1,24 @@
 {
-  "name": "react-tutorial",
+  "name": "anywhere",
   "version": "0.1.0",
-  "homepage": "http://10.0.0.2",
   "private": true,
   "dependencies": {
-    "@ant-design/compatible": "^1.0.2",
-    "@testing-library/jest-dom": "^5.9.0",
-    "@testing-library/react": "^10.0.4",
-    "@testing-library/user-event": "^10.4.0",
-    "antd": "^3.26.6",
-    "axios": "^0.19.2",
-    "classnames": "^2.2.6",
-    "prettier": "^1.19.1",
-    "prop-types": "^15.7.2",
-    "qs": "^6.9.4",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
-    "react-redux": "^7.2.0",
-    "react-router": "^5.2.0",
+    "@ant-design/icons": "^4.6.2",
+    "@testing-library/jest-dom": "^5.11.4",
+    "@testing-library/react": "^11.1.0",
+    "@testing-library/user-event": "^12.1.10",
+    "antd": "^4.16.2",
+    "axios": "^0.21.1",
+    "husky": "^6.0.0",
+    "lint-staged": "^11.0.0",
+    "prettier": "^2.3.1",
+    "qs": "^6.10.1",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-draggable": "^4.4.3",
     "react-router-dom": "^5.2.0",
-    "react-scripts": "3.4.1",
-    "redux": "^4.0.5",
-    "redux-logger": "^3.0.6",
-    "reselect": "^4.0.0"
+    "react-scripts": "4.0.3",
+    "web-vitals": "^1.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -31,7 +27,10 @@
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
-    "extends": "react-app"
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
   },
   "browserslist": {
     "production": [
@@ -44,21 +43,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "prettier": {
-    "stylelintIntegration": true,
-    "eslintIntegration": true
-  },
-  "devDependencies": {
-    "eslint": "^6.8.0",
-    "eslint-config-airbnb": "^18.0.1",
-    "eslint-config-prettier": "^6.10.0",
-    "eslint-plugin-import": "^2.20.1",
-    "eslint-plugin-jsx-a11y": "^6.2.3",
-    "eslint-plugin-prettier": "^3.1.2",
-    "eslint-plugin-react": "^7.18.3",
-    "eslint-plugin-react-hooks": "^2.3.0",
-    "prettier": "^1.19.1",
-    "redux-thunk": "^2.3.0"
   }
 }

@@ -111,6 +111,13 @@ func StringNvl(s *string) string {
 	return *s
 }
 
+func BoolNvl(s *bool) bool {
+	if s == nil {
+		return false
+	}
+	return *s
+}
+
 func Int64Nvl(s *int64) int64 {
 	if s == nil {
 		return 0

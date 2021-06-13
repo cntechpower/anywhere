@@ -55,10 +55,9 @@ type PostV1ProxyUpdateParams struct {
 	*/
 	UserName string
 	/*white_list_enable
-	  Required: true
 	  In: formData
 	*/
-	WhiteListEnable bool
+	WhiteListEnable *bool
 	/*white_list_ips
 	  In: formData
 	  Default: ""
@@ -191,25 +190,22 @@ func (o *PostV1ProxyUpdateParams) bindUserName(rawData []string, hasKey bool, fo
 
 // bindWhiteListEnable binds and validates parameter WhiteListEnable from formData.
 func (o *PostV1ProxyUpdateParams) bindWhiteListEnable(rawData []string, hasKey bool, formats strfmt.Registry) error {
-	if !hasKey {
-		return errors.Required("white_list_enable", "formData")
-	}
 	var raw string
 	if len(rawData) > 0 {
 		raw = rawData[len(rawData)-1]
 	}
 
-	// Required: true
+	// Required: false
 
-	if err := validate.RequiredString("white_list_enable", "formData", raw); err != nil {
-		return err
+	if raw == "" { // empty values pass all other validations
+		return nil
 	}
 
 	value, err := swag.ConvertBool(raw)
 	if err != nil {
 		return errors.InvalidType("white_list_enable", "formData", "bool", raw)
 	}
-	o.WhiteListEnable = value
+	o.WhiteListEnable = &value
 
 	return nil
 }
