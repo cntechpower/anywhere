@@ -1,14 +1,13 @@
-@import "~antd/dist/antd.css";
-
-.App {
-  text-align: center;
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.loading {
-  text-align: center;
-  /* background: rgba(0, 0, 0, 0.05); */
-  border-radius: 4px;
-  margin-bottom: 20px;
-  padding: 30px 50px;
-  margin: 20px 0;
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
 }

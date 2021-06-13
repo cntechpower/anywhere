@@ -1,49 +1,53 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
-import GlobalLayout from "./components/Layout/GlobalLayout";
-import EmptyWrapper from "./components/Layout/EmptyWrapper";
-import ProxyConfig from "./components/Anywhere/List";
-import ProxyConfigAdd from "./components/Anywhere/Add";
-import Summary from "./components/Summary/Summary";
-import UserLogin from "./components/User/LoginApp";
-import rootReducer from "./reducers";
 import "./index.css";
-import { createStore, applyMiddleware } from "redux";
-import { Provider } from "react-redux";
-import thunk from "redux-thunk";
-import logger from "redux-logger";
-
-import { DOCUMENT_ROOT } from "./constants/others";
-
-const store = createStore(rootReducer, applyMiddleware(thunk, logger));
+import App from "./App";
+import Home from "./pages/home";
+import ProxyConfigList from "./pages/configs/list";
+import ProxyConfigAdd from "./pages/configs/add";
+import UserLogin from "./pages/user/login";
+import reportWebVitals from "./reportWebVitals";
 
 ReactDOM.render(
-  <Provider store={store}>
+  <React.StrictMode>
     <Router>
+      {/* A <Switch> looks through its children <Route>s and
+            renders the first one that matches the current URL. */}
       <Switch>
-        <Route exact path={DOCUMENT_ROOT}>
-          <GlobalLayout openKey="" selectKey="">
-            <Summary />
-          </GlobalLayout>
+        <Route path="/home">
+          <App openKey="home" selectKey="home">
+            <Home />
+          </App>
         </Route>
-        <Route exact path={DOCUMENT_ROOT + "proxy/add"}>
-          <GlobalLayout openKey="proxy" selectKey="proxy_add">
+
+        <Route path="/configs/add">
+          <App openKey="configs" selectKey="add">
             <ProxyConfigAdd />
-          </GlobalLayout>
+          </App>
         </Route>
-        <Route exact path={DOCUMENT_ROOT + "proxy/list"}>
-          <GlobalLayout openKey="proxy" selectKey="proxy_list">
-            <ProxyConfig />
-          </GlobalLayout>
+
+        <Route path="/configs/list">
+          <App openKey="configs" selectKey="list">
+            <ProxyConfigList />
+          </App>
         </Route>
-        <Route exact path={DOCUMENT_ROOT + "user/login"}>
-          <EmptyWrapper>
-            <UserLogin />
-          </EmptyWrapper>
+
+        <Route path="/user/login">
+          <UserLogin />
+        </Route>
+        <Route path="/">
+          <App openKey="home" selectKey="home">
+            <Home />
+          </App>
         </Route>
       </Switch>
     </Router>
-  </Provider>,
+  </React.StrictMode>,
   document.getElementById("root")
 );
+
+// If you want to start measuring performance in your app, pass a function
+// to log results (for example: reportWebVitals(console.log))
+// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+reportWebVitals();

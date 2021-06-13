@@ -17,6 +17,12 @@ type AgentInfoInServer struct {
 	ProxyConfigCount int
 }
 
+type ZoneInfo struct {
+	UserName    string
+	ZoneName    string
+	AgentsCount int64
+}
+
 type AgentInfoInAgent struct {
 	Id          string
 	LocalAddr   string

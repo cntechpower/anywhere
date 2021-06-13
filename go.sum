@@ -62,10 +62,6 @@ github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XL
 github.com/clbanning/x2j v0.0.0-20191024224557-825249438eec/go.mod h1:jMjuTZXRI4dUb/I5gc9Hdhagfvm9+RyrPryS/auMzxE=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cncf/udpa/go v0.0.0-20200629203442-efcf912fb354/go.mod h1:WmhPx2Nbnhtbo57+VJT5O0JRkEi1Wbu0z5j0R8u5Hbk=
-github.com/cntechpower/utils v0.0.0-20210329153331-8b5c70bea91d h1:L1a2IMoOK2nG5JW5dJKQNgElFDuU2ctMLcqjyVHuLFg=
-github.com/cntechpower/utils v0.0.0-20210329153331-8b5c70bea91d/go.mod h1:ooakoIFOyDV0lhYdco2MdMwn83f295rdqmZvn0PpeaU=
-github.com/cntechpower/utils v0.0.0-20210408155931-ec4c14ffc40e h1:62VloA7ZXSWuiF16pIpBDTsU0lh7Qr2FVDuVnpS/+9A=
-github.com/cntechpower/utils v0.0.0-20210408155931-ec4c14ffc40e/go.mod h1:ooakoIFOyDV0lhYdco2MdMwn83f295rdqmZvn0PpeaU=
 github.com/cntechpower/utils v0.0.0-20210408161342-083024a6436e h1:U8a/9BjHQ5x5r/tdT2UQbuEhE3f4RvWRCCX00mSBIpE=
 github.com/cntechpower/utils v0.0.0-20210408161342-083024a6436e/go.mod h1:ooakoIFOyDV0lhYdco2MdMwn83f295rdqmZvn0PpeaU=
 github.com/cockroachdb/datadriven v0.0.0-20190809214429-80d97fb3cbaa/go.mod h1:zn76sxSg3SzpJ0PPJaLDCu+Bu0Lg3sKTORVIj19EIF8=
@@ -529,6 +525,8 @@ github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6So
 github.com/rogpeppe/go-internal v1.1.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.2.2/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
+github.com/rs/cors v1.7.0 h1:+88SsELBHx5r+hZ8TCkggzSstaWNbDvThkVK8H6f9ik=
+github.com/rs/cors v1.7.0/go.mod h1:gFx+x8UowdsKA9AchylcLynDq+nNFfI8FkUZdN/jGCU=
 github.com/russross/blackfriday/v2 v2.0.1/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f/go.mod h1:sm1tb6uqfes/u+d4ooFouqFdy9/2g9QGwK3SQygK0Ts=
 github.com/samuel/go-zookeeper v0.0.0-20190923202752-2cc03de413da/go.mod h1:gi+0XIa01GRL2eRQVjQkKGqKF3SF9vZR/HnPullcV2E=

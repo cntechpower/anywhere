@@ -37,9 +37,16 @@ func Remove(userName, zoneName string, remotePort int) error {
 	return proxyConf.Remove(userName, zoneName, remotePort)
 }
 
+func Update(userName, zoneName string, remotePort int, localAddr, whiteCidrs string, whiteListEnable bool) error {
+	if proxyConf == nil {
+		return fmt.Errorf("config not init")
+	}
+	return proxyConf.Update(userName, zoneName, remotePort, localAddr, whiteCidrs, whiteListEnable)
+}
+
 func PersistGlobalConfigLoop() {
 	h := log.NewHeader("persist_config_loop")
-	for range time.NewTicker(15 * time.Second).C {
+	for range time.NewTicker(5 * time.Second).C {
 		configMu.RLock()
 		if proxyConf == nil {
 			configMu.RUnlock()
@@ -137,8 +144,25 @@ func (c *ProxyConfigs) Remove(userName, zoneName string, remotePort int) error {
 			userName, zoneName, remotePort)
 	}
 	for idx, config := range c.ProxyConfigs[userName] {
-		if config.ZoneName == zoneName && config.RemotePort == config.RemotePort {
+		if config.ZoneName == zoneName && config.RemotePort == remotePort {
 			c.ProxyConfigs[userName] = append(c.ProxyConfigs[userName][:idx], c.ProxyConfigs[userName][idx+1:]...)
+			return nil
+		}
+	}
+	return nil
+}
+
+func (c *ProxyConfigs) Update(userName, zoneName string, remotePort int, localAddr, whiteCidrs string, whiteListEnable bool) error {
+	if !c.IsConfigExist(userName, zoneName, remotePort) {
+		return fmt.Errorf("config for user: %v, zoneName: %v, remotePort: %v not exist",
+			userName, zoneName, remotePort)
+	}
+	for idx, config := range c.ProxyConfigs[userName] {
+		if config.ZoneName == zoneName && config.RemotePort == remotePort {
+			c.ProxyConfigs[userName][idx].LocalAddr = localAddr
+			c.ProxyConfigs[userName][idx].WhiteCidrList = whiteCidrs
+			c.ProxyConfigs[userName][idx].IsWhiteListOn = whiteListEnable
+			return nil
 		}
 	}
 	return nil

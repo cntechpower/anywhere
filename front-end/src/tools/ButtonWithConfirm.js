@@ -12,7 +12,7 @@ class ButtonWithConfirm extends React.Component {
       onOk() {
         props.fnOnOk();
       },
-      onCancel() {}
+      onCancel() {},
     });
   }
 
@@ -33,7 +33,7 @@ ButtonWithConfirm.propTypes = {
   btnDisabled: PropTypes.bool.isRequired,
   confirmTitle: PropTypes.string.isRequired,
   confirmContent: PropTypes.string.isRequired,
-  fnOnOk: PropTypes.func.isRequired
+  fnOnOk: PropTypes.func.isRequired,
 };
 
 export default ButtonWithConfirm;

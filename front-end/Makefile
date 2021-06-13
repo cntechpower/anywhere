@@ -1,11 +1,11 @@
 PWD= $(shell pwd)
 VERSION=$(shell git rev-parse --short HEAD)
-default: deploy
+default: build
 build:
 	rm -rf node_modules
 	/usr/local/nodejs/bin/cnpm install
 	/usr/local/nodejs/bin/yarn build
-upload: build
+upload:
 	tar -czvf anywhere-fe-${VERSION}.tar.gz build/
 	tar -czvf anywhere-fe-latest.tar.gz build/
 	curl -T anywhere-fe-${VERSION}.tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere-fe/

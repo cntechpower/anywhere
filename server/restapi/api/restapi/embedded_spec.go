@@ -224,8 +224,7 @@ func init() {
             "type": "boolean",
             "description": "white_list_enable",
             "name": "white_list_enable",
-            "in": "formData",
-            "required": true
+            "in": "formData"
           },
           {
             "type": "string",
@@ -277,6 +276,28 @@ func init() {
             "description": "A JSON array of user names",
             "schema": {
               "type": "string"
+            }
+          },
+          "default": {
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
+          }
+        }
+      }
+    },
+    "/v1/zone/list": {
+      "get": {
+        "summary": "Returns a list of all zones.",
+        "responses": {
+          "200": {
+            "description": "A JSON array of zone",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Zone"
+              }
             }
           },
           "default": {
@@ -396,6 +417,24 @@ func init() {
           "items": {
             "$ref": "#/definitions/ProxyConfig"
           }
+        }
+      }
+    },
+    "Zone": {
+      "description": "zone information",
+      "type": "object",
+      "properties": {
+        "agent_count": {
+          "description": "agent count",
+          "type": "integer"
+        },
+        "user_name": {
+          "description": "user_name",
+          "type": "string"
+        },
+        "zone_name": {
+          "description": "zone_name",
+          "type": "string"
         }
       }
     }
@@ -608,8 +647,7 @@ func init() {
             "type": "boolean",
             "description": "white_list_enable",
             "name": "white_list_enable",
-            "in": "formData",
-            "required": true
+            "in": "formData"
           },
           {
             "type": "string",
@@ -661,6 +699,28 @@ func init() {
             "description": "A JSON array of user names",
             "schema": {
               "type": "string"
+            }
+          },
+          "default": {
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
+          }
+        }
+      }
+    },
+    "/v1/zone/list": {
+      "get": {
+        "summary": "Returns a list of all zones.",
+        "responses": {
+          "200": {
+            "description": "A JSON array of zone",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Zone"
+              }
             }
           },
           "default": {
@@ -780,6 +840,24 @@ func init() {
           "items": {
             "$ref": "#/definitions/ProxyConfig"
           }
+        }
+      }
+    },
+    "Zone": {
+      "description": "zone information",
+      "type": "object",
+      "properties": {
+        "agent_count": {
+          "description": "agent count",
+          "type": "integer"
+        },
+        "user_name": {
+          "description": "user_name",
+          "type": "string"
+        },
+        "zone_name": {
+          "description": "zone_name",
+          "type": "string"
         }
       }
     }

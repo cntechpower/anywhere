@@ -31,6 +31,7 @@ type IZone interface {
 	AddProxyConfigWhiteListConfig(remotePort int, localAddr, whiteCidrs string) error
 	//status
 	Infos() []*model.AgentInfoInServer
+	Info() *model.ZoneInfo
 	GetProxyConfigCount() int
 	ListProxyConfigs() []*model.ProxyConfig
 
@@ -157,6 +158,15 @@ func (z *Zone) Infos() (res []*model.AgentInfoInServer) {
 	return
 }
 
+func (z *Zone) Info() (res *model.ZoneInfo) {
+	res = &model.ZoneInfo{
+		UserName:    z.userName,
+		ZoneName:    z.zoneName,
+		AgentsCount: int64(len(z.agents)),
+	}
+	return
+}
+
 func (z *Zone) GetProxyConfigCount() int {
 	z.proxyConfigMutex.Lock()
 	defer z.proxyConfigMutex.Unlock()
@@ -196,7 +206,7 @@ func (z *Zone) UpdateProxyConfigWhiteListConfig(remotePort int, localAddr, white
 		return fmt.Errorf("no such proxy config %v in zone %v", localAddr, z.zoneName)
 	}
 	config.acl.SetEnable(whiteListEnable)
-	err := config.acl.AddCidrToList(whiteCidrs, true)
+	err := config.acl.AddCidrsToList(whiteCidrs, true)
 	if err == nil {
 		config.IsWhiteListOn = whiteListEnable
 		config.WhiteCidrList = whiteCidrs
