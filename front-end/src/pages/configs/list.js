@@ -13,7 +13,7 @@ import {
   Input,
 } from "antd";
 import ButtonWithConfirm from "../../tools/ButtonWithConfirm";
-import Draggable from "react-draggable";
+// import Draggable from "react-draggable";
 import qs from "qs";
 import apis from "../../apis/apis";
 import axios from "axios";
@@ -302,7 +302,7 @@ class List extends Component {
             </Button>,
           ]}
           onCancel={this.hideAddModal}
-          modalRender={(modal) => <Draggable>{modal}</Draggable>}
+          // modalRender={(modal) => <Draggable>{modal}</Draggable>}
         >
           <Form
             id="addV2rayNodeForm"
