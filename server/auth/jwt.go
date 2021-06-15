@@ -27,7 +27,7 @@ func (v *JwtValidator) Generate(userName string) (string, error) {
 		//Not Before
 		"nbf": time.Now().Unix(),
 		//Expire Time
-		"exp": time.Now().Add(12 * time.Hour).Unix(),
+		"exp": time.Now().Add(24 * time.Hour * 14).Unix(),
 	})
 	log.Infof(v.logHeader, "generate jwt for user %v", userName)
 	return token.SignedString(v.jwtKey)

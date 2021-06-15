@@ -184,7 +184,6 @@ var (
 			SkipLogin:   true,
 			GrpcAddr:    "127.0.0.1:1113",
 			IsWebEnable: true,
-			RestAddr:    "127.0.0.1:1112",
 			WebAddr:     "0.0.0.0:1114",
 		},
 		User: &model.UserConfig{
@@ -287,9 +286,6 @@ func parseSystemConfigFile() (*model.SystemConfig, error) {
 		}
 		if err := util.CheckAddrValid(config.UiConfig.WebAddr); err != nil {
 			return nil, newConfigIllegalError("UiConfig", "WebAddr", err)
-		}
-		if err := util.CheckAddrValid(config.UiConfig.RestAddr); err != nil {
-			return nil, newConfigIllegalError("UiConfig", "RestAddr", err)
 		}
 		if config.User == nil {
 			return nil, newConfigMissedError("main", "User")
