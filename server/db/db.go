@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/utils/log"
-
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -18,12 +16,12 @@ var ConfigDB *gorm.DB
 var MemDB *gorm.DB
 var header *log.Header
 
-func Init(dsn string) {
+func Init(dsn string, persistModels []interface{}, tmpModels []interface{}) {
 	if dsn == "" {
 		panic(fmt.Errorf("mysql dsn is empty"))
 	}
 	header = log.NewHeader("db")
-	initGorm()
+	initGorm(persistModels, tmpModels)
 	header.Infof("GORM init finish")
 	go func() {
 		time.Sleep(5 * time.Second)
@@ -38,7 +36,7 @@ func Init(dsn string) {
 		for {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 			if err := MySQL.PingContext(ctx); err != nil {
-				header.Infof("ConfigDB ping check error: %v", err)
+				header.Infof("db ping check error: %v", err)
 			}
 			cancel()
 			time.Sleep(30 * time.Second)
@@ -46,18 +44,19 @@ func Init(dsn string) {
 	}()
 }
 
-func initGorm() {
+func initGorm(persistModels []interface{}, tmpModels []interface{}) {
 	var err error
 	ConfigDB, err = gorm.Open(sqlite.Open("proxy.db"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
-	_ = ConfigDB.AutoMigrate(&model.ProxyConfig{})
+	_ = ConfigDB.AutoMigrate(persistModels...)
 
 	MemDB, err = gorm.Open(sqlite.Open("memory.db?cache=shared&mode=memory"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
+	_ = MemDB.AutoMigrate(tmpModels...)
 }
 
 func Close() {

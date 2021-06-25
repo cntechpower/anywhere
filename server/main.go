@@ -1,25 +1,20 @@
 package main
 
 import (
-	"time"
-
+	"github.com/cntechpower/anywhere/model"
+	"github.com/cntechpower/anywhere/server/cmd"
+	"github.com/cntechpower/anywhere/server/conf"
 	"github.com/cntechpower/anywhere/server/db"
-
+	"github.com/cntechpower/anywhere/server/http"
 	"github.com/cntechpower/anywhere/server/restapi/api/restapi"
 	"github.com/cntechpower/anywhere/server/restapi/api/restapi/operations"
-	"github.com/go-openapi/loads"
-
-	"github.com/cntechpower/anywhere/server/http"
-
-	"github.com/cntechpower/anywhere/server/conf"
-
-	"github.com/cntechpower/anywhere/server/cmd"
 	"github.com/cntechpower/anywhere/server/rpc/handler"
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/tls"
 	"github.com/cntechpower/utils/log"
 	"github.com/cntechpower/utils/os"
 
+	"github.com/go-openapi/loads"
 	"github.com/spf13/cobra"
 )
 
@@ -103,17 +98,14 @@ func run(_ *cobra.Command, _ []string) error {
 	if conf.Conf.UiConfig.IsWebEnable {
 		go http.StartUIAndAPIService(restHandler, s, conf.Conf.UiConfig.WebAddr, webExitChan,
 			conf.Conf.UiConfig.SkipLogin, conf.Conf.UiConfig.DebugMode, conf.Conf.ReportWhiteCidrs)
-
 	}
+
+	db.Init(conf.Conf.MysqlDSN, model.GetPersistModels(), model.GetTmpModels())
+	defer db.Close()
 
 	//wait for os kill signal. TODO: graceful shutdown
 	go os.ListenTTINSignalLoop()
-	//delay init of persist
-	go func() {
-		time.Sleep(5 * time.Second)
-		db.Init(conf.Conf.MysqlDSN)
-	}()
-	defer db.Close()
+
 	serverExitChan := os.ListenKillSignal()
 	select {
 	case <-serverExitChan:

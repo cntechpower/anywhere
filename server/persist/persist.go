@@ -32,8 +32,7 @@ type WhiteListDenyItem struct {
 	Count   int64
 }
 
-const (
-	createTableSql = `
+/*
 create table if not exists whitelist_deny_history(
   id int AUTO_INCREMENT COMMENT '自增ID',
   ip varchar(15) NOT NULL COMMENT '被拒绝的IP地址',
@@ -51,6 +50,8 @@ create table if not exists whitelist_deny_history(
   KEY idx_ip (ip)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8 COMMENT = '防火墙拦截记录表';`
 
+*/
+const (
 	insertWhiteListHistorySql = `
 insert into
   whitelist_deny_history(remote_port, ip, agent_id, local_addr)
@@ -126,10 +127,6 @@ var denyRankSqlMap = map[string]*denyRankSqls{
 }
 
 func AddWhiteListDenyIp(remotePort int, agentId, localAddr, ip string) error {
-	if db.MySQL == nil {
-		header.Errorf("db is not init")
-		return fmt.Errorf("db is not init")
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
 	_, err := db.MySQL.ExecContext(ctx, insertWhiteListHistorySql, remotePort, ip, agentId, localAddr)
 	cancel()
@@ -141,11 +138,6 @@ func AddWhiteListDenyIp(remotePort int, agentId, localAddr, ip string) error {
 }
 
 func GetWhiteListDenyRank(typ string, limit int64) (details []*WhiteListDenyItem, detailCount, ipCount int64, err error) {
-	if db.MySQL == nil {
-		header.Errorf("db is not init")
-		err = fmt.Errorf("db is not init")
-		return
-	}
 	sqls := denyRankSqlMap[typ]
 	if sqls == nil {
 		err = fmt.Errorf("no such deny rank type")

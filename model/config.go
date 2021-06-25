@@ -1,5 +1,7 @@
 package model
 
+import "gorm.io/gorm"
+
 type SystemConfig struct {
 	ServerId         string      `json:"server_id"`
 	MainPort         int         `json:"server_port"`
@@ -18,11 +20,12 @@ type UserConfig struct {
 }
 
 type User struct {
-	UserName  string `json:"user_name"`
-	UserPass  string `json:"user_password"`
-	IsAdmin   bool   `json:"is_admin"`
-	OtpEnable bool   `json:"otp_enable"`
-	OtpCode   string `json:"otp_code"`
+	gorm.Model `json:"-"`
+	UserName   string `json:"user_name"`
+	UserPass   string `json:"user_password"`
+	IsAdmin    bool   `json:"is_admin"`
+	OtpEnable  bool   `json:"otp_enable"`
+	OtpCode    string `json:"otp_code"`
 }
 
 type UiConfig struct {

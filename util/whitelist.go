@@ -4,8 +4,6 @@ import (
 	"net"
 	"strings"
 	"sync"
-
-	"github.com/cntechpower/anywhere/server/persist"
 )
 
 type WhiteList struct {
@@ -94,14 +92,7 @@ func NewWhiteList(remotePort int, agentId, localAddr, cidrList string, enable bo
 
 func (l *WhiteList) IpInWhiteList(ip string) (res bool) {
 	l.mutex.RLock()
-	defer func() {
-		l.mutex.RUnlock()
-		if !res {
-			go func() {
-				_ = persist.AddWhiteListDenyIp(l.remotePort, l.agentId, l.localAddr, ip)
-			}()
-		}
-	}()
+	defer l.mutex.RUnlock()
 	if !l.enable {
 		res = true
 		return
