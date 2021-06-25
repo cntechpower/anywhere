@@ -1,4 +1,4 @@
-package persist
+package whitelist
 
 import (
 	"context"
@@ -26,7 +26,7 @@ func init() {
 	prometheus.MustRegister(persistErrorCount)
 }
 
-type WhiteListDenyItem struct {
+type DenyItem struct {
 	Ip      string
 	Address string
 	Count   int64
@@ -137,7 +137,7 @@ func AddWhiteListDenyIp(remotePort int, agentId, localAddr, ip string) error {
 	return err
 }
 
-func GetWhiteListDenyRank(typ string, limit int64) (details []*WhiteListDenyItem, detailCount, ipCount int64, err error) {
+func GetWhiteListDenyRank(typ string, limit int64) (details []*DenyItem, detailCount, ipCount int64, err error) {
 	sqls := denyRankSqlMap[typ]
 	if sqls == nil {
 		err = fmt.Errorf("no such deny rank type")
@@ -159,9 +159,9 @@ func GetWhiteListDenyRank(typ string, limit int64) (details []*WhiteListDenyItem
 		header.Errorf("query total deny rank error: %v", err)
 		return
 	}
-	details = make([]*WhiteListDenyItem, 0)
+	details = make([]*DenyItem, 0)
 	for rows.Next() {
-		i := &WhiteListDenyItem{}
+		i := &DenyItem{}
 		if err = rows.Scan(&i.Ip, &i.Address, &i.Count); err != nil {
 			persistErrorCount.WithLabelValues(stageScan...).Inc()
 			return

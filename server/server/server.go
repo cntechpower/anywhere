@@ -7,6 +7,8 @@ import (
 	"net"
 	"sync"
 
+	configDao "github.com/cntechpower/anywhere/server/dao/config"
+
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/server/agent"
@@ -265,7 +267,14 @@ func (s *Server) UpdateProxyConfigWhiteList(userName, zoneName string, remotePor
 	}
 	err = s.zones[userName][zoneName].UpdateProxyConfigWhiteListConfig(remotePort, localAddr, whiteCidrs, whiteListEnable)
 	if err == nil {
-		err = conf.Update(userName, zoneName, remotePort, localAddr, whiteCidrs, whiteListEnable)
+		err = configDao.Add(&model.ProxyConfig{
+			UserName:      userName,
+			ZoneName:      zoneName,
+			RemotePort:    remotePort,
+			LocalAddr:     localAddr,
+			IsWhiteListOn: whiteListEnable,
+			WhiteCidrList: whiteCidrs,
+		})
 	}
 	return
 }
@@ -275,7 +284,7 @@ func (s *Server) LoadProxyConfigFile() error {
 	if err != nil {
 		return err
 	}
-	if err := configs.ProxyConfigIterator(func(userName string, config *model.ProxyConfig) error {
+	if err := configDao.ProxyConfigIterator(func(userName string, config *model.ProxyConfig) error {
 		return s.AddProxyConfigByModel(config)
 	}); err != nil {
 		return err

@@ -1,4 +1,4 @@
-package persist
+package whitelist
 
 import (
 	"testing"

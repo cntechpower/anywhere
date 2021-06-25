@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cntechpower/anywhere/server/persist"
+	"github.com/cntechpower/anywhere/server/dao/whitelist"
 
 	"github.com/cntechpower/anywhere/server/conf"
 
@@ -279,7 +279,7 @@ func (z *Zone) handleTunnelConnection(h *log.Header, ln *net.TCPListener, config
 			log.Infof(h, "refused %v connection because it is not in white list", c.RemoteAddr())
 			config.AddConnectRejectedCount(1)
 			go func() {
-				_ = persist.AddWhiteListDenyIp(config.RemotePort, config.ZoneName, config.LocalAddr, c.RemoteAddr().String())
+				_ = whitelist.AddWhiteListDenyIp(config.RemotePort, config.ZoneName, config.LocalAddr, c.RemoteAddr().String())
 			}()
 			continue
 		}

@@ -9,50 +9,10 @@ import (
 
 	"github.com/cntechpower/anywhere/constants"
 	"github.com/cntechpower/anywhere/model"
-	"github.com/cntechpower/anywhere/server/db"
 	"github.com/cntechpower/anywhere/util"
-	"github.com/cntechpower/utils/log"
 )
 
 var Conf *model.SystemConfig
-
-func Add(config *model.ProxyConfig) (err error) {
-	err = db.ConfigDB.Save(config).Error
-	return
-}
-
-func Remove(userName, zoneName string, remotePort int) (err error) {
-	err = db.ConfigDB.Where("user_name=?", userName).
-		Where("zone_name=?", zoneName).
-		Where("remote_port=?", remotePort).Delete(&model.ProxyConfig{}).Error
-	return
-}
-
-func Update(userName, zoneName string, remotePort int, localAddr, whiteCidrs string, whiteListEnable bool) (err error) {
-	err = db.ConfigDB.Where("user_name=?", userName).
-		Where("zone_name=?", zoneName).
-		Where("remote_port=?", remotePort).Save(&model.ProxyConfig{
-		UserName:      userName,
-		ZoneName:      zoneName,
-		RemotePort:    remotePort,
-		LocalAddr:     localAddr,
-		IsWhiteListOn: whiteListEnable,
-		WhiteCidrList: whiteCidrs,
-	}).Error
-	return
-}
-
-func IsConfigExist(userName, zoneName string, remotePort int) (exist bool, err error) {
-	count := int64(0)
-	err = db.ConfigDB.Where("user_name=?", userName).
-		Where("zone_name=?", zoneName).
-		Where("remote_port=?", remotePort).Count(&count).Error
-	if err != nil {
-		return
-	}
-	exist = count >= 1
-	return
-}
 
 var (
 	initConfig = &model.SystemConfig{
@@ -132,7 +92,6 @@ func getConfigJsonTag(sectionName, configName string) (string, string) {
 			}
 
 		}
-
 	}
 	return printSection, printName
 }
@@ -223,20 +182,4 @@ func WriteSystemConfigFile(config *model.SystemConfig) error {
 
 func WriteInitConfigFile() error {
 	return WriteSystemConfigFile(initConfig)
-}
-
-func MigrateFileToDB() (err error) {
-	h := log.NewHeader("MigrateFileToDB")
-	cs, err := ParseProxyConfigFile()
-	if err != nil {
-		h.Errorf("ParseProxyConfigFile error: %v", err)
-		return
-	}
-	for _, c := range cs.ProxyConfigs {
-		err := db.ConfigDB.Save(c).Error
-		if err != nil {
-			h.Errorf("save %+v to db error: %v", c, err)
-		}
-	}
-	return
 }
