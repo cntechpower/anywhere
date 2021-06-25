@@ -11,6 +11,7 @@ import (
 
 	"github.com/cntechpower/anywhere/constants"
 	"github.com/cntechpower/anywhere/model"
+	"github.com/cntechpower/anywhere/server/db"
 	"github.com/cntechpower/anywhere/util"
 	"github.com/cntechpower/utils/log"
 )
@@ -23,18 +24,28 @@ type ProxyConfigs struct {
 	ProxyConfigs map[string] /*user*/ []*model.ProxyConfig
 }
 
-func Add(config *model.ProxyConfig) error {
+func Add(config *model.ProxyConfig) (err error) {
 	if proxyConf == nil {
 		return fmt.Errorf("config not init")
 	}
-	return proxyConf.Add(config)
+	if err = proxyConf.Add(config); err != nil {
+		return
+	}
+	err = db.ConfigDB.Save(config).Error
+	return
 }
 
-func Remove(userName, zoneName string, remotePort int) error {
+func Remove(userName, zoneName string, remotePort int) (err error) {
 	if proxyConf == nil {
 		return fmt.Errorf("config not init")
 	}
-	return proxyConf.Remove(userName, zoneName, remotePort)
+	if err = proxyConf.Remove(userName, zoneName, remotePort); err != nil {
+		return
+	}
+	err = db.ConfigDB.Where("user_name=?", userName).
+		Where("zone_name=?", zoneName).
+		Where("remote_port=?", remotePort).Delete(&model.ProxyConfig{}).Error
+	return
 }
 
 func Update(userName, zoneName string, remotePort int, localAddr, whiteCidrs string, whiteListEnable bool) error {
@@ -337,4 +348,20 @@ func WriteSystemConfigFile(config *model.SystemConfig) error {
 
 func WriteInitConfigFile() error {
 	return WriteSystemConfigFile(initConfig)
+}
+
+func MigrateFileToDB() (err error) {
+	h := log.NewHeader("MigrateFileToDB")
+	cs, err := ParseProxyConfigFile()
+	if err != nil {
+		h.Errorf("ParseProxyConfigFile error: %v", err)
+		return
+	}
+	for _, c := range cs.ProxyConfigs {
+		err := db.ConfigDB.Save(c).Error
+		if err != nil {
+			h.Errorf("save %+v to db error: %v", c, err)
+		}
+	}
+	return
 }

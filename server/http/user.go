@@ -76,3 +76,6 @@ func userLogin(c *gin.Context) {
 	c.Next()
 	return
 }
+
+func userLogout(c *gin.Context) {
+}

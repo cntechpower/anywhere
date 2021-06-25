@@ -2,16 +2,16 @@ package persist
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
+
+	"github.com/cntechpower/anywhere/server/db"
 
 	"github.com/cntechpower/utils/log"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var DB *sql.DB
 var header *log.Header
 
 var stageExec = []string{"exec"}
@@ -125,43 +125,13 @@ var denyRankSqlMap = map[string]*denyRankSqls{
 	},
 }
 
-func Init(dsn string) {
-	if dsn == "" {
-		panic(fmt.Errorf("mysql dsn is empty"))
-	}
-	var err error
-	DB, err = sql.Open("mysql", dsn)
-	if err != nil {
-		panic(err)
-	}
-	DB.SetConnMaxLifetime(time.Minute * 120)
-	DB.SetMaxIdleConns(10)
-	_, err = DB.Exec(createTableSql)
-	if err != nil {
-		panic(err)
-	}
-	header = log.NewHeader("persist")
-	header.Infof("init finish")
-	go func() {
-		for {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-			if err := DB.PingContext(ctx); err != nil {
-				persistErrorCount.WithLabelValues(stagePing...).Inc()
-				header.Infof("db ping check error: %v", err)
-			}
-			cancel()
-			time.Sleep(30 * time.Second)
-		}
-	}()
-}
-
 func AddWhiteListDenyIp(remotePort int, agentId, localAddr, ip string) error {
-	if DB == nil {
+	if db.MySQL == nil {
 		header.Errorf("db is not init")
 		return fmt.Errorf("db is not init")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
-	_, err := DB.ExecContext(ctx, insertWhiteListHistorySql, remotePort, ip, agentId, localAddr)
+	_, err := db.MySQL.ExecContext(ctx, insertWhiteListHistorySql, remotePort, ip, agentId, localAddr)
 	cancel()
 	if err != nil {
 		persistErrorCount.WithLabelValues(stageExec...).Inc()
@@ -171,7 +141,7 @@ func AddWhiteListDenyIp(remotePort int, agentId, localAddr, ip string) error {
 }
 
 func GetWhiteListDenyRank(typ string, limit int64) (details []*WhiteListDenyItem, detailCount, ipCount int64, err error) {
-	if DB == nil {
+	if db.MySQL == nil {
 		header.Errorf("db is not init")
 		err = fmt.Errorf("db is not init")
 		return
@@ -183,15 +153,15 @@ func GetWhiteListDenyRank(typ string, limit int64) (details []*WhiteListDenyItem
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
 	defer cancel()
-	err = DB.QueryRow(sqls.detailCountSql).Scan(&detailCount)
+	err = db.MySQL.QueryRow(sqls.detailCountSql).Scan(&detailCount)
 	if err != nil {
 		return
 	}
-	err = DB.QueryRow(sqls.ipCountSql).Scan(&ipCount)
+	err = db.MySQL.QueryRow(sqls.ipCountSql).Scan(&ipCount)
 	if err != nil {
 		return
 	}
-	rows, err := DB.QueryContext(ctx, sqls.detailSql, limit)
+	rows, err := db.MySQL.QueryContext(ctx, sqls.detailSql, limit)
 	if err != nil {
 		persistErrorCount.WithLabelValues(stageQuery...).Inc()
 		header.Errorf("query total deny rank error: %v", err)

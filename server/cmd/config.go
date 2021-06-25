@@ -24,7 +24,19 @@ var resetConfigCmd = &cobra.Command{
 	},
 }
 
+var migrateConfigCmd = &cobra.Command{
+	Use:   "migrate",
+	Short: "migrate system config file to db",
+	Long:  `migrate config file 'anywhered.json' to db`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := conf.MigrateFileToDB(); err != nil {
+			fmt.Printf("error reset proxy config: %v\n", err)
+		}
+	},
+}
+
 func Config() *cobra.Command {
 	configCmd.AddCommand(resetConfigCmd)
+	configCmd.AddCommand(migrateConfigCmd)
 	return configCmd
 }

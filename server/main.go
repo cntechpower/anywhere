@@ -3,13 +3,13 @@ package main
 import (
 	"time"
 
+	"github.com/cntechpower/anywhere/server/db"
+
 	"github.com/cntechpower/anywhere/server/restapi/api/restapi"
 	"github.com/cntechpower/anywhere/server/restapi/api/restapi/operations"
 	"github.com/go-openapi/loads"
 
 	"github.com/cntechpower/anywhere/server/http"
-
-	"github.com/cntechpower/anywhere/server/persist"
 
 	"github.com/cntechpower/anywhere/server/conf"
 
@@ -111,8 +111,9 @@ func run(_ *cobra.Command, _ []string) error {
 	//delay init of persist
 	go func() {
 		time.Sleep(5 * time.Second)
-		persist.Init(conf.Conf.MysqlDSN)
+		db.Init(conf.Conf.MysqlDSN)
 	}()
+	defer db.Close()
 	serverExitChan := os.ListenKillSignal()
 	select {
 	case <-serverExitChan:

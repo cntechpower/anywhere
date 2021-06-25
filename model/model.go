@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/cntechpower/anywhere/util"
 )
 
@@ -32,6 +34,7 @@ type AgentInfoInAgent struct {
 }
 
 type ProxyConfig struct {
+	gorm.Model
 	UserName                        string `json:"user_name"`
 	ZoneName                        string `json:"zone_name"`
 	RemotePort                      int    `json:"remote_port"`
