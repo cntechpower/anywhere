@@ -133,12 +133,12 @@ func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (
 		Conn: make([]*pb.Conn, 0),
 	}
 
-	for _, agentConns := range agentConns {
-		for _, conn := range agentConns.List {
+	for _, agentConn := range agentConns {
+		for _, conn := range agentConn.List {
 			res.Conn = append(res.Conn, &pb.Conn{
 				AgentId:       conn.DstName,
-				ZoneName:      agentConns.ZoneName,
-				UserName:      agentConns.UserName,
+				ZoneName:      agentConn.ZoneName,
+				UserName:      agentConn.UserName,
 				ConnId:        int64(conn.ID),
 				SrcRemoteAddr: conn.SrcRemoteAddr,
 				SrcLocalAddr:  conn.SrcLocalAddr,
