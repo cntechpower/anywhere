@@ -1,4 +1,4 @@
-package agent
+package zone
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/cntechpower/anywhere/server/zone/agent"
 
 	"github.com/cntechpower/anywhere/server/dao/config"
 
@@ -44,8 +46,8 @@ type Zone struct {
 	zoneName         string
 	userName         string
 	agentsRwMutex    sync.RWMutex
-	agents           map[string]IAgent
-	proxyConfigs     map[string]*ProxyConfig
+	agents           map[string]agent.IAgent
+	proxyConfigs     map[string]*ProxyConfigStats
 	proxyConfigMutex sync.Mutex
 	connectionPool   conn.ConnectionPool
 	errChan          chan error
@@ -58,8 +60,8 @@ func NewZone(userName, zoneName string) IZone {
 	z := &Zone{
 		userName:         userName,
 		zoneName:         zoneName,
-		agents:           make(map[string]IAgent, 0),
-		proxyConfigs:     make(map[string]*ProxyConfig, 0),
+		agents:           make(map[string]agent.IAgent, 0),
+		proxyConfigs:     make(map[string]*ProxyConfigStats, 0),
 		proxyConfigMutex: sync.Mutex{},
 		errChan:          make(chan error, 1),
 		CloseChan:        make(chan struct{}, 1),
@@ -98,7 +100,7 @@ func (z *Zone) RegisterAgent(agentId string, c net.Conn) (isUpdate bool) {
 		a.ResetAdminConn(c)
 	} else {
 		h.Info("build admin conn for user: %v, zoneName: %v, agentId: %v", z.userName, z.zoneName, agentId)
-		z.agents[agentId] = NewAgentInfo(z.userName, z.zoneName, agentId, c, make(chan error, 99))
+		z.agents[agentId] = agent.NewAgentInfo(z.userName, z.zoneName, agentId, c, make(chan error, 99))
 	}
 	z.agentsRwMutex.Unlock()
 
@@ -129,7 +131,7 @@ func (z *Zone) AddProxyConfig(config *model.ProxyConfig) error {
 	defer z.proxyConfigMutex.Unlock()
 	log.Infof(h, "adding proxy config: %v", config)
 	closeChan := make(chan struct{}, 0)
-	pConfig := &ProxyConfig{
+	pConfig := &ProxyConfigStats{
 		ProxyConfig: config,
 		closeChan:   closeChan,
 	}
@@ -227,7 +229,7 @@ func (z *Zone) AddProxyConfigWhiteListConfig(remotePort int, localAddr, whiteCid
 
 }
 
-func (z *Zone) handleAddProxyConfig(config *ProxyConfig) {
+func (z *Zone) handleAddProxyConfig(config *ProxyConfigStats) {
 	h := log.NewHeader(fmt.Sprintf("tunnel-%v-(%v->%v)", config.UserName, config.RemotePort, config.LocalAddr))
 	h.Infof("starting new port listening")
 	ln, err := util.ListenTcp("0.0.0.0:" + strconv.Itoa(config.RemotePort))
@@ -240,7 +242,7 @@ func (z *Zone) handleAddProxyConfig(config *ProxyConfig) {
 	go z.handleTunnelConnection(h, ln, config)
 }
 
-func (z *Zone) handleTunnelConnection(h *log.Header, ln *net.TCPListener, config *ProxyConfig) {
+func (z *Zone) handleTunnelConnection(h *log.Header, ln *net.TCPListener, config *ProxyConfigStats) {
 	closeFlag := false
 	go func() {
 		<-config.closeChan
@@ -306,7 +308,7 @@ func (z *Zone) handleProxyConnection(c net.Conn, localAddr string, fnOnEnd func(
 
 }
 
-func (z *Zone) chooseAgent() IAgent {
+func (z *Zone) chooseAgent() agent.IAgent {
 	h := log.NewHeader("chooseAgent")
 	for _, i := range z.agents {
 		if i != nil && i.IsHealthy() {

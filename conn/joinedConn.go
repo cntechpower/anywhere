@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/cntechpower/utils/log"
+
+	"github.com/cntechpower/anywhere/server/db"
+
 	"github.com/cntechpower/anywhere/model"
-	"github.com/cntechpower/anywhere/util"
 )
 
 type joinedConn struct {
@@ -14,40 +17,48 @@ type joinedConn struct {
 }
 
 type JoinedConnList struct {
-	list   map[int]*joinedConn
+	name   string
+	list   map[uint]*joinedConn
 	listMu sync.RWMutex
 }
 
-func NewJoinedConnList() *JoinedConnList {
+func NewJoinedConnList(name string) *JoinedConnList {
 	return &JoinedConnList{
-		list: make(map[int]*joinedConn, 0),
+		name: name,
+		list: make(map[uint]*joinedConn, 0),
 	}
 }
 
-func (l *JoinedConnList) Add(src, dst *WrappedConn) int {
+func (l *JoinedConnList) Add(src, dst *WrappedConn) uint {
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
 	if l.list == nil {
-		l.list = make(map[int]*joinedConn, 0)
+		l.list = make(map[uint]*joinedConn, 0)
 	}
-	idx := util.RandInt(9999)
-	for {
-		if c, exist := l.list[idx]; exist && c != nil {
-			idx = util.RandInt(9999)
-		} else {
-			break
-		}
+	item := &model.JoinedConnListItem{
+		Name:          l.name,
+		SrcName:       src.remoteName,
+		DstName:       dst.remoteName,
+		SrcRemoteAddr: src.conn.RemoteAddr().String(),
+		SrcLocalAddr:  src.conn.LocalAddr().String(),
+		DstRemoteAddr: dst.conn.RemoteAddr().String(),
+		DstLocalAddr:  dst.conn.LocalAddr().String(),
+	}
+	err := db.MemDB.Save(&item)
+
+	if err != nil {
+		log.NewHeader("JoinedConnList").Errorf("add error: %v", err)
 	}
 
-	l.list[idx] = &joinedConn{
+	l.list[item.ID] = &joinedConn{
 		src: src,
 		dst: dst,
 	}
-	return idx //return index
+	return item.ID //return index
 
 }
 
-func (l *JoinedConnList) KillById(id int) error {
+func (l *JoinedConnList) KillById(id uint) error {
 	if id < 0 {
 		return fmt.Errorf("illegal id %v", id)
 	}
@@ -62,7 +73,7 @@ func (l *JoinedConnList) KillById(id int) error {
 	return nil
 }
 
-func (l *JoinedConnList) Remove(id int) error {
+func (l *JoinedConnList) Remove(id uint) error {
 	if id < 0 {
 		return fmt.Errorf("illegal id %v", id)
 	}
@@ -79,6 +90,7 @@ func (l *JoinedConnList) Remove(id int) error {
 func (l *JoinedConnList) Flush() {
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
+	db.MemDB.Delete(&model.JoinedConnListItem{}, "")
 	for _, joinedConn := range l.list {
 		joinedConn.src.Close()
 		joinedConn.dst.Close()

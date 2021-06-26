@@ -7,11 +7,12 @@ import (
 	"net"
 	"sync"
 
+	"github.com/cntechpower/anywhere/server/zone"
+
 	configDao "github.com/cntechpower/anywhere/server/dao/config"
 
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/model"
-	"github.com/cntechpower/anywhere/server/agent"
 	"github.com/cntechpower/anywhere/server/auth"
 	"github.com/cntechpower/anywhere/util"
 	"github.com/cntechpower/utils/log"
@@ -22,7 +23,7 @@ type Server struct {
 	serverAddr                       *net.TCPAddr
 	credential                       *_tls.Config
 	listener                         net.Listener
-	zones                            map[string] /*user*/ map[string] /*zone*/ agent.IZone
+	zones                            map[string] /*user*/ map[string] /*zone*/ zone.IZone
 	agentsRwMutex                    sync.RWMutex
 	ExitChan                         chan error
 	ErrChan                          chan error
@@ -48,7 +49,7 @@ func InitServerInstance(serverId string, port int, users *model.UserConfig) *Ser
 	serverInstance = &Server{
 		serverId:      serverId,
 		serverAddr:    addr,
-		zones:         make(map[string]map[string]agent.IZone, 0),
+		zones:         make(map[string]map[string]zone.IZone, 0),
 		agentsRwMutex: sync.RWMutex{},
 		ExitChan:      make(chan error, 1),
 		ErrChan:       make(chan error, 10000),
@@ -157,7 +158,7 @@ func (s *Server) handleNewConnection(c net.Conn) {
 
 func (s *Server) isZoneExist(userName, zoneName string) (exists bool) {
 	if _, userExist := s.zones[userName]; !userExist {
-		s.zones[userName] = make(map[string]agent.IZone, 0)
+		s.zones[userName] = make(map[string]zone.IZone, 0)
 	}
 	_, exists = s.zones[userName][zoneName]
 	return exists
@@ -203,10 +204,10 @@ func (s *Server) ListZones() []*model.ZoneInfo {
 
 func (s *Server) RegisterAgent(userName, zoneName, agentId string, c net.Conn) (isUpdate bool) {
 	if _, ok := s.zones[userName]; !ok {
-		s.zones[userName] = make(map[string]agent.IZone, 0)
+		s.zones[userName] = make(map[string]zone.IZone, 0)
 	}
 	if _, ok := s.zones[userName][zoneName]; !ok {
-		s.zones[userName][zoneName] = agent.NewZone(userName, zoneName)
+		s.zones[userName][zoneName] = zone.NewZone(userName, zoneName)
 	}
 	return s.zones[userName][zoneName].RegisterAgent(agentId, c)
 

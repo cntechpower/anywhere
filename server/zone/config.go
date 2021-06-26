@@ -1,4 +1,4 @@
-package agent
+package zone
 
 import (
 	"sync/atomic"
@@ -8,26 +8,26 @@ import (
 	"github.com/cntechpower/anywhere/server/auth"
 )
 
-type ProxyConfig struct {
+type ProxyConfigStats struct {
 	*model.ProxyConfig
 	acl         *auth.WhiteListValidator
 	joinedConns *conn.JoinedConnList
 	closeChan   chan struct{}
 }
 
-func (c *ProxyConfig) AddNetworkFlow(remoteToLocalBytes, localToRemoteBytes uint64) {
+func (c *ProxyConfigStats) AddNetworkFlow(remoteToLocalBytes, localToRemoteBytes uint64) {
 	atomic.AddUint64(&c.NetworkFlowLocalToRemoteInBytes, localToRemoteBytes)
 	atomic.AddUint64(&c.NetworkFlowRemoteToLocalInBytes, remoteToLocalBytes)
 }
 
-func (c *ProxyConfig) AddConnectCount(nums uint64) {
+func (c *ProxyConfigStats) AddConnectCount(nums uint64) {
 	atomic.AddUint64(&c.ProxyConnectCount, nums)
 }
 
-func (c *ProxyConfig) AddConnectRejectedCount(nums uint64) {
+func (c *ProxyConfigStats) AddConnectRejectedCount(nums uint64) {
 	atomic.AddUint64(&c.ProxyConnectRejectCount, nums)
 }
 
-func (c *ProxyConfig) GetCurrentConnectionCount() int {
+func (c *ProxyConfigStats) GetCurrentConnectionCount() int {
 	return c.joinedConns.Count()
 }
