@@ -35,15 +35,14 @@ type Agent struct {
 
 func NewAgentInfo(userName, zoneName, agentId string, c net.Conn, errChan chan error) *Agent {
 	a := &Agent{
-		zone:        zoneName,
-		id:          agentId,
-		userName:    userName,
-		version:     constants.AnywhereVersion,
-		RemoteAddr:  c.RemoteAddr(),
-		adminConn:   conn.NewWrappedConn(agentId, c),
-		errChan:     errChan,
-		CloseChan:   make(chan struct{}, 0),
-		joinedConns: conn.NewJoinedConnList(),
+		zone:       zoneName,
+		id:         agentId,
+		userName:   userName,
+		version:    constants.AnywhereVersion,
+		RemoteAddr: c.RemoteAddr(),
+		adminConn:  conn.NewWrappedConn(agentId, c),
+		errChan:    errChan,
+		CloseChan:  make(chan struct{}, 0),
 	}
 	go a.handleAdminConnection()
 	return a

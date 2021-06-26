@@ -67,8 +67,8 @@ func (l *JoinedConnList) KillById(id uint) error {
 	if c, exist := l.list[id]; !exist {
 		return fmt.Errorf("no such id %v", id)
 	} else {
-		c.src.Close()
-		c.dst.Close()
+		_ = c.src.Close()
+		_ = c.dst.Close()
 	}
 	return nil
 }
@@ -90,33 +90,22 @@ func (l *JoinedConnList) Remove(id uint) error {
 func (l *JoinedConnList) Flush() {
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
-	db.MemDB.Delete(&model.JoinedConnListItem{}, "")
+	db.MemDB.Delete(&model.JoinedConnListItem{}, "name = ?", l.name)
 	for _, joinedConn := range l.list {
-		joinedConn.src.Close()
-		joinedConn.dst.Close()
+		_ = joinedConn.src.Close()
+		_ = joinedConn.dst.Close()
 	}
 }
 
-func (l *JoinedConnList) List() []*model.JoinedConnListItem {
+func (l *JoinedConnList) List() (res []*model.JoinedConnListItem, err error) {
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
-	res := make([]*model.JoinedConnListItem, 0)
-	for idx, conn := range l.list {
-		res = append(res, &model.JoinedConnListItem{
-			ConnId:        idx,
-			SrcName:       conn.src.remoteName,
-			DstName:       conn.dst.remoteName,
-			SrcRemoteAddr: conn.src.GetRemoteAddr(),
-			SrcLocalAddr:  conn.src.GetLocalAddr(),
-			DstRemoteAddr: conn.dst.GetRemoteAddr(),
-			DstLocalAddr:  conn.dst.GetLocalAddr(),
-		})
-	}
-	return res
+	res = make([]*model.JoinedConnListItem, 0)
+	err = db.MemDB.Find(&res, "name = ?", l.name).Error
+	return
 }
 
-func (l *JoinedConnList) Count() int {
-	l.listMu.Lock()
-	defer l.listMu.Unlock()
-	return len(l.list)
+func (l *JoinedConnList) Count() (count int64, err error) {
+	err = db.MemDB.Model(&model.JoinedConnListItem{}).Count(&count).Error
+	return
 }

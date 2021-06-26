@@ -139,7 +139,7 @@ func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (
 				AgentId:       conn.DstName,
 				ZoneName:      agentConns.ZoneName,
 				UserName:      agentConns.UserName,
-				ConnId:        int64(conn.ConnId),
+				ConnId:        int64(conn.ID),
 				SrcRemoteAddr: conn.SrcRemoteAddr,
 				SrcLocalAddr:  conn.SrcLocalAddr,
 				DstRemoteAddr: conn.DstRemoteAddr,

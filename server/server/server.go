@@ -213,26 +213,33 @@ func (s *Server) RegisterAgent(userName, zoneName, agentId string, c net.Conn) (
 
 }
 
-func (s *Server) ListJoinedConns(userName, zoneName string) ([]*model.GroupConnList, error) {
-	res := make([]*model.GroupConnList, 0)
+func (s *Server) ListJoinedConns(userName, zoneName string) (res []*model.GroupConnList, err error) {
+	res = make([]*model.GroupConnList, 0)
 	if userName != "" && zoneName != "" { //only get specified zone
 		if !s.isZoneExist(userName, zoneName) {
 			return nil, fmt.Errorf("no such zone %v", zoneName)
 		}
+		var list []*model.JoinedConnListItem
+		list, err = s.zones[userName][zoneName].ListJoinedConns()
+		if err != nil {
+			return
+		}
 		res = append(res, &model.GroupConnList{
 			UserName: userName,
 			ZoneName: zoneName,
-			List:     s.zones[userName][zoneName].ListJoinedConns(),
+			List:     list,
 		})
 		return res, nil
 	}
 	//get all userName's group conn
 	for userName, zones := range s.zones {
-		for zoneName, zone := range zones {
+		for zoneName, z := range zones {
+			var list []*model.JoinedConnListItem
+			list, err = z.ListJoinedConns()
 			res = append(res, &model.GroupConnList{
 				UserName: userName,
 				ZoneName: zoneName,
-				List:     zone.ListJoinedConns(),
+				List:     list,
 			})
 
 		}
@@ -247,13 +254,13 @@ func (s *Server) KillJoinedConnById(userName, zoneName string, id int) error {
 	if !s.isZoneExist(userName, zoneName) {
 		return fmt.Errorf("no such zone %v", zoneName)
 	}
-	return s.zones[userName][zoneName].KillJoinedConnById(id)
+	return s.zones[userName][zoneName].KillJoinedConnById(uint(id))
 }
 
 func (s *Server) FlushJoinedConns() {
 	for _, zones := range s.zones {
-		for _, zone := range zones {
-			zone.FlushJoinedConns()
+		for _, z := range zones {
+			z.FlushJoinedConns()
 		}
 	}
 }

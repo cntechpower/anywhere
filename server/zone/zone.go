@@ -27,10 +27,10 @@ type IZone interface {
 	RegisterAgent(agentId string, c net.Conn) (isUpdate bool)
 	AddProxyConfig(config *model.ProxyConfig) error
 	RemoveProxyConfig(remotePort int, localAddr string) error
-	ListJoinedConns() []*model.JoinedConnListItem
-	KillJoinedConnById(id int) error
+	ListJoinedConns() ([]*model.JoinedConnListItem, error)
+	KillJoinedConnById(id uint) error
 	FlushJoinedConns()
-	GetCurrentConnectionCount() int
+	GetCurrentConnectionCount() (int64, error)
 	UpdateProxyConfigWhiteListConfig(remotePort int, localAddr, whiteCidrs string, whiteListEnable bool) error
 	AddProxyConfigWhiteListConfig(remotePort int, localAddr, whiteCidrs string) error
 	//status
@@ -65,7 +65,7 @@ func NewZone(userName, zoneName string) IZone {
 		proxyConfigMutex: sync.Mutex{},
 		errChan:          make(chan error, 1),
 		CloseChan:        make(chan struct{}, 1),
-		joinedConns:      conn.NewJoinedConnList(),
+		joinedConns:      conn.NewJoinedConnList(fmt.Sprintf("%v-%v", userName, zoneName)),
 		connectCount:     0,
 	}
 	z.connectionPool = conn.NewConnectionPool(z.requestNewProxyConn)
@@ -79,9 +79,9 @@ func (z *Zone) houseKeepLoop() {
 	h := log.NewHeader("houseKeepLoop")
 	for range ticker.C {
 		z.agentsRwMutex.Lock()
-		for name, agent := range z.agents {
-			if agent.LastAckRcvTime().Add(time.Minute * 5).Before(time.Now()) {
-				h.Infof("agent %v not receive ack for 5 min, will be delete", name)
+		for name, a := range z.agents {
+			if a.LastAckRcvTime().Add(time.Minute * 5).Before(time.Now()) {
+				h.Infof("a %v not receive ack for 5 min, will be delete", name)
 				delete(z.agents, name)
 			}
 		}
@@ -114,7 +114,7 @@ func (z *Zone) IsAgentExists(agentId string) bool {
 	return ok
 }
 
-func (z *Zone) GetCurrentConnectionCount() int {
+func (z *Zone) GetCurrentConnectionCount() (int64, error) {
 	return z.joinedConns.Count()
 }
 
@@ -333,11 +333,11 @@ func (z *Zone) requestNewProxyConn(localAddr string) {
 	}
 }
 
-func (z *Zone) ListJoinedConns() []*model.JoinedConnListItem {
+func (z *Zone) ListJoinedConns() ([]*model.JoinedConnListItem, error) {
 	return z.joinedConns.List()
 }
 
-func (z *Zone) KillJoinedConnById(id int) error {
+func (z *Zone) KillJoinedConnById(id uint) error {
 	return z.joinedConns.KillById(id)
 }
 

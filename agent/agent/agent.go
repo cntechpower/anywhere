@@ -45,7 +45,7 @@ func InitAnyWhereAgent(group, id, ip, user, password string, port int) *Agent {
 		user:        user,
 		password:    password,
 		addr:        addr,
-		joinedConns: conn.NewJoinedConnList(),
+		joinedConns: conn.NewJoinedConnList(id),
 		version:     constants.AnywhereVersion,
 		status:      "INIT",
 	}
@@ -74,17 +74,17 @@ func (a *Agent) Start(ctx context.Context) {
 func (a *Agent) Stop() {
 	h := log.NewHeader("agentMain")
 	if a.adminConn != nil {
-		a.adminConn.Close()
+		_ = a.adminConn.Close()
 		log.Infof(h, "Agent Stopping...")
 	}
 	a.status = "STOPPED"
 }
 
-func (a *Agent) ListJoinedConns() []*model.JoinedConnListItem {
+func (a *Agent) ListJoinedConns() ([]*model.JoinedConnListItem, error) {
 	return a.joinedConns.List()
 }
 
-func (a *Agent) KillJoinedConnById(id int) error {
+func (a *Agent) KillJoinedConnById(id uint) error {
 	return a.joinedConns.KillById(id)
 }
 

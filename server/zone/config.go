@@ -28,6 +28,6 @@ func (c *ProxyConfigStats) AddConnectRejectedCount(nums uint64) {
 	atomic.AddUint64(&c.ProxyConnectRejectCount, nums)
 }
 
-func (c *ProxyConfigStats) GetCurrentConnectionCount() int {
+func (c *ProxyConfigStats) GetCurrentConnectionCount() (int64, error) {
 	return c.joinedConns.Count()
 }
