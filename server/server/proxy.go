@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/cntechpower/anywhere/server/conf"
-
 	"github.com/cntechpower/anywhere/model"
+	"github.com/cntechpower/anywhere/server/dao/config"
 	"github.com/cntechpower/anywhere/util"
 	"github.com/cntechpower/utils/log"
 )
@@ -32,7 +31,7 @@ func (s *Server) AddProxyConfig(userName, zoneName string, remotePort int, local
 	if err := s.AddProxyConfigByModel(pkg); err != nil {
 		return err
 	}
-	return conf.Add(pkg)
+	return config.Add(pkg)
 
 }
 
@@ -60,6 +59,6 @@ func (s *Server) RemoveProxyConfig(userName string, zoneName string, remotePort 
 	if err := s.zones[userName][zoneName].RemoveProxyConfig(remotePort, localAddr); err != nil {
 		return err
 	}
-	return conf.Remove(userName, zoneName, remotePort)
+	return config.Remove(userName, zoneName, remotePort)
 
 }

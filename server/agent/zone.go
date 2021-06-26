@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cntechpower/anywhere/server/dao/whitelist"
+	"github.com/cntechpower/anywhere/server/dao/config"
 
-	"github.com/cntechpower/anywhere/server/conf"
+	"github.com/cntechpower/anywhere/server/dao/whitelist"
 
 	"github.com/cntechpower/anywhere/server/auth"
 
@@ -182,20 +182,20 @@ func (z *Zone) ListProxyConfigs() []*model.ProxyConfig {
 		return nil
 	}
 	res := make([]*model.ProxyConfig, 0, len(z.proxyConfigs))
-	for _, config := range z.proxyConfigs {
-		//fmt.Printf("ListProxyConfigs: %v\n", config.NetworkFlowLocalToRemoteInBytes)
-		//fmt.Printf("ListProxyConfigs: %v\n", config.NetworkFlowRemoteToLocalInBytes)
+	for _, c := range z.proxyConfigs {
+		//fmt.Printf("ListProxyConfigs: %v\n", c.NetworkFlowLocalToRemoteInBytes)
+		//fmt.Printf("ListProxyConfigs: %v\n", c.NetworkFlowRemoteToLocalInBytes)
 		res = append(res, &model.ProxyConfig{
 			UserName:                        z.userName,
 			ZoneName:                        z.zoneName,
-			RemotePort:                      config.RemotePort,
-			LocalAddr:                       config.LocalAddr,
-			IsWhiteListOn:                   config.IsWhiteListOn,
-			WhiteCidrList:                   config.WhiteCidrList,
-			NetworkFlowRemoteToLocalInBytes: config.NetworkFlowRemoteToLocalInBytes,
-			NetworkFlowLocalToRemoteInBytes: config.NetworkFlowLocalToRemoteInBytes,
-			ProxyConnectCount:               config.ProxyConnectCount,
-			ProxyConnectRejectCount:         config.ProxyConnectRejectCount,
+			RemotePort:                      c.RemotePort,
+			LocalAddr:                       c.LocalAddr,
+			IsWhiteListOn:                   c.IsWhiteListOn,
+			WhiteCidrList:                   c.WhiteCidrList,
+			NetworkFlowRemoteToLocalInBytes: c.NetworkFlowRemoteToLocalInBytes,
+			NetworkFlowLocalToRemoteInBytes: c.NetworkFlowLocalToRemoteInBytes,
+			ProxyConnectCount:               c.ProxyConnectCount,
+			ProxyConnectRejectCount:         c.ProxyConnectRejectCount,
 		})
 	}
 	return res
@@ -203,15 +203,15 @@ func (z *Zone) ListProxyConfigs() []*model.ProxyConfig {
 
 func (z *Zone) UpdateProxyConfigWhiteListConfig(remotePort int, localAddr, whiteCidrs string, whiteListEnable bool) error {
 	key := z.getProxyConfigMapKey(remotePort, localAddr)
-	config, ok := z.proxyConfigs[key]
+	c, ok := z.proxyConfigs[key]
 	if !ok {
-		return fmt.Errorf("no such proxy config %v in zone %v", localAddr, z.zoneName)
+		return fmt.Errorf("no such proxy c %v in zone %v", localAddr, z.zoneName)
 	}
-	config.acl.SetEnable(whiteListEnable)
-	err := config.acl.AddCidrsToList(whiteCidrs, true)
+	c.acl.SetEnable(whiteListEnable)
+	err := c.acl.AddCidrsToList(whiteCidrs, true)
 	if err == nil {
-		config.IsWhiteListOn = whiteListEnable
-		config.WhiteCidrList = whiteCidrs
+		c.IsWhiteListOn = whiteListEnable
+		c.WhiteCidrList = whiteCidrs
 	}
 	return err
 
@@ -219,11 +219,11 @@ func (z *Zone) UpdateProxyConfigWhiteListConfig(remotePort int, localAddr, white
 
 func (z *Zone) AddProxyConfigWhiteListConfig(remotePort int, localAddr, whiteCidrs string) error {
 	key := z.getProxyConfigMapKey(remotePort, localAddr)
-	config, ok := z.proxyConfigs[key]
+	c, ok := z.proxyConfigs[key]
 	if !ok {
-		return fmt.Errorf("no such proxy config %v in zone %v", localAddr, z.zoneName)
+		return fmt.Errorf("no such proxy c %v in zone %v", localAddr, z.zoneName)
 	}
-	return config.acl.AddCidrToList(whiteCidrs, false)
+	return c.acl.AddCidrToList(whiteCidrs, false)
 
 }
 
@@ -345,18 +345,16 @@ func (z *Zone) FlushJoinedConns() {
 
 func (z *Zone) restoreProxyConfig() error {
 	header := log.NewHeader(fmt.Sprintf("restoreProxyConfig_%s_%s", z.userName, z.zoneName))
-	configs, err := conf.ParseProxyConfigFile()
-	if err != nil {
-		return err
-	}
-	if err := configs.ProxyConfigIterator(func(userName string, config *model.ProxyConfig) error {
+	if err := config.Iterator(func(config *model.ProxyConfig) {
 		var err error
 		if z.userName == config.UserName && z.zoneName == config.ZoneName {
 			err = z.AddProxyConfig(config)
 			header.Infof("restore config for user %v, zone %v remotePort(%v), localAddr(%v), error: %v",
 				config.UserName, config.ZoneName, config.RemotePort, config.LocalAddr, err)
 		}
-		return err
+		if err != nil {
+			header.Errorf("restore config %+v error: %v", config, err)
+		}
 	}); err != nil {
 		return err
 	}

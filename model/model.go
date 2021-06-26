@@ -34,7 +34,7 @@ type AgentInfoInAgent struct {
 }
 
 type ProxyConfigs struct {
-	ProxyConfigs map[string] /*user*/ []*model.ProxyConfig
+	ProxyConfigs map[string] /*user*/ []*ProxyConfig
 }
 
 type ProxyConfig struct {
@@ -119,7 +119,7 @@ func GetPersistModels() []interface{} {
 func GetTmpModels() []interface{} {
 	res := make([]interface{}, 0)
 	res = append(res,
-		&GroupConnList{},
+		&JoinedConnListItem{},
 	)
 	return res
 }

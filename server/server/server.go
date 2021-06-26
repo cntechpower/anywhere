@@ -13,7 +13,6 @@ import (
 	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/server/agent"
 	"github.com/cntechpower/anywhere/server/auth"
-	"github.com/cntechpower/anywhere/server/conf"
 	"github.com/cntechpower/anywhere/util"
 	"github.com/cntechpower/utils/log"
 )
@@ -280,12 +279,12 @@ func (s *Server) UpdateProxyConfigWhiteList(userName, zoneName string, remotePor
 }
 
 func (s *Server) LoadProxyConfigFile() error {
-	configs, err := conf.ParseProxyConfigFile()
-	if err != nil {
-		return err
-	}
-	if err := configDao.ProxyConfigIterator(func(userName string, config *model.ProxyConfig) error {
-		return s.AddProxyConfigByModel(config)
+	h := log.NewHeader("LoadProxyConfigFile")
+	if err := configDao.Iterator(func(config *model.ProxyConfig) {
+		err := s.AddProxyConfigByModel(config)
+		if err != nil {
+			h.Errorf("load config %+v error: %v", config, err)
+		}
 	}); err != nil {
 		return err
 	}

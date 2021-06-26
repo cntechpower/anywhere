@@ -50,6 +50,14 @@ var (
 	}
 )
 
+func Init() {
+	gc, err := parseSystemConfigFile()
+	if err != nil {
+		panic(err)
+	}
+	Conf = gc
+}
+
 func ParseProxyConfigFile() (*model.ProxyConfigs, error) {
 	file, err := os.Open(constants.ProxyConfigFileName)
 	if err != nil {

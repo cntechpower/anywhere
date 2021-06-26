@@ -31,6 +31,10 @@ func main() {
 		log.WithEs(app, "http://127.0.0.1:9200"),
 	)
 	defer log.Close()
+	conf.Init()
+	db.Init(conf.Conf.MysqlDSN, model.GetPersistModels(), model.GetTmpModels())
+	defer db.Close()
+
 	var rootCmd = &cobra.Command{
 		Use:   "anywhered",
 		Short: "This is A Proxy Server ",
@@ -71,7 +75,6 @@ func main() {
 
 func run(_ *cobra.Command, _ []string) error {
 	h := log.NewHeader("serverMain")
-	conf.Init()
 	s := server.InitServerInstance(conf.Conf.ServerId, conf.Conf.MainPort, conf.Conf.User)
 	tlsConfig, err := tls.ParseTlsConfig(conf.Conf.AgentSsl.CertFile, conf.Conf.AgentSsl.KeyFile, conf.Conf.AgentSsl.CaFile)
 	if err != nil {
@@ -99,9 +102,6 @@ func run(_ *cobra.Command, _ []string) error {
 		go http.StartUIAndAPIService(restHandler, s, conf.Conf.UiConfig.WebAddr, webExitChan,
 			conf.Conf.UiConfig.SkipLogin, conf.Conf.UiConfig.DebugMode, conf.Conf.ReportWhiteCidrs)
 	}
-
-	db.Init(conf.Conf.MysqlDSN, model.GetPersistModels(), model.GetTmpModels())
-	defer db.Close()
 
 	//wait for os kill signal. TODO: graceful shutdown
 	go os.ListenTTINSignalLoop()

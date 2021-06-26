@@ -52,7 +52,7 @@ func initGorm(persistModels []interface{}, tmpModels []interface{}) {
 	}
 	_ = ConfigDB.AutoMigrate(persistModels...)
 
-	MemDB, err = gorm.Open(sqlite.Open("memory.db?cache=shared&mode=memory"), &gorm.Config{})
+	MemDB, err = gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}

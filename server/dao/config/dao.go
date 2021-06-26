@@ -56,6 +56,15 @@ func Migrate(cs *model.ProxyConfigs) (err error) {
 	return
 }
 
-func Iterator(func()) {
-	db.ConfigDB.Find()
+func Iterator(fn func(c *model.ProxyConfig)) (err error) {
+	res := make([]*model.ProxyConfig, 0)
+	err = db.ConfigDB.Find(&res).Error
+	if err != nil {
+		return err
+	}
+	for _, c := range res {
+		tmpC := c
+		fn(tmpC)
+	}
+	return
 }
