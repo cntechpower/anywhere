@@ -1,17 +1,22 @@
 package server
 
 import (
+	"context"
 	_tls "crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net"
 	"sync"
 
+	"github.com/cntechpower/anywhere/dao/connlist"
+
+	"github.com/cntechpower/anywhere/server/zone"
+
+	configDao "github.com/cntechpower/anywhere/dao/config"
+
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/model"
-	"github.com/cntechpower/anywhere/server/agent"
-	"github.com/cntechpower/anywhere/server/auth"
-	"github.com/cntechpower/anywhere/server/conf"
+	"github.com/cntechpower/anywhere/server/api/auth"
 	"github.com/cntechpower/anywhere/util"
 	"github.com/cntechpower/utils/log"
 )
@@ -21,7 +26,7 @@ type Server struct {
 	serverAddr                       *net.TCPAddr
 	credential                       *_tls.Config
 	listener                         net.Listener
-	zones                            map[string] /*user*/ map[string] /*zone*/ agent.IZone
+	zones                            map[string] /*user*/ map[string] /*zone*/ zone.IZone
 	agentsRwMutex                    sync.RWMutex
 	ExitChan                         chan error
 	ErrChan                          chan error
@@ -47,7 +52,7 @@ func InitServerInstance(serverId string, port int, users *model.UserConfig) *Ser
 	serverInstance = &Server{
 		serverId:      serverId,
 		serverAddr:    addr,
-		zones:         make(map[string]map[string]agent.IZone, 0),
+		zones:         make(map[string]map[string]zone.IZone, 0),
 		agentsRwMutex: sync.RWMutex{},
 		ExitChan:      make(chan error, 1),
 		ErrChan:       make(chan error, 10000),
@@ -79,7 +84,7 @@ func (s *Server) checkServerInit() error {
 
 }
 
-func (s *Server) Start() {
+func (s *Server) Start(ctx context.Context) {
 	h := log.NewHeader("serverStart")
 	if err := s.checkServerInit(); err != nil {
 		panic(err)
@@ -89,7 +94,7 @@ func (s *Server) Start() {
 		panic(err)
 	}
 	s.listener = ln
-	go s.RefreshSummaryLoop()
+	go s.RefreshSummaryLoop(ctx)
 	go s.StartReportCron()
 
 	go func() {
@@ -156,7 +161,7 @@ func (s *Server) handleNewConnection(c net.Conn) {
 
 func (s *Server) isZoneExist(userName, zoneName string) (exists bool) {
 	if _, userExist := s.zones[userName]; !userExist {
-		s.zones[userName] = make(map[string]agent.IZone, 0)
+		s.zones[userName] = make(map[string]zone.IZone, 0)
 	}
 	_, exists = s.zones[userName][zoneName]
 	return exists
@@ -202,35 +207,42 @@ func (s *Server) ListZones() []*model.ZoneInfo {
 
 func (s *Server) RegisterAgent(userName, zoneName, agentId string, c net.Conn) (isUpdate bool) {
 	if _, ok := s.zones[userName]; !ok {
-		s.zones[userName] = make(map[string]agent.IZone, 0)
+		s.zones[userName] = make(map[string]zone.IZone, 0)
 	}
 	if _, ok := s.zones[userName][zoneName]; !ok {
-		s.zones[userName][zoneName] = agent.NewZone(userName, zoneName)
+		s.zones[userName][zoneName] = zone.NewZone(userName, zoneName)
 	}
 	return s.zones[userName][zoneName].RegisterAgent(agentId, c)
 
 }
 
-func (s *Server) ListJoinedConns(userName, zoneName string) ([]*model.GroupConnList, error) {
-	res := make([]*model.GroupConnList, 0)
+func (s *Server) ListJoinedConns(userName, zoneName string) (res []*model.GroupConnList, err error) {
+	res = make([]*model.GroupConnList, 0)
 	if userName != "" && zoneName != "" { //only get specified zone
 		if !s.isZoneExist(userName, zoneName) {
 			return nil, fmt.Errorf("no such zone %v", zoneName)
 		}
+		var list []*model.JoinedConnListItem
+		list, err = s.zones[userName][zoneName].ListJoinedConns()
+		if err != nil {
+			return
+		}
 		res = append(res, &model.GroupConnList{
 			UserName: userName,
 			ZoneName: zoneName,
-			List:     s.zones[userName][zoneName].ListJoinedConns(),
+			List:     list,
 		})
 		return res, nil
 	}
 	//get all userName's group conn
 	for userName, zones := range s.zones {
-		for zoneName, zone := range zones {
+		for zoneName, z := range zones {
+			var list []*model.JoinedConnListItem
+			list, err = z.ListJoinedConns()
 			res = append(res, &model.GroupConnList{
 				UserName: userName,
 				ZoneName: zoneName,
-				List:     zone.ListJoinedConns(),
+				List:     list,
 			})
 
 		}
@@ -238,7 +250,7 @@ func (s *Server) ListJoinedConns(userName, zoneName string) ([]*model.GroupConnL
 	return res, nil
 }
 
-func (s *Server) KillJoinedConnById(userName, zoneName string, id int) error {
+func (s *Server) killJoinedConn(userName, zoneName string, id uint) error {
 	if zoneName == "" {
 		return fmt.Errorf("zone is empty")
 	}
@@ -248,10 +260,18 @@ func (s *Server) KillJoinedConnById(userName, zoneName string, id int) error {
 	return s.zones[userName][zoneName].KillJoinedConnById(id)
 }
 
+func (s *Server) KillJoinedConnById(id int64) (err error) {
+	c, err := connlist.GetJoinedConnById(id)
+	if err != nil {
+		return
+	}
+	return s.killJoinedConn(c.UserName, c.ZoneName, c.ID)
+}
+
 func (s *Server) FlushJoinedConns() {
 	for _, zones := range s.zones {
-		for _, zone := range zones {
-			zone.FlushJoinedConns()
+		for _, z := range zones {
+			z.FlushJoinedConns()
 		}
 	}
 }
@@ -265,18 +285,25 @@ func (s *Server) UpdateProxyConfigWhiteList(userName, zoneName string, remotePor
 	}
 	err = s.zones[userName][zoneName].UpdateProxyConfigWhiteListConfig(remotePort, localAddr, whiteCidrs, whiteListEnable)
 	if err == nil {
-		err = conf.Update(userName, zoneName, remotePort, localAddr, whiteCidrs, whiteListEnable)
+		err = configDao.Add(&model.ProxyConfig{
+			UserName:      userName,
+			ZoneName:      zoneName,
+			RemotePort:    remotePort,
+			LocalAddr:     localAddr,
+			IsWhiteListOn: whiteListEnable,
+			WhiteCidrList: whiteCidrs,
+		})
 	}
 	return
 }
 
 func (s *Server) LoadProxyConfigFile() error {
-	configs, err := conf.ParseProxyConfigFile()
-	if err != nil {
-		return err
-	}
-	if err := configs.ProxyConfigIterator(func(userName string, config *model.ProxyConfig) error {
-		return s.AddProxyConfigByModel(config)
+	h := log.NewHeader("LoadProxyConfigFile")
+	if err := configDao.Iterator(func(config *model.ProxyConfig) {
+		err := s.AddProxyConfigByModel(config)
+		if err != nil {
+			h.Errorf("load config %+v error: %v", config, err)
+		}
 	}); err != nil {
 		return err
 	}

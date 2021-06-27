@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/cntechpower/anywhere/server/rpc/handler"
+	"github.com/cntechpower/anywhere/server/api/rpc/handler"
 	"github.com/spf13/cobra"
 )
 

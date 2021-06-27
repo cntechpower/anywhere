@@ -23,7 +23,7 @@ scp anywhere-latest.tar.gz aliyun:/usr/local/anywhere
 ssh aliyun "cd /usr/local/anywhere && tar -xf anywhere-latest.tar.gz && rm -rf anywhere-latest.tar.gz"
 ssh aliyun "cd /usr/local/anywhere && rm -rf bin/anywhere && rm -rf bin/test"
 # shellcheck disable=SC2029
-ssh aliyun "cp /usr/local/anywhere_$timestamp/proxy.json /usr/local/anywhere/proxy.json"
+ssh aliyun "cp /usr/local/anywhere_$timestamp/proxy.db /usr/local/anywhere/proxy.db"
 # shellcheck disable=SC2029
 ssh aliyun "cp /usr/local/anywhere_$timestamp/anywhered.json /usr/local/anywhere/anywhered.json"
 ssh aliyun 'cd /usr/local/anywhere; nohup ./bin/anywhered start > anywhered.log 2>&1 &'

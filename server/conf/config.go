@@ -6,167 +6,13 @@ import (
 	"io/ioutil"
 	"os"
 	"reflect"
-	"sync"
-	"time"
 
 	"github.com/cntechpower/anywhere/constants"
 	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/util"
-	"github.com/cntechpower/utils/log"
 )
 
-var proxyConf *ProxyConfigs
 var Conf *model.SystemConfig
-var configMu sync.RWMutex
-
-type ProxyConfigs struct {
-	ProxyConfigs map[string] /*user*/ []*model.ProxyConfig
-}
-
-func Add(config *model.ProxyConfig) error {
-	if proxyConf == nil {
-		return fmt.Errorf("config not init")
-	}
-	return proxyConf.Add(config)
-}
-
-func Remove(userName, zoneName string, remotePort int) error {
-	if proxyConf == nil {
-		return fmt.Errorf("config not init")
-	}
-	return proxyConf.Remove(userName, zoneName, remotePort)
-}
-
-func Update(userName, zoneName string, remotePort int, localAddr, whiteCidrs string, whiteListEnable bool) error {
-	if proxyConf == nil {
-		return fmt.Errorf("config not init")
-	}
-	return proxyConf.Update(userName, zoneName, remotePort, localAddr, whiteCidrs, whiteListEnable)
-}
-
-func PersistGlobalConfigLoop() {
-	h := log.NewHeader("persist_config_loop")
-	for range time.NewTicker(5 * time.Second).C {
-		configMu.RLock()
-		if proxyConf == nil {
-			configMu.RUnlock()
-			log.Infof(h, "skip because config is nil")
-			continue
-		}
-		file, err := os.Create(constants.ProxyConfigFileName)
-		if err != nil {
-			configMu.RUnlock()
-			log.Errorf(h, "create file %v error: %v", constants.ProxyConfigFileName, err)
-			continue
-		}
-		bs, err := json.MarshalIndent(proxyConf, "", "    ")
-		if err != nil {
-			configMu.RUnlock()
-			_ = file.Close()
-			log.Errorf(h, "marshal config error: %v", err)
-			continue
-		}
-		_, err = file.Write(bs)
-		if err != nil {
-			configMu.RUnlock()
-			_ = file.Close()
-			log.Errorf(h, "write config to file error: %v", err)
-			continue
-		}
-		configMu.RUnlock()
-		_ = file.Close()
-	}
-}
-
-func Init() {
-	h := log.NewHeader("init_proxy_config")
-	var err error
-	proxyConf, err = ParseProxyConfigFile()
-	if err != nil {
-		log.Warnf(h, "read config file %v error: %v, will start with empty config",
-			constants.ProxyConfigFileName, err)
-		proxyConf = &ProxyConfigs{}
-	}
-	if proxyConf.ProxyConfigs == nil {
-		proxyConf.ProxyConfigs = make(map[string][]*model.ProxyConfig, 0)
-	}
-	Conf, err = parseSystemConfigFile()
-	if err != nil {
-		panic(err)
-	}
-	go PersistGlobalConfigLoop()
-}
-
-func (c *ProxyConfigs) ProxyConfigIterator(fn func(userName string, config *model.ProxyConfig) error) error {
-	configMu.RLock()
-	defer configMu.RUnlock()
-	for userName, configs := range c.ProxyConfigs {
-		for _, config := range configs {
-			if err := fn(userName, config); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func (c *ProxyConfigs) IsConfigExist(userName, zoneName string, remotePort int) bool {
-	configMu.RLock()
-	defer configMu.RUnlock()
-	if _, ok := c.ProxyConfigs[userName]; !ok {
-		c.ProxyConfigs[userName] = make([]*model.ProxyConfig, 0)
-		return false
-	}
-	for _, config := range c.ProxyConfigs[userName] {
-		if config.ZoneName == zoneName &&
-			config.RemotePort == remotePort {
-			return true
-		}
-	}
-	return false
-}
-
-func (c *ProxyConfigs) Add(config *model.ProxyConfig) error {
-	if c.IsConfigExist(config.UserName, config.ZoneName, config.RemotePort) {
-		return fmt.Errorf("config for user: %v, group: %v, remotePort: %v already exist",
-			config.UserName, config.ZoneName, config.RemotePort)
-	}
-	if _, ok := c.ProxyConfigs[config.UserName]; !ok {
-		c.ProxyConfigs[config.UserName] = make([]*model.ProxyConfig, 0)
-	}
-	c.ProxyConfigs[config.UserName] = append(c.ProxyConfigs[config.UserName], config)
-	return nil
-}
-
-func (c *ProxyConfigs) Remove(userName, zoneName string, remotePort int) error {
-	if !c.IsConfigExist(userName, zoneName, remotePort) {
-		return fmt.Errorf("config for user: %v, zoneName: %v, remotePort: %v not exist",
-			userName, zoneName, remotePort)
-	}
-	for idx, config := range c.ProxyConfigs[userName] {
-		if config.ZoneName == zoneName && config.RemotePort == remotePort {
-			c.ProxyConfigs[userName] = append(c.ProxyConfigs[userName][:idx], c.ProxyConfigs[userName][idx+1:]...)
-			return nil
-		}
-	}
-	return nil
-}
-
-func (c *ProxyConfigs) Update(userName, zoneName string, remotePort int, localAddr, whiteCidrs string, whiteListEnable bool) error {
-	if !c.IsConfigExist(userName, zoneName, remotePort) {
-		return fmt.Errorf("config for user: %v, zoneName: %v, remotePort: %v not exist",
-			userName, zoneName, remotePort)
-	}
-	for idx, config := range c.ProxyConfigs[userName] {
-		if config.ZoneName == zoneName && config.RemotePort == remotePort {
-			c.ProxyConfigs[userName][idx].LocalAddr = localAddr
-			c.ProxyConfigs[userName][idx].WhiteCidrList = whiteCidrs
-			c.ProxyConfigs[userName][idx].IsWhiteListOn = whiteListEnable
-			return nil
-		}
-	}
-	return nil
-}
 
 var (
 	initConfig = &model.SystemConfig{
@@ -204,20 +50,12 @@ var (
 	}
 )
 
-func ParseProxyConfigFile() (*ProxyConfigs, error) {
-	file, err := os.Open(constants.ProxyConfigFileName)
+func Init() {
+	gc, err := parseSystemConfigFile()
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	content, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, err
-	}
-	config := &ProxyConfigs{}
-	if err := json.Unmarshal(content, config); err != nil {
-		return nil, err
-	}
-	return config, nil
+	Conf = gc
 }
 
 func getConfigJsonTag(sectionName, configName string) (string, string) {
@@ -246,7 +84,6 @@ func getConfigJsonTag(sectionName, configName string) (string, string) {
 			}
 
 		}
-
 	}
 	return printSection, printName
 }

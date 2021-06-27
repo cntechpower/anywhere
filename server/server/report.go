@@ -5,14 +5,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cntechpower/anywhere/dao/whitelist"
+
 	"github.com/cntechpower/anywhere/constants"
 
 	"github.com/cntechpower/anywhere/server/conf"
 
 	"github.com/robfig/cron/v3"
 
-	"github.com/cntechpower/anywhere/server/persist"
-	"github.com/cntechpower/anywhere/server/template"
 	"github.com/cntechpower/anywhere/server/tool"
 	"github.com/cntechpower/anywhere/util"
 	"github.com/cntechpower/utils/log"
@@ -43,12 +43,12 @@ func (s *Server) SendDailyReport() {
 
 func (s *Server) GetHtmlReport(h *log.Header) (string, error) {
 
-	totalWhiteList, err := s.getWhiteListHtmlReport(persist.RankTypeTotal, 10)
+	totalWhiteList, err := s.getWhiteListHtmlReport(whitelist.RankTypeTotal, 10)
 	if err != nil {
 		//do not return because we still need send proxy report.
 		h.Errorf("get totalWhiteList html error: %v", err)
 	}
-	dailyWhiteList, err := s.getWhiteListHtmlReport(persist.RankTypeDaily, 10)
+	dailyWhiteList, err := s.getWhiteListHtmlReport(whitelist.RankTypeDaily, 10)
 	if err != nil {
 		h.Errorf("get dailyWhiteList html error: %v", err)
 	}
@@ -60,7 +60,7 @@ func (s *Server) GetHtmlReport(h *log.Header) (string, error) {
 	if err != nil {
 		h.Errorf("get proxy html error: %v", err)
 	}
-	return fmt.Sprintf(template.HTMLReport, template.HTMLReportCss, dailyWhiteList, totalWhiteList, agent, proxy), nil
+	return fmt.Sprintf(tool.HTMLReport, tool.HTMLReportCss, dailyWhiteList, totalWhiteList, agent, proxy), nil
 }
 
 func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error) {
@@ -138,7 +138,7 @@ func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error)
 
 func (s *Server) getWhiteListHtmlReport(typ string, maxLines int64) (html string, err error) {
 	proxyDenyHtmlTable := strings.Builder{}
-	denyDetails, detailCount, ipCount, err := persist.GetWhiteListDenyRank(typ, maxLines)
+	denyDetails, detailCount, ipCount, err := whitelist.GetWhiteListDenyRank(typ, maxLines)
 	if err != nil {
 		proxyDenyHtmlTable.WriteString(fmt.Sprintf("<b>%v!</b>", err))
 		return proxyDenyHtmlTable.String(), err

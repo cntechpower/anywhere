@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/cntechpower/anywhere/util"
 )
 
@@ -31,7 +33,12 @@ type AgentInfoInAgent struct {
 	LastAckRcv  string
 }
 
+type ProxyConfigs struct {
+	ProxyConfigs map[string] /*user*/ []*ProxyConfig
+}
+
 type ProxyConfig struct {
+	gorm.Model
 	UserName                        string `json:"user_name"`
 	ZoneName                        string `json:"zone_name"`
 	RemotePort                      int    `json:"remote_port"`
@@ -57,7 +64,9 @@ type ServerSummary struct {
 }
 
 type JoinedConnListItem struct {
-	ConnId        int
+	gorm.Model
+	UserName      string
+	ZoneName      string
 	SrcName       string
 	DstName       string
 	SrcRemoteAddr string
@@ -73,7 +82,6 @@ type GroupConnList struct {
 }
 
 func NewProxyConfig(userName, zoneName string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) (*ProxyConfig, error) {
-
 	if err := util.CheckPortValid(remotePort); err != nil {
 		return nil, fmt.Errorf("invalid remoteAddr %v in config, error: %v", localAddr, err)
 	}
@@ -88,7 +96,6 @@ func NewProxyConfig(userName, zoneName string, remotePort int, localAddr string,
 		IsWhiteListOn: isWhiteListOn,
 		WhiteCidrList: whiteListIps,
 	}, nil
-
 }
 
 //TODO: sort
@@ -100,5 +107,21 @@ func NewSortedProxyConfigList(list []*ProxyConfig, less func(i, j int) bool) []*
 	for _, c := range list {
 		res = append(res, c)
 	}
+	return res
+}
+
+func GetPersistModels() []interface{} {
+	res := make([]interface{}, 0)
+	res = append(res,
+		&ProxyConfig{},
+	)
+	return res
+}
+
+func GetTmpModels() []interface{} {
+	res := make([]interface{}, 0)
+	res = append(res,
+		&JoinedConnListItem{},
+	)
 	return res
 }

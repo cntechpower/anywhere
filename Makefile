@@ -20,10 +20,10 @@ newkey:
 	openssl req -new -key credential/client.key -out credential/client.csr -subj "/CN=cntechpower_anywhere"
 	openssl x509 -req -in credential/client.csr -CA credential/ca.crt -CAkey credential/ca.key -CAcreateserial -out credential/client.crt -days 3650
 rpc:
-	protoc --go_out=plugins=grpc:. server/rpc/definitions/*.proto
+	protoc --go_out=plugins=grpc:. server/api/rpc/definitions/*.proto
 	protoc --go_out=plugins=grpc:. agent/rpc/definitions/*.proto
 api:
-	swagger23 generate server -t server/restapi/api --exclude-main -f server/restapi/definition/anywhere.yml
+	swagger23 generate server -t server/api/http/api --exclude-main -f server/api/http/definition/anywhere.yml
 build_server:
 	mkdir -p bin/
 	rm -rf bin/anywhered
@@ -55,7 +55,6 @@ docker_test: docker_test_clean build_docker_image
 	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net --env PASSWD=sshpass 10.0.0.2:5000/centos:sshpass_client sshpass -p sshpass ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -n root@172.90.101.11 -p 4447 /usr/sbin/ip a
 	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.2:5000/cntechpower/busybox:1.31.1-glibc wget -O - http://172.90.101.11:4446
 	sudo $(DOCKER) exec -t composefiles_anywhered_1 bash -c "/usr/local/anywhere/bin/anywhered agent list"
-	sudo $(DOCKER) exec -t composefiles_anywhered_1 bash -c "/usr/local/anywhere/bin/anywhered proxy list"
 	sudo $(DOCKER) logs composefiles_anywhered_1
 	sudo $(DOCKER) logs composefiles_anywhere-1_1
 	sudo $(DOCKER) logs composefiles_anywhere-2_1

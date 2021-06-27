@@ -13,15 +13,18 @@ type anywhereAgentRpcHandler struct {
 	logHeader *log.Header
 }
 
-func (h *anywhereAgentRpcHandler) ListConns(ctx context.Context, empty *pb.Empty) (*pb.Conns, error) {
-	conns := h.a.ListJoinedConns()
-	res := &pb.Conns{
+func (h *anywhereAgentRpcHandler) ListConns(ctx context.Context, empty *pb.Empty) (res *pb.Conns, err error) {
+	conns, err := h.a.ListJoinedConns()
+	if err != nil {
+		return
+	}
+	res = &pb.Conns{
 		Conn: make([]*pb.Conn, 0),
 	}
 
 	for _, conn := range conns {
 		res.Conn = append(res.Conn, &pb.Conn{
-			ConnId:        int64(conn.ConnId),
+			ConnId:        int64(conn.ID),
 			SrcRemoteAddr: conn.SrcRemoteAddr,
 			SrcLocalAddr:  conn.SrcLocalAddr,
 			DstRemoteAddr: conn.DstRemoteAddr,
@@ -33,7 +36,7 @@ func (h *anywhereAgentRpcHandler) ListConns(ctx context.Context, empty *pb.Empty
 }
 
 func (h *anywhereAgentRpcHandler) KillConnById(ctx context.Context, input *pb.KillConnByIdInput) (*pb.Empty, error) {
-	return &pb.Empty{}, h.a.KillJoinedConnById(int(input.ConnId))
+	return &pb.Empty{}, h.a.KillJoinedConnById(uint(input.ConnId))
 }
 
 func (h *anywhereAgentRpcHandler) KillAllConns(ctx context.Context, empty *pb.Empty) (*pb.Empty, error) {

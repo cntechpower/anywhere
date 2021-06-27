@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/cntechpower/anywhere/server/conf"
-
+	"github.com/cntechpower/anywhere/dao/config"
 	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/util"
 	"github.com/cntechpower/utils/log"
@@ -32,7 +31,7 @@ func (s *Server) AddProxyConfig(userName, zoneName string, remotePort int, local
 	if err := s.AddProxyConfigByModel(pkg); err != nil {
 		return err
 	}
-	return conf.Add(pkg)
+	return config.Add(pkg)
 
 }
 
@@ -48,7 +47,7 @@ func (s *Server) AddProxyConfigByModel(config *model.ProxyConfig) error {
 	return nil
 }
 
-func (s *Server) RemoveProxyConfig(userName string, zoneName string, remotePort int, localAddr string) error {
+func (s *Server) RemoveProxyConfig(userName string, zoneName string, remotePort int, localAddr string) (err error) {
 	if !s.isZoneExist(userName, zoneName) {
 		return fmt.Errorf("zoneName %v not exist", zoneName)
 	}
@@ -57,9 +56,22 @@ func (s *Server) RemoveProxyConfig(userName string, zoneName string, remotePort 
 	}
 	s.agentsRwMutex.Lock()
 	defer s.agentsRwMutex.Unlock()
-	if err := s.zones[userName][zoneName].RemoveProxyConfig(remotePort, localAddr); err != nil {
+	if err = s.zones[userName][zoneName].RemoveProxyConfig(remotePort, localAddr); err != nil {
 		return err
 	}
-	return conf.Remove(userName, zoneName, remotePort)
+	return
 
+}
+
+func (s *Server) RemoveProxyConfigById(id uint) (err error) {
+	pc, err := config.GetById(int64(id))
+	if err != nil {
+		return
+	}
+	err = s.RemoveProxyConfig(pc.UserName, pc.ZoneName, pc.RemotePort, pc.LocalAddr)
+	if err != nil {
+		return
+	}
+	err = config.Remove(id)
+	return
 }
