@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cntechpower/anywhere/dao"
+	"github.com/cntechpower/anywhere/model"
+
 	"github.com/cntechpower/anywhere/agent/agent"
 	"github.com/cntechpower/anywhere/agent/handler"
 	"github.com/cntechpower/utils/log"
@@ -26,9 +29,11 @@ var connIdToKill int
 func main() {
 	log.Init(
 		log.WithStd(log.OutputTypeText),
-		log.WithKafka(app, "10.0.0.2:9093", "AsyncLogging"),
+		log.WithEs(app, "http://10.0.0.2:9200"),
 	)
 	defer log.Close()
+	dao.Init("", nil, model.GetTmpModels())
+	defer dao.Close()
 	var rootCmd = &cobra.Command{
 		Use:   "anywhere --help",
 		Short: "This is A Proxy Agent ",

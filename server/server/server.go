@@ -1,19 +1,22 @@
 package server
 
 import (
+	"context"
 	_tls "crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net"
 	"sync"
 
+	"github.com/cntechpower/anywhere/dao/connlist"
+
 	"github.com/cntechpower/anywhere/server/zone"
 
-	configDao "github.com/cntechpower/anywhere/server/dao/config"
+	configDao "github.com/cntechpower/anywhere/dao/config"
 
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/model"
-	"github.com/cntechpower/anywhere/server/auth"
+	"github.com/cntechpower/anywhere/server/api/auth"
 	"github.com/cntechpower/anywhere/util"
 	"github.com/cntechpower/utils/log"
 )
@@ -81,7 +84,7 @@ func (s *Server) checkServerInit() error {
 
 }
 
-func (s *Server) Start() {
+func (s *Server) Start(ctx context.Context) {
 	h := log.NewHeader("serverStart")
 	if err := s.checkServerInit(); err != nil {
 		panic(err)
@@ -91,7 +94,7 @@ func (s *Server) Start() {
 		panic(err)
 	}
 	s.listener = ln
-	go s.RefreshSummaryLoop()
+	go s.RefreshSummaryLoop(ctx)
 	go s.StartReportCron()
 
 	go func() {
@@ -247,14 +250,22 @@ func (s *Server) ListJoinedConns(userName, zoneName string) (res []*model.GroupC
 	return res, nil
 }
 
-func (s *Server) KillJoinedConnById(userName, zoneName string, id int) error {
+func (s *Server) killJoinedConn(userName, zoneName string, id uint) error {
 	if zoneName == "" {
 		return fmt.Errorf("zone is empty")
 	}
 	if !s.isZoneExist(userName, zoneName) {
 		return fmt.Errorf("no such zone %v", zoneName)
 	}
-	return s.zones[userName][zoneName].KillJoinedConnById(uint(id))
+	return s.zones[userName][zoneName].KillJoinedConnById(id)
+}
+
+func (s *Server) KillJoinedConnById(id int64) (err error) {
+	c, err := connlist.GetJoinedConnById(id)
+	if err != nil {
+		return
+	}
+	return s.killJoinedConn(c.UserName, c.ZoneName, c.ID)
 }
 
 func (s *Server) FlushJoinedConns() {

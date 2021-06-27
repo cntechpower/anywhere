@@ -6,6 +6,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/cntechpower/anywhere/dao/connlist"
+
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/constants"
 	"github.com/cntechpower/anywhere/model"
@@ -15,14 +17,14 @@ import (
 )
 
 type Agent struct {
-	group           string
+	zone            string
 	id              string
 	user            string
 	password        string
 	addr            *net.TCPAddr
 	credential      *_tls.Config
 	adminConn       *conn.WrappedConn
-	joinedConns     *conn.JoinedConnList
+	joinedConns     *connlist.JoinedConnList
 	version         string
 	status          string
 	lastAckSendTime time.Time
@@ -31,7 +33,7 @@ type Agent struct {
 
 var agentInstance *Agent
 
-func InitAnyWhereAgent(group, id, ip, user, password string, port int) *Agent {
+func InitAnyWhereAgent(zone, id, ip, user, password string, port int) *Agent {
 	if agentInstance != nil {
 		panic("agent already init")
 	}
@@ -40,12 +42,12 @@ func InitAnyWhereAgent(group, id, ip, user, password string, port int) *Agent {
 		panic(err)
 	}
 	agentInstance = &Agent{
-		group:       group,
+		zone:        zone,
 		id:          id,
 		user:        user,
 		password:    password,
 		addr:        addr,
-		joinedConns: conn.NewJoinedConnList(id),
+		joinedConns: connlist.NewJoinedConnList(user, zone),
 		version:     constants.AnywhereVersion,
 		status:      "INIT",
 	}

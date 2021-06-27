@@ -5,6 +5,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/cntechpower/anywhere/dao/connlist"
+
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/constants"
 	"github.com/cntechpower/anywhere/model"
@@ -29,7 +31,7 @@ type Agent struct {
 	adminConn    *conn.WrappedConn
 	errChan      chan error
 	CloseChan    chan struct{}
-	joinedConns  *conn.JoinedConnList
+	joinedConns  *connlist.JoinedConnList
 	connectCount uint64
 }
 

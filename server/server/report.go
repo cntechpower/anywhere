@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cntechpower/anywhere/server/dao/whitelist"
+	"github.com/cntechpower/anywhere/dao/whitelist"
 
 	"github.com/cntechpower/anywhere/constants"
 
@@ -13,7 +13,6 @@ import (
 
 	"github.com/robfig/cron/v3"
 
-	"github.com/cntechpower/anywhere/server/template"
 	"github.com/cntechpower/anywhere/server/tool"
 	"github.com/cntechpower/anywhere/util"
 	"github.com/cntechpower/utils/log"
@@ -61,7 +60,7 @@ func (s *Server) GetHtmlReport(h *log.Header) (string, error) {
 	if err != nil {
 		h.Errorf("get proxy html error: %v", err)
 	}
-	return fmt.Sprintf(template.HTMLReport, template.HTMLReportCss, dailyWhiteList, totalWhiteList, agent, proxy), nil
+	return fmt.Sprintf(tool.HTMLReport, tool.HTMLReportCss, dailyWhiteList, totalWhiteList, agent, proxy), nil
 }
 
 func (s *Server) getProxyConfigHtmlReport(maxLines int) (html string, err error) {

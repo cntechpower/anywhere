@@ -39,9 +39,11 @@ func NewConnectionPool(newConnectionFn func(proxyAddr string)) ConnectionPool {
 }
 
 func (p *connectionPool) Get(proxyAddr string) (*WrappedConn, error) {
+	p.mu.Lock()
 	if _, ok := p.pool[proxyAddr]; !ok {
 		p.pool[proxyAddr] = make(chan *WrappedConn, constants.ProxyConnBufferForEachAgent)
 	}
+	p.mu.Unlock()
 	for i := 0; i < constants.ProxyConnGetMaxRetryCount; i++ {
 		select {
 		case c := <-p.pool[proxyAddr]:
@@ -92,7 +94,7 @@ func (p *connectionPool) houseKeeper() {
 				}
 			default:
 			}
-			p.mu.Unlock()
 		}
+		p.mu.Unlock()
 	}
 }

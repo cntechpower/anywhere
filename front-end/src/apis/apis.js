@@ -16,4 +16,8 @@ export default {
   //support api
   getLocalIpAPI: prefix + "/api/v1/support/ip",
   getSummaryApi: prefix + "/api/v1/summary",
+
+  //stats api
+  statsGetConnectionListApi: prefix + "/api/v1/connection/list",
+  statsKillConnectionApi: prefix + "/api/v1/connection/kill",
 };

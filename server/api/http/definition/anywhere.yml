@@ -1,0 +1,359 @@
+swagger: '2.0'
+consumes:
+  - application/x-www-form-urlencoded
+produces:
+  - application/json
+info:
+  title: AnywhereServer API
+  version: 0.0.1
+  contact:
+    name: dujinyang
+    url: http://www.cntechpower.com
+    email: root@cntechpower.com
+basePath: /api
+
+paths:
+  /v1/support/ip:
+    get:
+      summary: Returns this server's public ip.
+      responses:
+        200:
+          description: A JSON array of user names
+          schema:
+            type: string
+        default:
+          description: 'generic errors'
+          schema:
+            $ref: '#/definitions/GenericErrors'
+  /v1/agent/list:
+    get:
+      summary: Returns a list of all agent.
+      responses:
+        200:
+          description: A JSON array of user names
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/AgentListInfo'
+        default:
+          description: 'generic errors'
+          schema:
+            $ref: '#/definitions/GenericErrors'
+
+  /v1/proxy/list:
+    get:
+      summary: Returns a list of all proxy config.
+      responses:
+        200:
+          description: A JSON array of user names
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ProxyConfig'
+        default:
+          description: 'generic errors'
+          schema:
+            $ref: '#/definitions/GenericErrors'
+
+  /v1/zone/list:
+    get:
+      summary: Returns a list of all zones.
+      responses:
+        200:
+          description: A JSON array of zone
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Zone'
+        default:
+          description: 'generic errors'
+          schema:
+            $ref: '#/definitions/GenericErrors'
+
+  /v1/proxy/add:
+    post:
+      parameters:
+        - in: formData
+          name: user_name
+          description: "user name"
+          type: string
+          required: true
+        - in: formData
+          name: zone_name
+          description: "zone name"
+          type: string
+          required: true
+        - in: formData
+          name: remote_port
+          description: "anywhered server listen port"
+          type: integer
+          required: true
+        - in: formData
+          name: local_addr
+          description: "localAddress"
+          type: string
+          required: true
+        - in: formData
+          name: white_list_enable
+          description: "white_list_enable"
+          type: boolean
+          required: true
+        - in: formData
+          name: white_list_ips
+          description: "white_list_ips"
+          default: ""
+          type: string
+      responses:
+        200:
+          description: A JSON array of user names
+          schema:
+            $ref: '#/definitions/ProxyConfig'
+        default:
+          description: 'generic errors'
+          schema:
+            $ref: '#/definitions/GenericErrors'
+
+  /v1/proxy/update:
+    post:
+      parameters:
+        - in: formData
+          name: user_name
+          description: "user name"
+          type: string
+          required: true
+        - in: formData
+          name: zone_name
+          description: "zone name"
+          type: string
+          required: true
+        - in: formData
+          name: remote_port
+          description: "anywhered server listen port"
+          type: integer
+        - in: formData
+          name: local_addr
+          description: "localAddress"
+          type: string
+          required: true
+        - in: formData
+          name: white_list_enable
+          description: "white_list_enable"
+          type: boolean
+        - in: formData
+          name: white_list_ips
+          description: "white_list_ips"
+          default: ""
+          type: string
+      responses:
+        200:
+          description: A JSON array of user names
+          schema:
+            $ref: '#/definitions/ProxyConfig'
+        default:
+          description: 'generic errors'
+          schema:
+            $ref: '#/definitions/GenericErrors'
+
+  /v1/proxy/delete:
+    post:
+      parameters:
+        - in: formData
+          name: id
+          description: "user name"
+          type: integer
+          required: true
+      responses:
+        200:
+          description: A JSON array of user names
+          schema:
+            $ref: '#/definitions/GenericResponse'
+        default:
+          description: 'generic errors'
+          schema:
+            $ref: '#/definitions/GenericErrors'
+
+  /v1/summary:
+    get:
+      responses:
+        200:
+          description: "get anywhere statistic summary"
+          schema:
+            $ref: '#/definitions/SummaryStatistic'
+        default:
+          description: 'generic errors'
+          schema:
+            $ref: '#/definitions/GenericErrors'
+
+  /v1/connection/list:
+    get:
+      summary: Returns a list of all conection.
+      parameters:
+        - name: user_name
+          in: query
+          description: user name
+          type: string
+        - name: zone_name
+          in: query
+          description: zone name
+          type: string
+      responses:
+        200:
+          description: A JSON array of connection
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ConnListItem'
+        default:
+          description: 'generic errors'
+          schema:
+            $ref: '#/definitions/GenericErrors'
+
+  /v1/connection/kill:
+    post:
+      parameters:
+        - in: formData
+          name: id
+          description: "connection id to kill"
+          type: integer
+          required: true
+      responses:
+        200:
+          description: 'generic response'
+          schema:
+            $ref: '#/definitions/GenericResponse'
+        default:
+          description: 'generic errors'
+          schema:
+            $ref: '#/definitions/GenericErrors'
+
+definitions:
+  GenericErrors:
+    description: Error Template
+    type: string
+
+  GenericResponse:
+    type: object
+    description: Journal information
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+
+  AgentListInfo:
+    type: object
+    description: Journal information
+    properties:
+      userName:
+        type: string
+      zoneName:
+        type: string
+      agentId:
+        type: string
+      agentAdminAddr:
+        type: string
+      lastAckSend:
+        type: string
+      lastAckRcv:
+        type: string
+      proxyConfigCount:
+        type: integer
+
+  Zone:
+    type: object
+    description: zone information
+    properties:
+      user_name:
+        description: "user_name"
+        type: string
+      zone_name:
+        description: "zone_name"
+        type: string
+      agent_count:
+        description: "agent count"
+        type: integer
+
+  ProxyConfig:
+    type: object
+    description: proxy config information
+    properties:
+      id:
+        description: "config id"
+        type: integer
+      user_name:
+        description: "user name"
+        type: string
+      zone_name:
+        description: "zone name"
+        type: string
+      remote_port:
+        description: "anywhered server listen addr"
+        type: integer
+      local_addr:
+        description: "localAddress"
+        type: string
+      is_whitelist_on:
+        description: "is whitelist on"
+        type: boolean
+      whitelist_ips:
+        description: "whitelist ips"
+        type: string
+      network_flow_local_to_remote_in_bytes:
+        type: integer
+      network_flow_remote_to_local_in_bytes:
+        type: integer
+      proxy_connect_count:
+        type: integer
+      proxy_connect_reject_count:
+        type: integer
+
+  SummaryStatistic:
+    description: SummaryOutput struct
+    type: object
+    properties:
+      agent_total_count:
+        type: integer
+      proxy_config_total_count:
+        type: integer
+      proxy_connect_total_count:
+        type: integer
+      proxy_connect_reject_count:
+        type: integer
+      current_proxy_connection_count:
+        type: integer
+      network_flow_total_count_in_bytes:
+        type: integer
+      proxy_network_flow_top10:
+        type: array
+        items:
+          $ref: '#/definitions/ProxyConfig'
+      proxy_connect_reject_count_top10:
+        type: array
+        items:
+          $ref: '#/definitions/ProxyConfig'
+
+  ConnListItem:
+    type: object
+    description: connection list item
+    properties:
+      id:
+        description: "id"
+        type: integer
+      src_name:
+        description: "src_name"
+        type: string
+      dst_name:
+        description: "dst_name"
+        type: string
+      src_remote_addr:
+        description: "src remote addr"
+        type: string
+      src_local_addr:
+        description: "src local addr"
+        type: string
+      dst_remote_addr:
+        description: "dst remote addr"
+        type: string
+      dst_local_addr:
+        description: "dst local addr"
+        type: string

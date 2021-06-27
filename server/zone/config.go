@@ -3,15 +3,16 @@ package zone
 import (
 	"sync/atomic"
 
-	"github.com/cntechpower/anywhere/conn"
+	"github.com/cntechpower/anywhere/dao/connlist"
+
 	"github.com/cntechpower/anywhere/model"
-	"github.com/cntechpower/anywhere/server/auth"
+	"github.com/cntechpower/anywhere/server/api/auth"
 )
 
 type ProxyConfigStats struct {
 	*model.ProxyConfig
 	acl         *auth.WhiteListValidator
-	joinedConns *conn.JoinedConnList
+	joinedConns *connlist.JoinedConnList
 	closeChan   chan struct{}
 }
 

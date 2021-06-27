@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/cntechpower/anywhere/server/dao/config"
+	"github.com/cntechpower/anywhere/dao/config"
 
 	"github.com/cntechpower/anywhere/server/conf"
 
@@ -31,12 +31,7 @@ var migrateConfigCmd = &cobra.Command{
 	Short: "migrate system config file to db",
 	Long:  `migrate config file 'anywhered.json' to db`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cs, err := conf.ParseProxyConfigFile()
-		if err != nil {
-			fmt.Printf("error parse old  proxy config: %v\n", err)
-			return
-		}
-		err = config.Migrate(cs)
+		err := config.Migrate()
 		if err != nil {
 			fmt.Printf("error save new proxy config: %v\n", err)
 		}

@@ -3,7 +3,11 @@ import "antd/dist/antd.css";
 import "./App.css";
 import { Layout, Menu } from "antd";
 import { Link } from "react-router-dom";
-import { GlobalOutlined, PieChartOutlined } from "@ant-design/icons";
+import {
+  CompassOutlined,
+  PieChartOutlined,
+  SettingOutlined,
+} from "@ant-design/icons";
 
 const { Header, Content, Footer, Sider } = Layout;
 const { SubMenu } = Menu;
@@ -41,12 +45,17 @@ class SiderBar extends React.Component {
               <Link to="/home">系统状态</Link>
             </Menu.Item>
 
-            <SubMenu key="configs" icon={<GlobalOutlined />} title="配置管理">
+            <SubMenu key="configs" icon={<SettingOutlined />} title="配置管理">
               <Menu.Item key="add">
                 <Link to="/configs/add">添加配置</Link>
               </Menu.Item>
               <Menu.Item key="list">
                 <Link to="/configs/list">配置列表</Link>
+              </Menu.Item>
+            </SubMenu>
+            <SubMenu key="stats" icon={<CompassOutlined />} title="状态管理">
+              <Menu.Item key="conns">
+                <Link to="/stats/conns">连接列表</Link>
               </Menu.Item>
             </SubMenu>
           </Menu>

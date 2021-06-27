@@ -20,10 +20,10 @@ newkey:
 	openssl req -new -key credential/client.key -out credential/client.csr -subj "/CN=cntechpower_anywhere"
 	openssl x509 -req -in credential/client.csr -CA credential/ca.crt -CAkey credential/ca.key -CAcreateserial -out credential/client.crt -days 3650
 rpc:
-	protoc --go_out=plugins=grpc:. server/rpc/definitions/*.proto
+	protoc --go_out=plugins=grpc:. server/api/rpc/definitions/*.proto
 	protoc --go_out=plugins=grpc:. agent/rpc/definitions/*.proto
 api:
-	swagger23 generate server -t server/restapi/api --exclude-main -f server/restapi/definition/anywhere.yml
+	swagger23 generate server -t server/api/http/api --exclude-main -f server/api/http/definition/anywhere.yml
 build_server:
 	mkdir -p bin/
 	rm -rf bin/anywhered

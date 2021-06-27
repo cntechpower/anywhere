@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"time"
 
 	"github.com/cntechpower/anywhere/constants"
@@ -48,7 +49,7 @@ func SortDescAndLimit(a []*model.ProxyConfig, less func(p1 *model.ProxyConfig, p
 	return res
 }
 
-func (s *Server) RefreshSummaryLoop() {
+func (s *Server) RefreshSummaryLoop(ctx context.Context) {
 	h := log.NewHeader("RefreshSummaryLoop")
 	currentLoop := 0
 	shouldLog := func() bool {
@@ -59,7 +60,16 @@ func (s *Server) RefreshSummaryLoop() {
 		currentLoop++
 		return false
 	}
+	ticker := time.NewTicker(constants.CacheRefreshLoopTimeSeconds * time.Second)
+
 	for {
+		select {
+		case <-ctx.Done():
+			h.Infoc(ctx, "existing")
+			return
+		case <-ticker.C:
+		}
+
 		startTime := time.Now()
 		newCache := model.ServerSummary{}
 		allConfigList := make([]*model.ProxyConfig, 0, 100)
@@ -97,9 +107,7 @@ func (s *Server) RefreshSummaryLoop() {
 		if shouldLog() {
 			log.Infof(h, "refresh done, microseconds used %v", endTime.Sub(startTime).Microseconds())
 		}
-		time.Sleep(constants.CacheRefreshLoopTimeSeconds * time.Second)
 	}
-
 }
 
 func (s *Server) GetSummary() model.ServerSummary {

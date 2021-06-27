@@ -7,13 +7,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cntechpower/anywhere/dao/connlist"
+
 	"github.com/cntechpower/anywhere/server/zone/agent"
 
-	"github.com/cntechpower/anywhere/server/dao/config"
+	"github.com/cntechpower/anywhere/dao/config"
 
-	"github.com/cntechpower/anywhere/server/dao/whitelist"
+	"github.com/cntechpower/anywhere/dao/whitelist"
 
-	"github.com/cntechpower/anywhere/server/auth"
+	"github.com/cntechpower/anywhere/server/api/auth"
 
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/model"
@@ -52,7 +54,7 @@ type Zone struct {
 	connectionPool   conn.ConnectionPool
 	errChan          chan error
 	CloseChan        chan struct{}
-	joinedConns      *conn.JoinedConnList
+	joinedConns      *connlist.JoinedConnList
 	connectCount     uint64
 }
 
@@ -65,7 +67,7 @@ func NewZone(userName, zoneName string) IZone {
 		proxyConfigMutex: sync.Mutex{},
 		errChan:          make(chan error, 1),
 		CloseChan:        make(chan struct{}, 1),
-		joinedConns:      conn.NewJoinedConnList(fmt.Sprintf("%v-%v", userName, zoneName)),
+		joinedConns:      connlist.NewJoinedConnList(userName, zoneName),
 		connectCount:     0,
 	}
 	z.connectionPool = conn.NewConnectionPool(z.requestNewProxyConn)
@@ -187,7 +189,7 @@ func (z *Zone) ListProxyConfigs() []*model.ProxyConfig {
 	for _, c := range z.proxyConfigs {
 		//fmt.Printf("ListProxyConfigs: %v\n", c.NetworkFlowLocalToRemoteInBytes)
 		//fmt.Printf("ListProxyConfigs: %v\n", c.NetworkFlowRemoteToLocalInBytes)
-		res = append(res, &model.ProxyConfig{
+		tmpC := &model.ProxyConfig{
 			UserName:                        z.userName,
 			ZoneName:                        z.zoneName,
 			RemotePort:                      c.RemotePort,
@@ -198,7 +200,11 @@ func (z *Zone) ListProxyConfigs() []*model.ProxyConfig {
 			NetworkFlowLocalToRemoteInBytes: c.NetworkFlowLocalToRemoteInBytes,
 			ProxyConnectCount:               c.ProxyConnectCount,
 			ProxyConnectRejectCount:         c.ProxyConnectRejectCount,
-		})
+		}
+		tmpC.ID = c.ID
+		tmpC.CreatedAt = c.CreatedAt
+		tmpC.UpdatedAt = c.UpdatedAt
+		res = append(res, tmpC)
 	}
 	return res
 }
@@ -292,13 +298,16 @@ func (z *Zone) handleTunnelConnection(h *log.Header, ln *net.TCPListener, config
 
 func (z *Zone) handleProxyConnection(c net.Conn, localAddr string, fnOnEnd func(localToRemoteBytes, remoteToLocalBytes uint64)) {
 	h := log.NewHeader(fmt.Sprintf("proxy: %v->%v", c.RemoteAddr().String(), localAddr))
+	h.Infof("handle new request")
 	dst, err := z.connectionPool.Get(localAddr)
 	if err != nil {
 		log.Infof(h, "get conn error: %v", err)
 		_ = c.Close()
 		return
 	}
-	idx := z.joinedConns.Add(conn.NewWrappedConn("other", c), dst)
+	h.Infof("get conn from pool success")
+	idx := z.joinedConns.Add(conn.NewWrappedConn(localAddr, c), dst)
+	h.Infof("joinedConns.Add success")
 	localToRemoteBytes, remoteToLocalBytes := conn.JoinConn(dst.GetConn(), c)
 	fnOnEnd(localToRemoteBytes, remoteToLocalBytes)
 	if err := z.joinedConns.Remove(idx); err != nil {

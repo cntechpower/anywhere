@@ -65,7 +65,8 @@ type ServerSummary struct {
 
 type JoinedConnListItem struct {
 	gorm.Model
-	Name          string
+	UserName      string
+	ZoneName      string
 	SrcName       string
 	DstName       string
 	SrcRemoteAddr string

@@ -1,20 +1,19 @@
 package main
 
 import (
+	"context"
+
+	"github.com/cntechpower/anywhere/server/api"
+
+	"github.com/cntechpower/anywhere/dao"
 	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/server/cmd"
 	"github.com/cntechpower/anywhere/server/conf"
-	"github.com/cntechpower/anywhere/server/db"
-	"github.com/cntechpower/anywhere/server/http"
-	"github.com/cntechpower/anywhere/server/restapi/api/restapi"
-	"github.com/cntechpower/anywhere/server/restapi/api/restapi/operations"
-	"github.com/cntechpower/anywhere/server/rpc/handler"
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/tls"
 	"github.com/cntechpower/utils/log"
 	"github.com/cntechpower/utils/os"
 
-	"github.com/go-openapi/loads"
 	"github.com/spf13/cobra"
 )
 
@@ -32,8 +31,8 @@ func main() {
 	)
 	defer log.Close()
 	conf.Init()
-	db.Init(conf.Conf.MysqlDSN, model.GetPersistModels(), model.GetTmpModels())
-	defer db.Close()
+	dao.Init(conf.Conf.MysqlDSN, model.GetPersistModels(), model.GetTmpModels())
+	defer dao.Close()
 
 	var rootCmd = &cobra.Command{
 		Use:   "anywhered",
@@ -53,11 +52,9 @@ func main() {
 
 	//main service
 	rootCmd.AddCommand(startCmd)
+
 	//agent cmd
 	rootCmd.AddCommand(cmd.Agent())
-
-	//proxy cmd
-	rootCmd.AddCommand(cmd.Proxy())
 
 	//config file manage cmd
 	rootCmd.AddCommand(cmd.Config())
@@ -76,6 +73,8 @@ func main() {
 func run(_ *cobra.Command, _ []string) error {
 	h := log.NewHeader("serverMain")
 	s := server.InitServerInstance(conf.Conf.ServerId, conf.Conf.MainPort, conf.Conf.User)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	tlsConfig, err := tls.ParseTlsConfig(conf.Conf.AgentSsl.CertFile, conf.Conf.AgentSsl.KeyFile, conf.Conf.AgentSsl.CaFile)
 	if err != nil {
 		return err
@@ -83,24 +82,13 @@ func run(_ *cobra.Command, _ []string) error {
 	s.SetCredentials(tlsConfig)
 
 	//start main service
-	s.Start()
+	s.Start(ctx)
 
-	// start rpc server
-	rpcExitChan := make(chan error, 0)
-	go handler.StartRpcServer(s, conf.Conf.UiConfig.GrpcAddr, rpcExitChan)
-	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
+	// start api
+	apiExitChan := make(chan error, 0)
+	err = api.Start(s, apiExitChan)
 	if err != nil {
-		return err
-	}
-	api := operations.NewAnywhereServerAPI(swaggerSpec)
-	restServer := restapi.NewServer(api)
-	restServer.ConfigureAPI()
-	restHandler := restServer.GetHandler()
-	webExitChan := make(chan error, 0)
-	//TODO: passthroughs config directly to http.StartUIAndAPIService
-	if conf.Conf.UiConfig.IsWebEnable {
-		go http.StartUIAndAPIService(restHandler, s, conf.Conf.UiConfig.WebAddr, webExitChan,
-			conf.Conf.UiConfig.SkipLogin, conf.Conf.UiConfig.DebugMode, conf.Conf.ReportWhiteCidrs)
+		panic(err)
 	}
 
 	//wait for os kill signal. TODO: graceful shutdown
@@ -110,10 +98,8 @@ func run(_ *cobra.Command, _ []string) error {
 	select {
 	case <-serverExitChan:
 		log.Infof(h, "Server Existing")
-	case err := <-webExitChan:
+	case err := <-apiExitChan:
 		log.Fatalf(h, "api server exit with error: %v", err)
-	case err := <-rpcExitChan:
-		log.Fatalf(h, "rpc server exit with error: %v", err)
 	case err := <-s.ExitChan:
 		log.Fatalf(h, "anywhere server exit with error: %v", err)
 	}

@@ -3,14 +3,12 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/cntechpower/anywhere/server/rpc/handler"
+	"github.com/cntechpower/anywhere/server/api/rpc/handler"
 
 	"github.com/spf13/cobra"
 )
 
-var agentId string
 var connIdToKill int
-var userName string
 
 var connCmd = &cobra.Command{
 	Use:   "conn",
@@ -23,7 +21,7 @@ var connListCmd = &cobra.Command{
 	Short: "list conns",
 	Long:  `list anywhere conns.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := handler.ListConns(agentId); err != nil {
+		if err := handler.ListConns(""); err != nil {
 			fmt.Printf("error query conn list: %v\n", err)
 		}
 	},
@@ -34,7 +32,7 @@ var connKillCmd = &cobra.Command{
 	Short: "kill conn",
 	Long:  `kill anywhere conn.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := handler.KillConn(userName, agentId, connIdToKill); err != nil {
+		if err := handler.KillConn(int64(connIdToKill)); err != nil {
 			fmt.Printf("error query agent list: %v\n", err)
 		}
 	},
@@ -51,10 +49,7 @@ var connFlushCmd = &cobra.Command{
 }
 
 func Conn() *cobra.Command {
-	connCmd.PersistentFlags().StringVar(&userName, "user", "", "user name ")
-	connListCmd.PersistentFlags().StringVar(&agentId, "agent-id", "", "agent id to list, leave blank to list all agent")
 	connCmd.AddCommand(connListCmd)
-	connKillCmd.PersistentFlags().StringVar(&agentId, "agent-id", "anywhere-agent-1", "agent id to delete conn")
 	connKillCmd.PersistentFlags().IntVar(&connIdToKill, "conn-id", -1, "conn id to kill")
 	connCmd.AddCommand(connKillCmd)
 	connCmd.AddCommand(connFlushCmd)

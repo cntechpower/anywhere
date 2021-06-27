@@ -57,15 +57,12 @@ class List extends Component {
       );
   }
 
-  deleteProxyConfig = (user_name, zone_name, local_addr, remote_port) => {
+  deleteProxyConfig = (id) => {
     const options = {
       method: "POST",
       headers: { "content-type": "application/x-www-form-urlencoded" },
       data: qs.stringify({
-        user_name: user_name,
-        zone_name: zone_name,
-        local_addr: local_addr,
-        remote_port: remote_port,
+        id: id,
       }),
       url: apis.proxyAgentDelApi,
     };
@@ -190,6 +187,13 @@ class List extends Component {
 
     const columns = [
       {
+        title: "ID",
+        dataIndex: "id",
+        key: "id",
+        defaultSortOrder: "descend",
+        sorter: (a, b) => a.id - b.id,
+      },
+      {
         title: "用户",
         dataIndex: "user_name",
         key: "UserName",
@@ -268,14 +272,7 @@ class List extends Component {
               confirmContent={
                 "0.0.0.0:" + record.remote_port + " -> " + record.local_addr
               }
-              fnOnOk={() =>
-                this.deleteProxyConfig(
-                  record.user_name,
-                  record.zone_name,
-                  record.local_addr,
-                  record.remote_port
-                )
-              }
+              fnOnOk={() => this.deleteProxyConfig(record.id)}
               //https://github.com/ant-design/ant-design/issues/4453
             />
           </span>

@@ -58,22 +58,6 @@ func Init() {
 	Conf = gc
 }
 
-func ParseProxyConfigFile() (*model.ProxyConfigs, error) {
-	file, err := os.Open(constants.ProxyConfigFileName)
-	if err != nil {
-		return nil, err
-	}
-	content, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, err
-	}
-	config := &model.ProxyConfigs{}
-	if err := json.Unmarshal(content, config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
 func getConfigJsonTag(sectionName, configName string) (string, string) {
 	printName := configName
 	printSection := sectionName
