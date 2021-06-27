@@ -32,4 +32,3 @@ echo "Server Upgrade Success"
 # sleep 5 to wait agent
 sleep 5
 ssh aliyun "cd /usr/local/anywhere; ./bin/anywhered agent list"
-ssh aliyun "cd /usr/local/anywhere; ./bin/anywhered proxy list"
