@@ -14,8 +14,8 @@ func ListAgentV1() ([]*models.AgentListInfo, error) {
 			ZoneName:         agent.ZoneName,
 			AgentAdminAddr:   agent.RemoteAddr,
 			AgentID:          agent.Id,
-			LastAckSend:      agent.LastAckSend.Format(constants.DefaultTimeFormat),
-			LastAckRcv:       agent.LastAckRcv.Format(constants.DefaultTimeFormat),
+			LastAckSend:      agent.LastAckSend.Local().Format(constants.DefaultTimeFormat),
+			LastAckRcv:       agent.LastAckRcv.Local().Format(constants.DefaultTimeFormat),
 			ProxyConfigCount: int64(agent.ProxyConfigCount),
 		}
 		res = append(res, a)
