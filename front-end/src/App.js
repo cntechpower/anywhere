@@ -54,6 +54,9 @@ class SiderBar extends React.Component {
               </Menu.Item>
             </SubMenu>
             <SubMenu key="stats" icon={<CompassOutlined />} title="状态管理">
+              <Menu.Item key="agents">
+                <Link to="/stats/agents">节点列表</Link>
+              </Menu.Item>
               <Menu.Item key="conns">
                 <Link to="/stats/conns">连接列表</Link>
               </Menu.Item>

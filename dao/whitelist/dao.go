@@ -11,7 +11,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var header *log.Header
+var header = log.NewHeader("whitelist")
 
 type DenyItem struct {
 	Ip      string

@@ -7,6 +7,7 @@ import Home from "./pages/home";
 import ProxyConfigList from "./pages/configs/list";
 import ProxyConfigAdd from "./pages/configs/add";
 import StatsConnsList from "./pages/stats/connection";
+import StatsAgentsList from "./pages/stats/agent";
 import UserLogin from "./pages/user/login";
 import reportWebVitals from "./reportWebVitals";
 
@@ -37,6 +38,12 @@ ReactDOM.render(
         <Route path="/stats/conns">
           <App openKey="stats" selectKey="conns">
             <StatsConnsList />
+          </App>
+        </Route>
+
+        <Route path="/stats/agents">
+          <App openKey="stats" selectKey="agents">
+            <StatsAgentsList />
           </App>
         </Route>
 

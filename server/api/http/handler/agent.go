@@ -11,6 +11,7 @@ func ListAgentV1() ([]*models.AgentListInfo, error) {
 	for _, agent := range agents {
 		a := &models.AgentListInfo{
 			UserName:         agent.UserName,
+			ZoneName:         agent.ZoneName,
 			AgentAdminAddr:   agent.RemoteAddr,
 			AgentID:          agent.Id,
 			LastAckSend:      agent.LastAckSend.Format(constants.DefaultTimeFormat),

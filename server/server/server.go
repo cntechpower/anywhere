@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"sort"
 	"sync"
 
 	"github.com/cntechpower/anywhere/dao/connlist"
@@ -167,8 +168,8 @@ func (s *Server) isZoneExist(userName, zoneName string) (exists bool) {
 	return exists
 }
 
-func (s *Server) ListAgentInfo() []*model.AgentInfoInServer {
-	res := make([]*model.AgentInfoInServer, 0)
+func (s *Server) ListAgentInfo() (res []*model.AgentInfoInServer) {
+	res = make([]*model.AgentInfoInServer, 0)
 	s.agentsRwMutex.RLock()
 	defer s.agentsRwMutex.RUnlock()
 	for _, zones := range s.zones {
@@ -176,6 +177,9 @@ func (s *Server) ListAgentInfo() []*model.AgentInfoInServer {
 			res = append(res, z.Infos()...)
 		}
 	}
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].Id > res[j].Id
+	})
 	return res
 }
 
