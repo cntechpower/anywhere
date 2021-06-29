@@ -2,8 +2,10 @@ package zone
 
 import (
 	"fmt"
+	"math/rand"
 	"net"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -282,12 +284,13 @@ func (z *Zone) handleTunnelConnection(h *log.Header, ln *net.TCPListener, config
 			continue
 		}
 		waitTime = time.Millisecond
-		if !whiteList.AddrInWhiteList(c.RemoteAddr().String()) {
+		ip := strings.Split(c.RemoteAddr().String(), ":")[0]
+		if !whiteList.IpInWhiteList(ip) {
 			_ = c.Close()
 			log.Infof(h, "refused %v connection because it is not in white list", c.RemoteAddr())
 			config.AddConnectRejectedCount(1)
 			go func() {
-				_ = whitelist.AddWhiteListDenyIp(config.RemotePort, config.ZoneName, config.LocalAddr, c.RemoteAddr().String())
+				_ = whitelist.AddWhiteListDenyIp(config.RemotePort, config.ZoneName, config.LocalAddr, ip)
 			}()
 			continue
 		}
@@ -317,16 +320,30 @@ func (z *Zone) handleProxyConnection(c net.Conn, localAddr string, fnOnEnd func(
 
 }
 
-func (z *Zone) chooseAgent() agent.IAgent {
+func (z *Zone) chooseAgent() (a agent.IAgent) {
 	h := log.NewHeader("chooseAgent")
-	for _, i := range z.agents {
+	z.agentsRwMutex.RLock()
+	defer z.agentsRwMutex.RUnlock()
+	tmpList := make([]string, 0, len(z.agents))
+	for id, i := range z.agents {
 		if i != nil && i.IsHealthy() {
-			h.Infof("chosen agent %v", i.Info().Id)
-			return i
+			tmpList = append(tmpList, id)
 		}
 	}
-	h.Errorf("can't find agent")
-	return nil
+	if len(tmpList) == 0 {
+		h.Errorf("can't find agent")
+		return
+	}
+	var randIdx int
+	if len(tmpList) == 1 {
+		randIdx = 0
+	} else {
+		randIdx = rand.Intn(len(tmpList) - 1)
+	}
+	h.Infof("choose agent %v", tmpList[randIdx])
+	a = z.agents[tmpList[randIdx]]
+
+	return
 }
 
 func (z *Zone) requestNewProxyConn(localAddr string) {
