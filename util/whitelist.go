@@ -44,17 +44,24 @@ func (l *WhiteList) AddCidrToList(cidrString string, reset bool) error {
 	return nil
 }
 
-func (l *WhiteList) AddCidrsToList(cidrsString string, reset bool) (err error) {
+func (l *WhiteList) UpdateCidrs(cidrsString string) (err error) {
 	cidrs := strings.Split(cidrsString, ",")
-	if len(cidrs) == 1 && cidrs[0] == "" {
-		return
-	}
-	for _, cidr := range cidrs {
-		err = l.AddCidrToList(cidr, reset)
-		if err != nil {
-			return
+	tmpCidrs := make([]*net.IPNet, 0, len(cidrs))
+	for _, cidrString := range cidrs {
+		if cidrString == "" {
+			continue
 		}
+		_, cidr, err := net.ParseCIDR(cidrString)
+		if err != nil {
+			return err
+		}
+		tmpCidrs = append(tmpCidrs, cidr)
 	}
+
+	l.mutex.Lock()
+	l.cidrs = tmpCidrs
+	l.mutex.Unlock()
+
 	return
 }
 
