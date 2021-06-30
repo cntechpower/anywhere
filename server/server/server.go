@@ -289,7 +289,7 @@ func (s *Server) UpdateProxyConfigWhiteList(userName, zoneName string, remotePor
 	}
 	err = s.zones[userName][zoneName].UpdateProxyConfigWhiteListConfig(remotePort, localAddr, whiteCidrs, whiteListEnable)
 	if err == nil {
-		err = configDao.Add(&model.ProxyConfig{
+		err = configDao.Update(&model.ProxyConfig{
 			UserName:      userName,
 			ZoneName:      zoneName,
 			RemotePort:    remotePort,

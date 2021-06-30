@@ -16,17 +16,10 @@ func Remove(id uint) (err error) {
 	return
 }
 
-func Update(userName, zoneName string, remotePort int, localAddr, whiteCidrs string, whiteListEnable bool) (err error) {
-	err = dao.ConfigDB().Where("user_name=?", userName).
-		Where("zone_name=?", zoneName).
-		Where("remote_port=?", remotePort).Save(&model.ProxyConfig{
-		UserName:      userName,
-		ZoneName:      zoneName,
-		RemotePort:    remotePort,
-		LocalAddr:     localAddr,
-		IsWhiteListOn: whiteListEnable,
-		WhiteCidrList: whiteCidrs,
-	}).Error
+func Update(config *model.ProxyConfig) (err error) {
+	err = dao.ConfigDB().Where("user_name=?", config.UserName).
+		Where("zone_name=?", config.ZoneName).
+		Where("remote_port=?", config.RemotePort).Save(config).Error
 	return
 }
 
