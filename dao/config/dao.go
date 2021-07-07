@@ -6,7 +6,7 @@ import (
 	"github.com/cntechpower/utils/log"
 )
 
-func Add(config *model.ProxyConfig) (err error) {
+func Save(config *model.ProxyConfig) (err error) {
 	err = dao.ConfigDB().Save(config).Error
 	return
 }
@@ -43,7 +43,7 @@ func Migrate() (err error) {
 	}
 	for _, u := range cs.ProxyConfigs {
 		for _, c := range u {
-			if err = Add(c); err != nil {
+			if err = Save(c); err != nil {
 				h.Errorf("save %+v to db error: %v", c, err)
 			}
 		}

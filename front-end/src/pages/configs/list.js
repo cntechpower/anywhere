@@ -236,6 +236,55 @@ class List extends Component {
         },
       },
       {
+        title: "连接次数",
+        key: "NetWorkConnect",
+        dataIndex: "proxy_connect_count",
+        render: (text) => {
+          let displayText = "0";
+          if (text !== undefined && text !== null) {
+            displayText = text;
+          }
+          return displayText;
+        },
+      },
+  
+      {
+        title: "拒绝次数",
+        key: "NetWorkReject",
+        dataIndex: "proxy_connect_reject_count",
+        render: (text) => {
+          let displayText = "0";
+          if (text !== undefined && text !== null) {
+            displayText = text;
+          }
+          return displayText;
+        },
+      },
+      {
+        title: "进流量",
+        key: "NetWorkIn",
+        dataIndex: "network_flow_local_to_remote_in_bytes",
+        render: (text) => {
+          let displayText = "0.00MB";
+          if (text !== undefined && text !== null) {
+            displayText = (text/1024/1024).toFixed(2) + "MB";
+          }
+          return displayText;
+        },
+      },
+      {
+        title: "出流量",
+        key: "NetWorkOut",
+        dataIndex: "network_flow_remote_to_local_in_bytes",
+        render: (text) => {
+          let displayText = "0.00MB";
+          if (text !== undefined && text !== null) {
+            displayText = (text/1024/1024).toFixed(2) + "MB";
+          }
+          return displayText;
+        },
+      },
+      {
         title: "白名单",
         dataIndex: "whitelist_ips",
         key: "WhiteListIps",

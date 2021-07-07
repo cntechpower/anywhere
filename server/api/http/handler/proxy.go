@@ -22,6 +22,8 @@ func ListProxyV1() ([]*models.ProxyConfig, error) {
 			WhitelistIps:                    config.WhiteCidrList,
 			NetworkFlowLocalToRemoteInBytes: int64(config.NetworkFlowLocalToRemoteInBytes),
 			NetworkFlowRemoteToLocalInBytes: int64(config.NetworkFlowRemoteToLocalInBytes),
+			ProxyConnectCount:               int64(config.ProxyConnectCount),
+			ProxyConnectRejectCount:         int64(config.ProxyConnectRejectCount),
 		})
 	}
 	return res, nil

@@ -45,10 +45,10 @@ type ProxyConfig struct {
 	LocalAddr                       string `json:"local_addr"`
 	IsWhiteListOn                   bool   `json:"is_white_list_enable"`
 	WhiteCidrList                   string `json:"white_cidr_list"`
-	NetworkFlowRemoteToLocalInBytes uint64 `json:"-"`
-	NetworkFlowLocalToRemoteInBytes uint64 `json:"-"`
-	ProxyConnectCount               uint64 `json:"-"`
-	ProxyConnectRejectCount         uint64 `json:"-"`
+	NetworkFlowRemoteToLocalInBytes uint64 `json:"network_in_bytes"`
+	NetworkFlowLocalToRemoteInBytes uint64 `json:"network_out_bytes"`
+	ProxyConnectCount               uint64 `json:"proxy_connect_count"`
+	ProxyConnectRejectCount         uint64 `json:"proxy_connect_reject_count"`
 }
 
 type ServerSummary struct {
