@@ -6,6 +6,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/cntechpower/anywhere/util"
+
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/tls"
@@ -133,6 +135,11 @@ func (a *Agent) handleAdminConnection(ctx context.Context) {
 			m, _ := model.ParseAuthenticationFailMsg(msg.Message)
 			h.Fatalf("authentication fail: %v", m)
 
+		case model.PkgUDPData:
+			err := util.SendUDP(msg.To, msg.Message)
+			if err != nil {
+				h.Errorf("send udp data to %v error: %v", msg.To, err)
+			}
 		default:
 			h.Errorf("got unknown ReqType: %v, message is: %v", msg.ReqType, string(msg.Message))
 			_ = a.adminConn.Close()

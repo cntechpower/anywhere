@@ -63,6 +63,34 @@ func ListenTcp(addr string) (*net.TCPListener, error) {
 	return ln, err
 }
 
+func ListenUdp(addr string) (*net.UDPConn, error) {
+	rAddr, err := net.ResolveUDPAddr("udp", addr)
+	if err != nil {
+		return nil, err
+	}
+	ln, err := net.ListenUDP("udp", rAddr)
+	if err != nil {
+		return nil, err
+	}
+	return ln, err
+}
+
+func SendUDP(addr string, data []byte) error {
+	rAddr, err := net.ResolveUDPAddr("udp", addr)
+	if err != nil {
+		return err
+	}
+	c, err := net.DialUDP("udp", nil, rAddr)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = c.Close()
+	}()
+	_, err = c.Write(data)
+	return err
+}
+
 func FormatTimestampForFileName() string {
 	return time.Now().Format("2006_01_02_15_04")
 }

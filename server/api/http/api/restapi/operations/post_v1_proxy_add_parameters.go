@@ -23,10 +23,14 @@ func NewPostV1ProxyAddParams() PostV1ProxyAddParams {
 	var (
 		// initialize parameters with default values
 
+		listenTypeDefault = string("tcp")
+
 		whiteListIpsDefault = string("")
 	)
 
 	return PostV1ProxyAddParams{
+		ListenType: &listenTypeDefault,
+
 		WhiteListIps: &whiteListIpsDefault,
 	}
 }
@@ -40,6 +44,11 @@ type PostV1ProxyAddParams struct {
 	// HTTP Request Object
 	HTTPRequest *http.Request `json:"-"`
 
+	/*listen_type
+	  In: formData
+	  Default: "tcp"
+	*/
+	ListenType *string
 	/*localAddress
 	  Required: true
 	  In: formData
@@ -90,6 +99,11 @@ func (o *PostV1ProxyAddParams) BindRequest(r *http.Request, route *middleware.Ma
 	}
 	fds := runtime.Values(r.Form)
 
+	fdListenType, fdhkListenType, _ := fds.GetOK("listen_type")
+	if err := o.bindListenType(fdListenType, fdhkListenType, route.Formats); err != nil {
+		res = append(res, err)
+	}
+
 	fdLocalAddr, fdhkLocalAddr, _ := fds.GetOK("local_addr")
 	if err := o.bindLocalAddr(fdLocalAddr, fdhkLocalAddr, route.Formats); err != nil {
 		res = append(res, err)
@@ -123,6 +137,25 @@ func (o *PostV1ProxyAddParams) BindRequest(r *http.Request, route *middleware.Ma
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+// bindListenType binds and validates parameter ListenType from formData.
+func (o *PostV1ProxyAddParams) bindListenType(rawData []string, hasKey bool, formats strfmt.Registry) error {
+	var raw string
+	if len(rawData) > 0 {
+		raw = rawData[len(rawData)-1]
+	}
+
+	// Required: false
+
+	if raw == "" { // empty values pass all other validations
+		// Default values have been previously initialized by NewPostV1ProxyAddParams()
+		return nil
+	}
+
+	o.ListenType = &raw
+
 	return nil
 }
 

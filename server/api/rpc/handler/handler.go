@@ -67,7 +67,7 @@ func (h *rpcHandlers) AddProxyConfig(ctx context.Context, input *pb.AddProxyConf
 	if err := util.CheckAddrValid(config.LocalAddr); err != nil {
 		return &pb.Empty{}, fmt.Errorf("invalid localAddr %v in config, error: %v", config.LocalAddr, err)
 	}
-	if err := s.AddProxyConfig(config.Username, config.ZoneName, int(config.RemotePort), config.LocalAddr, config.IsWhiteListOn, config.WhiteCidrList); err != nil {
+	if err := s.AddProxyConfig(config.Username, config.ZoneName, int(config.RemotePort), config.LocalAddr, config.IsWhiteListOn, config.WhiteCidrList, ""); err != nil {
 		return nil, err
 	}
 	return &pb.Empty{}, nil

@@ -64,6 +64,8 @@ github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDk
 github.com/cncf/udpa/go v0.0.0-20200629203442-efcf912fb354/go.mod h1:WmhPx2Nbnhtbo57+VJT5O0JRkEi1Wbu0z5j0R8u5Hbk=
 github.com/cntechpower/utils v0.0.0-20210615163940-4335eab5f829 h1:QDatmGxvNcZsQA1lzWmrZaaHvJZoxem7/LsJ9gGdhaU=
 github.com/cntechpower/utils v0.0.0-20210615163940-4335eab5f829/go.mod h1:ooakoIFOyDV0lhYdco2MdMwn83f295rdqmZvn0PpeaU=
+github.com/cntechpower/utils v0.0.0-20210804143408-41d01c6ff35a h1:UB7EChUkCNJAyOsESvYeY3hXLLidc6dXzTA0oLOcgKY=
+github.com/cntechpower/utils v0.0.0-20210804143408-41d01c6ff35a/go.mod h1:ooakoIFOyDV0lhYdco2MdMwn83f295rdqmZvn0PpeaU=
 github.com/cockroachdb/datadriven v0.0.0-20190809214429-80d97fb3cbaa/go.mod h1:zn76sxSg3SzpJ0PPJaLDCu+Bu0Lg3sKTORVIj19EIF8=
 github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd/go.mod h1:sE/e/2PUdi/liOCUjSTXgM1o87ZssimdTWN964YiIeI=
 github.com/coreos/bbolt v1.3.2/go.mod h1:iRUV2dpdMOn7Bo10OQBFzIJO9kkE559Wcmn+qkEiiKk=

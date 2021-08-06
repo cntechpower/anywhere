@@ -24,6 +24,7 @@ func ListProxyV1() ([]*models.ProxyConfig, error) {
 			NetworkFlowRemoteToLocalInBytes: int64(config.NetworkFlowRemoteToLocalInBytes),
 			ProxyConnectCount:               int64(config.ProxyConnectCount),
 			ProxyConnectRejectCount:         int64(config.ProxyConnectRejectCount),
+			ListenType:                      config.ListenType,
 		})
 	}
 	return res, nil
@@ -31,7 +32,7 @@ func ListProxyV1() ([]*models.ProxyConfig, error) {
 
 func AddProxyConfigV1(params v1.PostV1ProxyAddParams) (*models.ProxyConfig, error) {
 	whiteListIps := util.StringNvl(params.WhiteListIps)
-	if err := serverInst.AddProxyConfig(params.UserName, params.ZoneName, int(params.RemotePort), params.LocalAddr, params.WhiteListEnable, whiteListIps); err != nil {
+	if err := serverInst.AddProxyConfig(params.UserName, params.ZoneName, int(params.RemotePort), params.LocalAddr, params.WhiteListEnable, whiteListIps, util.StringNvl(params.ListenType)); err != nil {
 		return nil, err
 	}
 	return &models.ProxyConfig{
@@ -41,6 +42,7 @@ func AddProxyConfigV1(params v1.PostV1ProxyAddParams) (*models.ProxyConfig, erro
 		LocalAddr:     params.LocalAddr,
 		RemotePort:    params.RemotePort,
 		WhitelistIps:  util.StringNvl(params.WhiteListIps),
+		ListenType:    util.StringNvl(params.ListenType),
 	}, nil
 }
 

@@ -165,6 +165,13 @@ func init() {
             "description": "white_list_ips",
             "name": "white_list_ips",
             "in": "formData"
+          },
+          {
+            "type": "string",
+            "default": "tcp",
+            "description": "listen_type",
+            "name": "listen_type",
+            "in": "formData"
           }
         ],
         "responses": {
@@ -441,6 +448,10 @@ func init() {
         "is_whitelist_on": {
           "description": "is whitelist on",
           "type": "boolean"
+        },
+        "listen_type": {
+          "description": "listen type",
+          "type": "string"
         },
         "local_addr": {
           "description": "localAddress",
@@ -680,6 +691,13 @@ func init() {
             "description": "white_list_ips",
             "name": "white_list_ips",
             "in": "formData"
+          },
+          {
+            "type": "string",
+            "default": "tcp",
+            "description": "listen_type",
+            "name": "listen_type",
+            "in": "formData"
           }
         ],
         "responses": {
@@ -956,6 +974,10 @@ func init() {
         "is_whitelist_on": {
           "description": "is whitelist on",
           "type": "boolean"
+        },
+        "listen_type": {
+          "description": "listen type",
+          "type": "string"
         },
         "local_addr": {
           "description": "localAddress",

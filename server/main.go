@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 
+	"github.com/cntechpower/utils/tracing"
+
 	"github.com/cntechpower/anywhere/server/api"
 
 	"github.com/cntechpower/anywhere/dao"
@@ -33,6 +35,9 @@ func main() {
 	conf.Init()
 	dao.Init(conf.Conf.MysqlDSN, model.GetPersistModels(), model.GetTmpModels())
 	defer dao.Close()
+
+	tracing.Init(app, "127.0.0.1:6831")
+	defer tracing.Close()
 
 	var rootCmd = &cobra.Command{
 		Use:   "anywhered",

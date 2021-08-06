@@ -103,6 +103,11 @@ paths:
           description: "white_list_ips"
           default: ""
           type: string
+        - in: formData
+          name: listen_type
+          description: "listen_type"
+          default: "tcp"
+          type: string
       responses:
         200:
           description: A JSON array of user names
@@ -306,6 +311,9 @@ definitions:
         type: integer
       proxy_connect_reject_count:
         type: integer
+      listen_type:
+        description: "listen type"
+        type: string
 
   SummaryStatistic:
     description: SummaryOutput struct
