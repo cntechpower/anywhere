@@ -37,6 +37,11 @@ type ProxyConfigs struct {
 	ProxyConfigs map[string] /*user*/ []*ProxyConfig
 }
 
+const (
+	ListenTypeTCP = "tcp"
+	ListenTypeUDP = "udp"
+)
+
 type ProxyConfig struct {
 	gorm.Model
 	UserName                        string `json:"user_name"`
@@ -49,6 +54,8 @@ type ProxyConfig struct {
 	NetworkFlowLocalToRemoteInBytes uint64 `json:"network_out_bytes"`
 	ProxyConnectCount               uint64 `json:"proxy_connect_count"`
 	ProxyConnectRejectCount         uint64 `json:"proxy_connect_reject_count"`
+	//监听类型: TCP/UDP
+	ListenType string `json:"listen_type"`
 }
 
 type ServerSummary struct {
@@ -81,7 +88,7 @@ type GroupConnList struct {
 	List     []*JoinedConnListItem
 }
 
-func NewProxyConfig(userName, zoneName string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps string) (*ProxyConfig, error) {
+func NewProxyConfig(userName, zoneName string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps, listenType string) (*ProxyConfig, error) {
 	if err := util.CheckPortValid(remotePort); err != nil {
 		return nil, fmt.Errorf("invalid remoteAddr %v in config, error: %v", localAddr, err)
 	}
@@ -95,6 +102,7 @@ func NewProxyConfig(userName, zoneName string, remotePort int, localAddr string,
 		LocalAddr:     localAddr,
 		IsWhiteListOn: isWhiteListOn,
 		WhiteCidrList: whiteListIps,
+		ListenType:    listenType,
 	}, nil
 }
 

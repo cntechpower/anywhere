@@ -15,6 +15,7 @@ const (
 	PkgTunnelBegin         ReqType = "3"
 	PkgReqHeartBeatPong    ReqType = "4"
 	PkgAuthenticationFail  ReqType = "5"
+	PkgUDPData             ReqType = "6"
 )
 
 type AgentRegisterMsg struct {
@@ -57,7 +58,17 @@ func newRequestMsg(t ReqType, fromGroup, from, to string, msg interface{}) *Requ
 		To:        to,
 		Message:   j,
 	}
+}
 
+func newUdpDataMsg(t ReqType, fromGroup, from, to string, data []byte) *RequestMsg {
+	return &RequestMsg{
+		Version:   constants.AnywhereVersion,
+		ReqType:   t,
+		FromGroup: fromGroup,
+		FromId:    from,
+		To:        to,
+		Message:   data,
+	}
 }
 
 type ResponseMsg struct {
@@ -151,4 +162,8 @@ func ParseAuthenticationFailMsg(data []byte) (*AuthenticationFailMsg, error) {
 		return &AuthenticationFailMsg{}, err
 	}
 	return msg, nil
+}
+
+func NewUDPDataMsg(localAddr, group, id string, data []byte) *RequestMsg {
+	return newUdpDataMsg(PkgUDPData, group, id, localAddr, data)
 }

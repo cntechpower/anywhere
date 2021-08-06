@@ -18,6 +18,7 @@ import (
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/util"
 	"github.com/cntechpower/utils/log"
+	mhttp "github.com/cntechpower/utils/monitor/http"
 )
 
 var userValidator *auth.UserValidator
@@ -69,6 +70,11 @@ func StartUIAndAPIService(restHandler http.Handler, serverI *server.Server, errC
 	}
 	serverInst = serverI
 	router := gin.New()
+	router.Use(mhttp.GinMiddleware(
+		mhttp.WithLog(true, true),
+		mhttp.WithTrace(),
+		mhttp.WithBlackList([]string{"/favicon.ico"}),
+	))
 	if conf.Conf.UiConfig.DebugMode {
 		// running in debug mode, open access log
 		gin.SetMode(gin.DebugMode)

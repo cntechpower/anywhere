@@ -20,6 +20,7 @@ type IAgent interface {
 	Info() *model.AgentInfoInServer
 	IsHealthy() bool
 	LastAckRcvTime() time.Time
+	SendUDPData(localAddr string, data []byte) (err error)
 }
 
 type Agent struct {
@@ -132,4 +133,8 @@ func (a *Agent) IsHealthy() bool {
 
 func (a *Agent) LastAckRcvTime() time.Time {
 	return a.adminConn.LastAckRcvTime
+}
+
+func (a *Agent) SendUDPData(localAddr string, data []byte) (err error) {
+	return a.adminConn.Send(model.NewUDPDataMsg(localAddr, a.zone, a.id, data))
 }

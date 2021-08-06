@@ -8,8 +8,8 @@ import (
 	"github.com/cntechpower/anywhere/util"
 )
 
-func (s *Server) AddProxyConfig(userName, zoneName string, remotePort int, localAddr string, isWhiteListOn bool, whiteList string) error {
-	pkg, err := model.NewProxyConfig(userName, zoneName, remotePort, localAddr, isWhiteListOn, whiteList)
+func (s *Server) AddProxyConfig(userName, zoneName string, remotePort int, localAddr string, isWhiteListOn bool, whiteList, listenType string) error {
+	pkg, err := model.NewProxyConfig(userName, zoneName, remotePort, localAddr, isWhiteListOn, whiteList, listenType)
 	if err != nil {
 		return err
 	}

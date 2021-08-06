@@ -201,6 +201,7 @@ func (z *Zone) ListProxyConfigs() []*model.ProxyConfig {
 			NetworkFlowLocalToRemoteInBytes: c.NetworkFlowLocalToRemoteInBytes,
 			ProxyConnectCount:               c.ProxyConnectCount,
 			ProxyConnectRejectCount:         c.ProxyConnectRejectCount,
+			ListenType:                      c.ListenType,
 		}
 		tmpC.ID = c.ID
 		tmpC.CreatedAt = c.CreatedAt
@@ -228,18 +229,31 @@ func (z *Zone) UpdateProxyConfigWhiteListConfig(remotePort int, localAddr, white
 
 func (z *Zone) handleAddProxyConfig(config *ProxyConfigStats) {
 	h := log.NewHeader(fmt.Sprintf("tunnel-%v-(%v->%v)", config.UserName, config.RemotePort, config.LocalAddr))
-	h.Infof("starting new port listening")
-	ln, err := util.ListenTcp("0.0.0.0:" + strconv.Itoa(config.RemotePort))
-	if err != nil {
-		errMsg := fmt.Errorf("zone %v handleAddProxyConfig got error %v", z.zoneName, err)
-		log.Errorf(h, "%v", errMsg)
-		z.errChan <- errMsg
-		return
+	h.Infof("starting new %v port listening", config.ListenType)
+
+	if config.ListenType == model.ListenTypeUDP {
+		ln, err := util.ListenUdp("0.0.0.0:" + strconv.Itoa(config.RemotePort))
+		if err != nil {
+			errMsg := fmt.Errorf("zone %v handleAddProxyConfig got error %v", z.zoneName, err)
+			log.Errorf(h, "%v", errMsg)
+			z.errChan <- errMsg
+			return
+		}
+		go z.handleUDPTunnelConnection(h, ln, config)
+	} else {
+		ln, err := util.ListenTcp("0.0.0.0:" + strconv.Itoa(config.RemotePort))
+		if err != nil {
+			errMsg := fmt.Errorf("zone %v handleAddProxyConfig got error %v", z.zoneName, err)
+			log.Errorf(h, "%v", errMsg)
+			z.errChan <- errMsg
+			return
+		}
+		go z.handleTCPTunnelConnection(h, ln, config)
 	}
-	go z.handleTunnelConnection(h, ln, config)
+
 }
 
-func (z *Zone) handleTunnelConnection(h *log.Header, ln *net.TCPListener, config *ProxyConfigStats) {
+func (z *Zone) handleTCPTunnelConnection(h *log.Header, ln *net.TCPListener, config *ProxyConfigStats) {
 	closeFlag := false
 	go func() {
 		<-config.closeChan
@@ -283,12 +297,61 @@ func (z *Zone) handleTunnelConnection(h *log.Header, ln *net.TCPListener, config
 			}()
 			continue
 		}
-		go z.handleProxyConnection(c, config.LocalAddr, onConnectionEnd)
+		go z.handleTCPProxyConnection(c, config.LocalAddr, onConnectionEnd)
 
 	}
 }
 
-func (z *Zone) handleProxyConnection(c net.Conn, localAddr string, fnOnEnd func(localToRemoteBytes, remoteToLocalBytes uint64)) {
+func (z *Zone) handleUDPTunnelConnection(h *log.Header, ln *net.UDPConn, config *ProxyConfigStats) {
+	closeFlag := false
+	go func() {
+		<-config.closeChan
+		_ = ln.Close()
+		closeFlag = true
+	}()
+
+	//always try to get a whitelist
+	whiteList, err := auth.NewWhiteListValidator(config.RemotePort, config.ZoneName, config.LocalAddr, config.WhiteCidrList, config.IsWhiteListOn)
+	if err != nil {
+		log.Errorf(h, "init white list error: %v", err)
+		return
+	}
+	config.acl = whiteList
+	onConnectionEnd := func(localToRemoteBytes, remoteToLocalBytes uint64) {
+		config.AddNetworkFlow(remoteToLocalBytes, localToRemoteBytes)
+		config.AddConnectCount(1)
+	}
+	data := make([]byte, 1024)
+	for {
+		waitTime := time.Millisecond //default error wait time 1ms
+		n, remoteAddr, err := ln.ReadFromUDP(data)
+		if err != nil {
+			//if got conn error, make a limiting
+			time.Sleep(waitTime)
+			waitTime = waitTime * 2 //double wait time
+			if closeFlag {
+				log.Infof(h, "handler closed")
+				return
+			}
+			log.Infof(h, "accept new conn error: %v", err)
+			continue
+		}
+		ip := strings.Split(remoteAddr.String(), ":")[0]
+		if !whiteList.IpInWhiteList(ip) {
+			log.Infof(h, "refused %v connection because it is not in white list", remoteAddr.String())
+			config.AddConnectRejectedCount(1)
+			go func() {
+				_ = whitelist.AddWhiteListDenyIp(config.RemotePort, config.ZoneName, config.LocalAddr, ip)
+			}()
+			continue
+		}
+		waitTime = time.Millisecond
+		go z.handleUDPProxyConnection(remoteAddr.String(), config.LocalAddr, data[:n], onConnectionEnd)
+
+	}
+}
+
+func (z *Zone) handleTCPProxyConnection(c net.Conn, localAddr string, fnOnEnd func(localToRemoteBytes, remoteToLocalBytes uint64)) {
 	h := log.NewHeader(fmt.Sprintf("proxy: %v->%v", c.RemoteAddr().String(), localAddr))
 	h.Infof("handle new request")
 	dst, err := z.connectionPool.Get(localAddr)
@@ -307,6 +370,20 @@ func (z *Zone) handleProxyConnection(c net.Conn, localAddr string, fnOnEnd func(
 	}
 	log.Infof(h, "proxy conn closed")
 
+}
+
+func (z *Zone) handleUDPProxyConnection(remoteAddr, localAddr string, data []byte, fnOnEnd func(localToRemoteBytes, remoteToLocalBytes uint64)) {
+	h := log.NewHeader(fmt.Sprintf("UDP proxy: %v->%v", remoteAddr, localAddr))
+	h.Infof("handle new request")
+	a := z.chooseAgent()
+	if a == nil {
+		return
+	}
+	err := a.SendUDPData(localAddr, data)
+	if err != nil {
+		h.Errorf("send udp data error: %v", err)
+	}
+	fnOnEnd(0, uint64(len(data)))
 }
 
 func (z *Zone) chooseAgent() (a agent.IAgent) {

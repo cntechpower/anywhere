@@ -68,6 +68,7 @@ class Add extends React.Component {
         local_addr: values.local_ip + ":" + values.local_port,
         white_list_enable: values.white_list_enable,
         white_list_ips: values.white_list_ips || "",
+        listen_type: values.listen_type,
       }),
       url: apis.proxyConfigAddApi,
     };
@@ -157,6 +158,12 @@ class Add extends React.Component {
             disabled={this.props.zoneLoading}
           >
             {zones}
+          </Select>
+        </Form.Item>
+        <Form.Item label="监听类型" name="listen_type" initialValue="tcp">
+          <Select defaultValue="tcp" style={{ width: 200 }}>
+            <Option value="tcp">TCP</Option>
+            <Option value="udp">UDP</Option>
           </Select>
         </Form.Item>
         <Form.Item

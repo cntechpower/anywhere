@@ -220,7 +220,18 @@ class List extends Component {
         dataIndex: "local_addr",
         key: "LocalAddr",
       },
-
+      {
+        title: "类型",
+        dataIndex: "listen_type",
+        key: "RemoteAddr",
+        render: (text) => {
+          let displayText = "TCP";
+          if (text !== undefined && text === "udp") {
+            displayText = "UDP";
+          }
+          return displayText;
+        },
+      },
       {
         title: "白名单控制",
         key: "IsWhiteListOn",
@@ -247,7 +258,7 @@ class List extends Component {
           return displayText;
         },
       },
-  
+
       {
         title: "拒绝次数",
         key: "NetWorkReject",
@@ -267,7 +278,7 @@ class List extends Component {
         render: (text) => {
           let displayText = "0.00MB";
           if (text !== undefined && text !== null) {
-            displayText = (text/1024/1024).toFixed(2) + "MB";
+            displayText = (text / 1024 / 1024).toFixed(2) + "MB";
           }
           return displayText;
         },
@@ -279,7 +290,7 @@ class List extends Component {
         render: (text) => {
           let displayText = "0.00MB";
           if (text !== undefined && text !== null) {
-            displayText = (text/1024/1024).toFixed(2) + "MB";
+            displayText = (text / 1024 / 1024).toFixed(2) + "MB";
           }
           return displayText;
         },

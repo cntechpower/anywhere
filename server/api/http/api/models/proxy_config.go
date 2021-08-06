@@ -21,6 +21,9 @@ type ProxyConfig struct {
 	// is whitelist on
 	IsWhitelistOn bool `json:"is_whitelist_on,omitempty"`
 
+	// listen type
+	ListenType string `json:"listen_type,omitempty"`
+
 	// localAddress
 	LocalAddr string `json:"local_addr,omitempty"`
 
