@@ -3,26 +3,23 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	xos "os"
 	"time"
 
 	"github.com/cntechpower/anywhere/server/conf"
 
+	"github.com/cntechpower/anywhere/server/api/auth"
+	"github.com/cntechpower/anywhere/server/server"
+	"github.com/cntechpower/anywhere/util"
+	mhttp "github.com/cntechpower/utils/monitor/http"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"github.com/cntechpower/anywhere/server/api/auth"
-	"github.com/cntechpower/anywhere/server/server"
-	"github.com/cntechpower/anywhere/util"
-	"github.com/cntechpower/utils/log"
-	mhttp "github.com/cntechpower/utils/monitor/http"
 )
 
 var userValidator *auth.UserValidator
-var whiteListValidator *auth.WhiteListValidator
 var jwtValidator *auth.JwtValidator
 var serverInst *server.Server
 
@@ -70,11 +67,17 @@ func StartUIAndAPIService(restHandler http.Handler, serverI *server.Server, errC
 	}
 	serverInst = serverI
 	router := gin.New()
-	router.Use(mhttp.GinMiddleware(
+
+	options := []mhttp.GinMiddlewareOption{
 		mhttp.WithLog(true, true),
-		mhttp.WithTrace(),
 		mhttp.WithBlackList([]string{"/favicon.ico"}),
-	))
+	}
+	traceAddr := xos.Getenv("TRACE_ADDR")
+	if traceAddr != "" {
+		options = append(options, mhttp.WithTrace())
+	}
+	router.Use(mhttp.GinMiddleware(options...))
+
 	if conf.Conf.UiConfig.DebugMode {
 		// running in debug mode, open access log
 		gin.SetMode(gin.DebugMode)
@@ -123,21 +126,5 @@ func StartUIAndAPIService(restHandler http.Handler, serverI *server.Server, errC
 	if err := addAPIRouter(router, restHandler); err != nil {
 		errChan <- err
 	}
-	_, port, _ := util.GetIpPortByAddr(conf.Conf.UiConfig.WebAddr)
-	var err error
-	whiteListValidator, err = auth.NewWhiteListValidator(port, "frontend", conf.Conf.UiConfig.WebAddr, conf.Conf.ReportWhiteCidrs, true)
-	if err != nil {
-		panic(err)
-	}
-	router.GET("/report", whiteListValidator.GinHandler, func(ctx *gin.Context) {
-		html, err := serverInst.GetHtmlReport(log.NewHeader("web"))
-		if err != nil {
-			_ = ctx.AbortWithError(http.StatusInternalServerError, err)
-			return
-		}
-		ctx.Header("Content-Type", "text/html; charset=utf-8")
-		ctx.String(http.StatusOK, html)
-	})
-	router.GET("/metrics", whiteListValidator.GinHandler, gin.WrapH(promhttp.Handler()))
 	errChan <- router.RunTLS(conf.Conf.UiConfig.WebAddr, conf.Conf.HttpSSL.CertFile, conf.Conf.HttpSSL.KeyFile)
 }

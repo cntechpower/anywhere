@@ -203,8 +203,3 @@ func (h *rpcHandlers) GetSummary(ctx context.Context, empty *pb.Empty) (*pb.GetS
 	}
 	return res, nil
 }
-
-func (h *rpcHandlers) SendReport(ctx context.Context, empty *pb.Empty) (*pb.Empty, error) {
-	h.s.SendDailyReport()
-	return &pb.Empty{}, nil
-}

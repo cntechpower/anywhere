@@ -231,6 +231,27 @@ paths:
           schema:
             $ref: '#/definitions/GenericErrors'
 
+  /v1/whitelist/denys:
+    get:
+      summary: Returns a list of white list deny record.
+      parameters:
+        - name: limit
+          in: query
+          description: record limit
+          type: integer
+          default: 10
+      responses:
+        200:
+          description: A JSON array of connection
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/WhiteListDenyRecordItem'
+        default:
+          description: 'generic errors'
+          schema:
+            $ref: '#/definitions/GenericErrors'
+
 definitions:
   GenericErrors:
     description: Error Template
@@ -365,3 +386,27 @@ definitions:
       dst_local_addr:
         description: "dst local addr"
         type: string
+
+
+  WhiteListDenyRecordItem:
+    type: object
+    description: whitelist deny record item
+    properties:
+      id:
+        description: "id"
+        type: integer
+      user_name:
+        description: "user name"
+        type: string
+      zone_name:
+        description: "zone name"
+        type: string
+      local_addr:
+        description: "local addr"
+        type: string
+      ip:
+        description: "ip"
+        type: string
+      ctime:
+        description: "ctime"
+        type: integer

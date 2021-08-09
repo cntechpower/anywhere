@@ -293,7 +293,7 @@ func (z *Zone) handleTCPTunnelConnection(h *log.Header, ln *net.TCPListener, con
 			log.Infof(h, "refused %v connection because it is not in white list", c.RemoteAddr())
 			config.AddConnectRejectedCount(1)
 			go func() {
-				_ = whitelist.AddWhiteListDenyIp(config.RemotePort, config.ZoneName, config.LocalAddr, ip)
+				_ = whitelist.AddWhiteListDenyIp(config.RemotePort, config.UserName, config.ZoneName, config.LocalAddr, ip)
 			}()
 			continue
 		}
@@ -341,7 +341,7 @@ func (z *Zone) handleUDPTunnelConnection(h *log.Header, ln *net.UDPConn, config 
 			log.Infof(h, "refused %v connection because it is not in white list", remoteAddr.String())
 			config.AddConnectRejectedCount(1)
 			go func() {
-				_ = whitelist.AddWhiteListDenyIp(config.RemotePort, config.ZoneName, config.LocalAddr, ip)
+				_ = whitelist.AddWhiteListDenyIp(config.RemotePort, config.UserName, config.ZoneName, config.LocalAddr, ip)
 			}()
 			continue
 		}

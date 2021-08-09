@@ -336,6 +336,37 @@ func init() {
         }
       }
     },
+    "/v1/whitelist/denys": {
+      "get": {
+        "summary": "Returns a list of white list deny record.",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 10,
+            "description": "user name",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A JSON array of connection",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/WhiteListDenyRecordItem"
+              }
+            }
+          },
+          "default": {
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
+          }
+        }
+      }
+    },
     "/v1/zone/list": {
       "get": {
         "summary": "Returns a list of all zones.",
@@ -520,6 +551,36 @@ func init() {
           "items": {
             "$ref": "#/definitions/ProxyConfig"
           }
+        }
+      }
+    },
+    "WhiteListDenyRecordItem": {
+      "description": "whitelist deny record item",
+      "type": "object",
+      "properties": {
+        "ctime": {
+          "description": "ctime",
+          "type": "integer"
+        },
+        "id": {
+          "description": "id",
+          "type": "integer"
+        },
+        "ip": {
+          "description": "ip",
+          "type": "string"
+        },
+        "local_addr": {
+          "description": "local addr",
+          "type": "string"
+        },
+        "user_name": {
+          "description": "user name",
+          "type": "string"
+        },
+        "zone_name": {
+          "description": "zone name",
+          "type": "string"
         }
       }
     },
@@ -862,6 +923,37 @@ func init() {
         }
       }
     },
+    "/v1/whitelist/denys": {
+      "get": {
+        "summary": "Returns a list of white list deny record.",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 10,
+            "description": "user name",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A JSON array of connection",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/WhiteListDenyRecordItem"
+              }
+            }
+          },
+          "default": {
+            "description": "generic errors",
+            "schema": {
+              "$ref": "#/definitions/GenericErrors"
+            }
+          }
+        }
+      }
+    },
     "/v1/zone/list": {
       "get": {
         "summary": "Returns a list of all zones.",
@@ -1046,6 +1138,36 @@ func init() {
           "items": {
             "$ref": "#/definitions/ProxyConfig"
           }
+        }
+      }
+    },
+    "WhiteListDenyRecordItem": {
+      "description": "whitelist deny record item",
+      "type": "object",
+      "properties": {
+        "ctime": {
+          "description": "ctime",
+          "type": "integer"
+        },
+        "id": {
+          "description": "id",
+          "type": "integer"
+        },
+        "ip": {
+          "description": "ip",
+          "type": "string"
+        },
+        "local_addr": {
+          "description": "local addr",
+          "type": "string"
+        },
+        "user_name": {
+          "description": "user name",
+          "type": "string"
+        },
+        "zone_name": {
+          "description": "zone name",
+          "type": "string"
         }
       }
     },

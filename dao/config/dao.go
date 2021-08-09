@@ -7,17 +7,17 @@ import (
 )
 
 func Save(config *model.ProxyConfig) (err error) {
-	err = dao.ConfigDB().Save(config).Error
+	err = dao.PersistDB().Save(config).Error
 	return
 }
 
 func Remove(id uint) (err error) {
-	err = dao.ConfigDB().Delete(&model.ProxyConfig{}, "id = ?", id).Error
+	err = dao.PersistDB().Delete(&model.ProxyConfig{}, "id = ?", id).Error
 	return
 }
 
 func Update(config *model.ProxyConfig) (err error) {
-	err = dao.ConfigDB().Where("user_name=?", config.UserName).
+	err = dao.PersistDB().Where("user_name=?", config.UserName).
 		Where("zone_name=?", config.ZoneName).
 		Where("remote_port=?", config.RemotePort).Save(config).Error
 	return
@@ -25,7 +25,7 @@ func Update(config *model.ProxyConfig) (err error) {
 
 func IsExist(userName, zoneName string, remotePort int) (exist bool, err error) {
 	count := int64(0)
-	err = dao.ConfigDB().Where("user_name=?", userName).
+	err = dao.PersistDB().Where("user_name=?", userName).
 		Where("zone_name=?", zoneName).
 		Where("remote_port=?", remotePort).Count(&count).Error
 	if err != nil {
@@ -53,7 +53,7 @@ func Migrate() (err error) {
 
 func Iterator(fn func(c *model.ProxyConfig)) (err error) {
 	res := make([]*model.ProxyConfig, 0)
-	err = dao.ConfigDB().Find(&res).Error
+	err = dao.PersistDB().Find(&res).Error
 	if err != nil {
 		return err
 	}
@@ -66,6 +66,6 @@ func Iterator(fn func(c *model.ProxyConfig)) (err error) {
 
 func GetById(id int64) (res *model.ProxyConfig, err error) {
 	res = &model.ProxyConfig{}
-	err = dao.ConfigDB().First(res, "id = ?", id).Error
+	err = dao.PersistDB().First(res, "id = ?", id).Error
 	return
 }
