@@ -3,6 +3,8 @@ package handler
 import (
 	"net/http"
 
+	"github.com/cntechpower/anywhere/dao/whitelist"
+
 	"github.com/cntechpower/anywhere/dao/connlist"
 	"github.com/cntechpower/anywhere/server/api/http/api/models"
 	v1 "github.com/cntechpower/anywhere/server/api/http/api/restapi/operations"
@@ -37,6 +39,27 @@ func KillConnV1(params v1.PostV1ConnectionKillParams) (res *models.GenericRespon
 	if err == nil {
 		res.Code = http.StatusOK
 		res.Message = "OK"
+	}
+	return
+}
+
+func WhiteListRecordV1(params v1.GetV1WhitelistDenysParams) (res []*models.WhiteListDenyRecordItem, err error) {
+	res = make([]*models.WhiteListDenyRecordItem, 0)
+	limit := int(util.Int64Nvl(params.Limit))
+	records, err := whitelist.GetWhiteListDenyRank(limit)
+	if err != nil {
+		return
+	}
+	for _, r := range records {
+		t := &models.WhiteListDenyRecordItem{
+			Ctime:     r.CreatedAt.Unix(),
+			ID:        int64(r.ID),
+			IP:        r.IP,
+			LocalAddr: r.LocalAddr,
+			UserName:  r.UserName,
+			ZoneName:  r.ZoneName,
+		}
+		res = append(res, t)
 	}
 	return
 }

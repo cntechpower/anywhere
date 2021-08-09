@@ -224,16 +224,3 @@ func FlushConns() error {
 	_, err = client.KillAllConns(context.Background(), &pb.Empty{})
 	return err
 }
-
-func SendReport() error {
-	client, err := NewClient(true)
-	if err != nil {
-		return err
-	}
-	_, err = client.SendReport(context.Background(), &pb.Empty{})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}

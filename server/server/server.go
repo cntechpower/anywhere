@@ -96,8 +96,6 @@ func (s *Server) Start(ctx context.Context) {
 	}
 	s.listener = ln
 	go s.RefreshSummaryLoop(ctx)
-	go s.StartReportCron()
-
 	go func() {
 		for {
 			c, err := s.listener.Accept()

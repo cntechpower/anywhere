@@ -28,7 +28,7 @@ ssh aliyun "cd /usr/local/anywhere && rm -rf bin/anywhere && rm -rf bin/test"
 ssh aliyun "cp /usr/local/anywhere_$timestamp/proxy.db /usr/local/anywhere/proxy.db"
 # shellcheck disable=SC2029
 ssh aliyun "cp /usr/local/anywhere_$timestamp/anywhered.json /usr/local/anywhere/anywhered.json"
-ssh aliyun 'cd /usr/local/anywhere; nohup ./bin/anywhered start > anywhered.log 2>&1 &'
+ssh aliyun 'cd /usr/local/anywhere; ES_ADDR=http://127.0.0.1:9200 TRACE_ADDR=127.0.0.1:6831 nohup ./bin/anywhered start > anywhered.log 2>&1 &'
 echo "Aliyun Upgrade Success"
 
 # QingCloud

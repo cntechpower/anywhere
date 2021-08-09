@@ -58,6 +58,15 @@ type ProxyConfig struct {
 	ListenType string `json:"listen_type"`
 }
 
+type WhiteListDenyRecord struct {
+	gorm.Model
+	UserName   string `json:"user_name"`
+	ZoneName   string `json:"zone_name"`
+	RemotePort int    `json:"remote_port"`
+	LocalAddr  string `json:"local_addr"`
+	IP         string `json:"ip"`
+}
+
 type ServerSummary struct {
 	AgentTotalCount              uint64
 	CurrentProxyConnectionCount  uint64
@@ -122,6 +131,7 @@ func GetPersistModels() []interface{} {
 	res := make([]interface{}, 0)
 	res = append(res,
 		&ProxyConfig{},
+		&WhiteListDenyRecord{},
 	)
 	return res
 }

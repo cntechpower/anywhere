@@ -119,6 +119,14 @@ func configureAPI(api *operations.AnywhereServerAPI) http.Handler {
 		return operations.NewPostV1ConnectionKillOK().WithPayload(res)
 	})
 
+	api.GetV1WhitelistDenysHandler = operations.GetV1WhitelistDenysHandlerFunc(func(params operations.GetV1WhitelistDenysParams) middleware.Responder {
+		res, err := handler.WhiteListRecordV1(params)
+		if err != nil {
+			return operations.NewGetV1WhitelistDenysDefault(500).WithPayload(models.GenericErrors(err.Error()))
+		}
+		return operations.NewGetV1WhitelistDenysOK().WithPayload(res)
+	})
+
 	api.ServerShutdown = func() {}
 
 	return setupGlobalMiddleware(api.Serve(setupMiddlewares))

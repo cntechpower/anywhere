@@ -1,9 +1,6 @@
 {
     "server_id": "anywhered-1",
     "server_port": 1111,
-    "report_cron": "20 9 * * *",
-    "report_white_cidrs": "180.168.0.0/16,101.86.210.116/16,223.88.249.186/16,120.253.0.0/16",
-    "mysql_dsn": "anywhere:anywhere@tcp(10.0.0.2:3306)/anywhere?charset=utf8mb4\u0026parseTime=True\u0026loc=Local\u0026timeout=5s\u0026readTimeout=5s",
     "ssl_config": {
         "cert_file_path": "credential/server.crt",
         "key_file_path": "credential/server.key",
@@ -32,11 +29,5 @@
                 "otp_code": "ZKQVBFY55NJGGWBV5F6CU5CEK2YAWIB6"
             }
         ]
-    },
-    "smtp_config": {
-        "host": "smtp.exmail.qq.com",
-        "port": 465,
-        "user_name": "no_reply@cntechpower.com",
-        "password": "APB0K77gamkkAaFc"
     }
 }

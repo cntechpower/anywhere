@@ -56,6 +56,9 @@ func NewAnywhereServerAPI(spec *loads.Document) *AnywhereServerAPI {
 		GetV1SupportIPHandler: GetV1SupportIPHandlerFunc(func(params GetV1SupportIPParams) middleware.Responder {
 			return middleware.NotImplemented("operation GetV1SupportIP has not yet been implemented")
 		}),
+		GetV1WhitelistDenysHandler: GetV1WhitelistDenysHandlerFunc(func(params GetV1WhitelistDenysParams) middleware.Responder {
+			return middleware.NotImplemented("operation GetV1WhitelistDenys has not yet been implemented")
+		}),
 		GetV1ZoneListHandler: GetV1ZoneListHandlerFunc(func(params GetV1ZoneListParams) middleware.Responder {
 			return middleware.NotImplemented("operation GetV1ZoneList has not yet been implemented")
 		}),
@@ -114,6 +117,8 @@ type AnywhereServerAPI struct {
 	GetV1SummaryHandler GetV1SummaryHandler
 	// GetV1SupportIPHandler sets the operation handler for the get v1 support IP operation
 	GetV1SupportIPHandler GetV1SupportIPHandler
+	// GetV1WhitelistDenysHandler sets the operation handler for the get v1 whitelist denys operation
+	GetV1WhitelistDenysHandler GetV1WhitelistDenysHandler
 	// GetV1ZoneListHandler sets the operation handler for the get v1 zone list operation
 	GetV1ZoneListHandler GetV1ZoneListHandler
 	// PostV1ConnectionKillHandler sets the operation handler for the post v1 connection kill operation
@@ -204,6 +209,9 @@ func (o *AnywhereServerAPI) Validate() error {
 	}
 	if o.GetV1SupportIPHandler == nil {
 		unregistered = append(unregistered, "GetV1SupportIPHandler")
+	}
+	if o.GetV1WhitelistDenysHandler == nil {
+		unregistered = append(unregistered, "GetV1WhitelistDenysHandler")
 	}
 	if o.GetV1ZoneListHandler == nil {
 		unregistered = append(unregistered, "GetV1ZoneListHandler")
@@ -328,6 +336,10 @@ func (o *AnywhereServerAPI) initHandlerCache() {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/v1/support/ip"] = NewGetV1SupportIP(o.context, o.GetV1SupportIPHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/v1/whitelist/denys"] = NewGetV1WhitelistDenys(o.context, o.GetV1WhitelistDenysHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}

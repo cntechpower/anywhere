@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-
-	"github.com/cntechpower/anywhere/dao"
-	"github.com/cntechpower/anywhere/model"
+	xos "os"
 
 	"github.com/cntechpower/anywhere/agent/agent"
 	"github.com/cntechpower/anywhere/agent/handler"
+	"github.com/cntechpower/anywhere/dao"
+	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/utils/log"
 	"github.com/cntechpower/utils/os"
 
@@ -27,12 +27,17 @@ var grpcAddress string
 var connIdToKill int
 
 func main() {
-	log.Init(
-		log.WithStd(log.OutputTypeText),
-		log.WithEs(app, "http://10.0.0.2:9200"),
-	)
+	//init log
+	esAddr := xos.Getenv("ES_ADDR")
+	logOptions := make([]log.Option, 0)
+	logOptions = append(logOptions, log.WithStd(log.OutputTypeText))
+	if esAddr != "" {
+		logOptions = append(logOptions, log.WithEs(app, esAddr))
+	}
+	log.Init(logOptions...)
 	defer log.Close()
-	dao.Init("", nil, model.GetTmpModels())
+
+	dao.Init(nil, model.GetTmpModels())
 	defer dao.Close()
 	var rootCmd = &cobra.Command{
 		Use:   "anywhere --help",

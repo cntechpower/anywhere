@@ -3,20 +3,20 @@ package main
 import (
 	"context"
 
-	"github.com/cntechpower/utils/tracing"
-
-	"github.com/cntechpower/anywhere/server/api"
-
 	"github.com/cntechpower/anywhere/dao"
 	"github.com/cntechpower/anywhere/model"
+	"github.com/cntechpower/anywhere/server/api"
 	"github.com/cntechpower/anywhere/server/cmd"
 	"github.com/cntechpower/anywhere/server/conf"
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/tls"
 	"github.com/cntechpower/utils/log"
 	"github.com/cntechpower/utils/os"
+	"github.com/cntechpower/utils/tracing"
 
 	"github.com/spf13/cobra"
+
+	xos "os"
 )
 
 const (
@@ -27,17 +27,27 @@ const (
 var version string
 
 func main() {
-	log.Init(
-		log.WithStd(log.OutputTypeText),
-		log.WithEs(app, "http://127.0.0.1:9200"),
-	)
+	//init log
+	esAddr := xos.Getenv("ES_ADDR")
+	logOptions := make([]log.Option, 0)
+	logOptions = append(logOptions, log.WithStd(log.OutputTypeText))
+	if esAddr != "" {
+		logOptions = append(logOptions, log.WithEs(app, esAddr))
+	}
+	log.Init(logOptions...)
 	defer log.Close()
+
+	//init conf
 	conf.Init()
-	dao.Init(conf.Conf.MysqlDSN, model.GetPersistModels(), model.GetTmpModels())
+	dao.Init(model.GetPersistModels(), model.GetTmpModels())
 	defer dao.Close()
 
-	tracing.Init(app, "127.0.0.1:6831")
-	defer tracing.Close()
+	//init trace
+	traceAddr := xos.Getenv("TRACE_ADDR")
+	if traceAddr != "" {
+		tracing.Init(app, traceAddr)
+		defer tracing.Close()
+	}
 
 	var rootCmd = &cobra.Command{
 		Use:   "anywhered",
@@ -67,8 +77,6 @@ func main() {
 	//conn cmd
 	rootCmd.AddCommand(cmd.Conn())
 
-	//status cmd
-	rootCmd.AddCommand(cmd.Status())
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)
 	}
