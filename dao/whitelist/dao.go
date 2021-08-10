@@ -22,6 +22,6 @@ func AddWhiteListDenyIp(remotePort int, userName, zoneName, localAddr, ip string
 
 func GetWhiteListDenyRank(limit int) (details []*model.WhiteListDenyRecord, err error) {
 	details = make([]*model.WhiteListDenyRecord, 0)
-	err = dao.PersistDB().Order("id DESC").Find(&details).Limit(limit).Error
+	err = dao.PersistDB().Order("id DESC").Limit(limit).Find(&details).Error
 	return
 }

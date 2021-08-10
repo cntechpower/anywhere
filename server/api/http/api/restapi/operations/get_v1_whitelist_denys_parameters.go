@@ -39,7 +39,7 @@ type GetV1WhitelistDenysParams struct {
 	// HTTP Request Object
 	HTTPRequest *http.Request `json:"-"`
 
-	/*user name
+	/*record limit
 	  In: query
 	  Default: 10
 	*/

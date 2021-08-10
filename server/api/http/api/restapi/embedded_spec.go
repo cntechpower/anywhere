@@ -343,7 +343,7 @@ func init() {
           {
             "type": "integer",
             "default": 10,
-            "description": "user name",
+            "description": "record limit",
             "name": "limit",
             "in": "query"
           }
@@ -930,7 +930,7 @@ func init() {
           {
             "type": "integer",
             "default": 10,
-            "description": "user name",
+            "description": "record limit",
             "name": "limit",
             "in": "query"
           }
