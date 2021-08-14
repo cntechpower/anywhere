@@ -12,7 +12,7 @@
         "ca_file_path": "credential/ca.crt"
     },
     "ui_config": {
-        "skip_login": true,
+        "skip_login": false,
         "grpc_addr": "127.0.0.1:1113",
         "is_web_enable": true,
         "rest_api_listen_addr": "127.0.0.1:1112",
@@ -25,7 +25,7 @@
                 "user_name": "admin",
                 "user_password": "admin",
                 "is_admin": true,
-                "otp_enable": false,
+                "otp_enable": true,
                 "otp_code": "ZKQVBFY55NJGGWBV5F6CU5CEK2YAWIB6"
             }
         ]

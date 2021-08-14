@@ -114,11 +114,12 @@ nohup ./bin/anywhered start > anywhered.log 2>&1 &
 ```shell script
 ### Agent端执行如下命令
 cd /usr/local/anywhere
+# $HOSTNAME替换为节点名, 每个Agent不能重复
 # $SERVER_ADDR替换为Server端的公网IP地址
 # $USER_NAME替换为anywhered.json中的user_name
 # $PASSWORD替换为anywhered.json中的user_password
 # $ZONE_NAME为可用区名,可自定义. 如: asia-shanghai
-nohup ./bin/anywhere -i $HOSTNAME -s $SERVER_ADDR -u $USER_NAME -z $ZONE_NAME  --pass $PASSWORD > anywhered.log 2>&1 &
+nohup ./bin/anywhere -i $HOSTNAME -s $SERVER_ADDR -u $USER_NAME -z $ZONE_NAME  --pass $PASSWORD > anywhere.log 2>&1 &
 ```
 
 #### 访问管理页面
