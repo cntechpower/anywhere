@@ -129,7 +129,7 @@ nohup ./bin/anywhere -i $HOSTNAME -s $SERVER_ADDR -u $USER_NAME -z $ZONE_NAME  -
 安装 Authy 或其他工具, [下载地址](https://apkpure.com/twilio-authy-2-factor-authentication/com.authy.authy)
 导入动态密码: Add account->Enter Code Manually->输入`anywhered.json`中的 otp_code
 
-#### 访问页面
+##### 访问页面
 
 访问`https://$SERVER_IP:1114`
 PS: 需要导入自签发证书,可参照如下文档(文档不保证实时性和正确性,如有异常请自行搜索其他文档)
