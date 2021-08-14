@@ -10,3 +10,5 @@ static/*
 *.tar.gz
 .scannerwork/
 front-end/node_modules/
+_build/*
+_build
