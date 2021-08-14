@@ -19,6 +19,9 @@ newkey:
 	openssl genrsa -out credential/client.key 2048
 	openssl req -new -key credential/client.key -out credential/client.csr -subj "/CN=cntechpower_anywhere"
 	openssl x509 -req -in credential/client.csr -CA credential/ca.crt -CAkey credential/ca.key -CAcreateserial -out credential/client.crt -days 3650
+	openssl genrsa -out credential/http.key 2048
+	openssl req -new -key credential/http.key -out credential/http.csr -subj "/CN=cntechpower_anywhere"
+	openssl x509 -req -in credential/http.csr -CA credential/ca.crt -CAkey credential/ca.key -CAcreateserial -out credential/http.crt -days 3650
 rpc:
 	protoc --go_out=plugins=grpc:. server/api/rpc/definitions/*.proto
 	protoc --go_out=plugins=grpc:. agent/rpc/definitions/*.proto
@@ -126,6 +129,19 @@ update_ui:
 	rm -f anywhere-fe-${VERSION}.tar.gz
 	rm -f anywhere-fe-latest.tar.gz
 
+
+build_fe_ci:
+	cd front-end
+	cd front-end && rm -rf node_modules
+	cd front-end && npm install
+	cd front-end && yarn build
+
+update_fe_in_repo_ci: build_fe_ci
+	rm -rf static
+	mv front-end/build static
+
+build_ci: vet build_server build_agent newkey update_fe_in_repo_ci
+	tar -czvf anywhere-master.tar.gz bin/ credential/ static/ anywhered.json Makefile
 
 .PHONY: help
 help:
