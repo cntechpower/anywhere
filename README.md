@@ -61,7 +61,7 @@ Agent 端运行的程序与 Server 端程序维持长连接(管理连接, 用于
 
 ### 安装
 
-请移步[Actions](https://github.com/cntechpower/v2ray-webui/actions?query=workflow%3ABuild+branch%3Amain) , 从 Artifacts 中下载最新版本安装包
+请移步[Actions](https://github.com/cntechpower/anywhere/actions?query=branch%3Amaster) , 从 Artifacts 中下载最新版本安装包
 下载完成后, 首先将安装包上传到 Agent 端机器,重新生成一下 SSL 证书(Server/Agent 通信使用 SSL 证书验证, 请务必不要使用安装包内的默认证书)
 
 #### Agent 安装,并重新生成证书
