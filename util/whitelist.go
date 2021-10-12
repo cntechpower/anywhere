@@ -101,8 +101,11 @@ func NewWhiteList(remotePort int, agentId, localAddr, cidrList string, enable bo
 }
 
 func (l *WhiteList) IpInWhiteList(ctx context.Context, ip string) (res bool) {
-	span, _ := tracing.New(ctx, "WhiteList.IpInWhiteList")
-	defer span.Finish()
+	if ctx != nil {
+		span, _ := tracing.New(ctx, "WhiteList.IpInWhiteList")
+		defer span.Finish()
+	}
+
 	l.mutex.RLock()
 	defer l.mutex.RUnlock()
 	if !l.enable {

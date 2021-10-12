@@ -329,7 +329,6 @@ func (z *Zone) handleUDPTunnelConnection(h *log.Header, ln *net.UDPConn, config 
 		config.AddConnectCount(1)
 	}
 
-	onConnectionStart := func(span opentracing.Span) func() { return func() { span.Finish() } }
 	waitTime := time.Millisecond //default error wait time 1ms
 	data := make([]byte, 1024)
 	for {
@@ -345,20 +344,17 @@ func (z *Zone) handleUDPTunnelConnection(h *log.Header, ln *net.UDPConn, config 
 			h.Errorf("accept new conn error: %v", err)
 			continue
 		}
-		span, ctx := tracing.New(context.TODO(), "handleUDPTunnelConnection")
 		waitTime = time.Millisecond
 		ip := strings.Split(remoteAddr.String(), ":")[0]
-		if !whiteList.IpInWhiteList(ctx, ip) {
-			h.Infoc(ctx, "refused %v connection because it is not in white list", remoteAddr.String())
+		if !whiteList.IpInWhiteList(nil, ip) {
+			h.Infof("refused %v connection because it is not in white list", remoteAddr.String())
 			config.AddConnectRejectedCount(1)
 			go func() {
 				_ = whitelist.AddWhiteListDenyIp(config.RemotePort, config.UserName, config.ZoneName, config.LocalAddr, ip)
 			}()
-			span.Finish()
 			continue
 		}
-		go z.handleUDPProxyConnection(remoteAddr.String(), config.LocalAddr, data[:n], onConnectionStart(span), onConnectionEnd)
-		span.Finish()
+		go z.handleUDPProxyConnection(remoteAddr.String(), config.LocalAddr, data[:n], onConnectionEnd)
 	}
 }
 
@@ -384,14 +380,13 @@ func (z *Zone) handleTCPProxyConnection(ctx context.Context, c net.Conn, localAd
 
 }
 
-func (z *Zone) handleUDPProxyConnection(remoteAddr, localAddr string, data []byte, fnOnStart func(), fnOnEnd func(localToRemoteBytes, remoteToLocalBytes uint64)) {
+func (z *Zone) handleUDPProxyConnection(remoteAddr, localAddr string, data []byte, fnOnEnd func(localToRemoteBytes, remoteToLocalBytes uint64)) {
 	h := log.NewHeader(fmt.Sprintf("UDP proxy: %v->%v", remoteAddr, localAddr))
 	h.Infof("handle new request")
 	a := z.chooseAgent()
 	if a == nil {
 		return
 	}
-	fnOnStart()
 	err := a.SendUDPData(localAddr, data)
 	if err != nil {
 		h.Errorf("send udp data error: %v", err)
