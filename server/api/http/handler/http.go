@@ -58,6 +58,7 @@ func addAPIRouter(router *gin.Engine, restHandler http.Handler) error {
 	return nil
 }
 
+//nolint:funlen
 func StartUIAndAPIService(restHandler http.Handler, serverI *server.Server, errChan chan error) {
 	if !conf.Conf.UiConfig.IsWebEnable {
 		return

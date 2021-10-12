@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"net"
@@ -8,6 +9,10 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/opentracing/opentracing-go"
+
+	"github.com/cntechpower/utils/tracing"
 
 	"github.com/cntechpower/anywhere/dao/connlist"
 
@@ -42,7 +47,7 @@ type IZone interface {
 	GetProxyConfigCount() int
 	ListProxyConfigs() []*model.ProxyConfig
 
-	PutProxyConn(fromAgentId, localAddr string, c net.Conn) error
+	PutProxyConn(ctx context.Context, fromAgentId, localAddr string, c net.Conn) error
 }
 
 type Zone struct {
@@ -63,8 +68,8 @@ func NewZone(userName, zoneName string) IZone {
 	z := &Zone{
 		userName:         userName,
 		zoneName:         zoneName,
-		agents:           make(map[string]agent.IAgent, 0),
-		proxyConfigs:     make(map[string]*ProxyConfigStats, 0),
+		agents:           make(map[string]agent.IAgent),
+		proxyConfigs:     make(map[string]*ProxyConfigStats),
 		proxyConfigMutex: sync.Mutex{},
 		errChan:          make(chan error, 1),
 		CloseChan:        make(chan struct{}, 1),
@@ -133,7 +138,7 @@ func (z *Zone) AddProxyConfig(config *model.ProxyConfig) error {
 	z.proxyConfigMutex.Lock()
 	defer z.proxyConfigMutex.Unlock()
 	log.Infof(h, "adding proxy config: %v", config)
-	closeChan := make(chan struct{}, 0)
+	closeChan := make(chan struct{})
 	pConfig := &ProxyConfigStats{
 		ProxyConfig: config,
 		closeChan:   closeChan,
@@ -272,32 +277,34 @@ func (z *Zone) handleTCPTunnelConnection(h *log.Header, ln *net.TCPListener, con
 		config.AddNetworkFlow(remoteToLocalBytes, localToRemoteBytes)
 		config.AddConnectCount(1)
 	}
+	onConnectionStart := func(span opentracing.Span) func() { return func() { span.Finish() } }
+	waitTime := time.Millisecond //default error wait time 1ms
 	for {
-		waitTime := time.Millisecond //default error wait time 1ms
+		span, ctx := tracing.New(context.TODO(), "handleUDPTunnelConnection")
 		c, err := ln.AcceptTCP()
 		if err != nil {
 			//if got conn error, make a limiting
-			time.Sleep(waitTime)
 			waitTime = waitTime * 2 //double wait time
+			time.Sleep(waitTime)
 			if closeFlag {
-				log.Infof(h, "handler closed")
+				h.Infoc(ctx, "handler closed")
 				return
 			}
-			log.Infof(h, "accept new conn error: %v", err)
+			h.Errorc(ctx, "accept new conn error: %v", err)
 			continue
 		}
 		waitTime = time.Millisecond
 		ip := strings.Split(c.RemoteAddr().String(), ":")[0]
 		if !whiteList.IpInWhiteList(ip) {
 			_ = c.Close()
-			log.Infof(h, "refused %v connection because it is not in white list", c.RemoteAddr())
+			h.Infoc(ctx, "refused %v connection because it is not in white list", c.RemoteAddr())
 			config.AddConnectRejectedCount(1)
 			go func() {
 				_ = whitelist.AddWhiteListDenyIp(config.RemotePort, config.UserName, config.ZoneName, config.LocalAddr, ip)
 			}()
 			continue
 		}
-		go z.handleTCPProxyConnection(c, config.LocalAddr, onConnectionEnd)
+		go z.handleTCPProxyConnection(ctx, c, config.LocalAddr, onConnectionStart(span), onConnectionEnd)
 
 	}
 }
@@ -321,64 +328,71 @@ func (z *Zone) handleUDPTunnelConnection(h *log.Header, ln *net.UDPConn, config 
 		config.AddNetworkFlow(remoteToLocalBytes, localToRemoteBytes)
 		config.AddConnectCount(1)
 	}
+
+	onConnectionStart := func(span opentracing.Span) func() { return func() { span.Finish() } }
+	waitTime := time.Millisecond //default error wait time 1ms
 	data := make([]byte, 1024)
 	for {
-		waitTime := time.Millisecond //default error wait time 1ms
+		span, ctx := tracing.New(context.TODO(), "handleUDPTunnelConnection")
 		n, remoteAddr, err := ln.ReadFromUDP(data)
 		if err != nil {
 			//if got conn error, make a limiting
-			time.Sleep(waitTime)
 			waitTime = waitTime * 2 //double wait time
+			time.Sleep(waitTime)
 			if closeFlag {
-				log.Infof(h, "handler closed")
+				h.Infoc(ctx, "handler closed")
 				return
 			}
-			log.Infof(h, "accept new conn error: %v", err)
+			h.Errorc(ctx, "accept new conn error: %v", err)
+			span.Finish()
 			continue
 		}
+		waitTime = time.Millisecond
 		ip := strings.Split(remoteAddr.String(), ":")[0]
 		if !whiteList.IpInWhiteList(ip) {
-			log.Infof(h, "refused %v connection because it is not in white list", remoteAddr.String())
+			h.Infoc(ctx, "refused %v connection because it is not in white list", remoteAddr.String())
 			config.AddConnectRejectedCount(1)
 			go func() {
 				_ = whitelist.AddWhiteListDenyIp(config.RemotePort, config.UserName, config.ZoneName, config.LocalAddr, ip)
 			}()
+			span.Finish()
 			continue
 		}
-		waitTime = time.Millisecond
-		go z.handleUDPProxyConnection(remoteAddr.String(), config.LocalAddr, data[:n], onConnectionEnd)
-
+		go z.handleUDPProxyConnection(remoteAddr.String(), config.LocalAddr, data[:n], onConnectionStart(span), onConnectionEnd)
+		span.Finish()
 	}
 }
 
-func (z *Zone) handleTCPProxyConnection(c net.Conn, localAddr string, fnOnEnd func(localToRemoteBytes, remoteToLocalBytes uint64)) {
+func (z *Zone) handleTCPProxyConnection(ctx context.Context, c net.Conn, localAddr string, fnOnStart func(), fnOnEnd func(localToRemoteBytes, remoteToLocalBytes uint64)) {
 	h := log.NewHeader(fmt.Sprintf("proxy: %v->%v", c.RemoteAddr().String(), localAddr))
 	h.Infof("handle new request")
-	dst, err := z.connectionPool.Get(localAddr)
+	dst, err := z.connectionPool.Get(ctx, localAddr)
 	if err != nil {
 		log.Infof(h, "get conn error: %v", err)
 		_ = c.Close()
 		return
 	}
-	h.Infof("get conn from pool success")
+	h.Infoc(ctx, "get conn from pool success")
 	idx := z.joinedConns.Add(conn.NewWrappedConn(localAddr, c), dst)
-	h.Infof("joinedConns.Add success")
+	h.Infoc(ctx, "joinedConns.Add success")
+	fnOnStart()
 	localToRemoteBytes, remoteToLocalBytes := conn.JoinConn(dst.GetConn(), c)
 	fnOnEnd(localToRemoteBytes, remoteToLocalBytes)
 	if err := z.joinedConns.Remove(idx); err != nil {
-		log.Errorf(h, "remove conn from list error: %v", err)
+		h.Errorc(ctx, "remove conn from list error: %v", err)
 	}
-	log.Infof(h, "proxy conn closed")
+	h.Errorc(ctx, "proxy conn closed")
 
 }
 
-func (z *Zone) handleUDPProxyConnection(remoteAddr, localAddr string, data []byte, fnOnEnd func(localToRemoteBytes, remoteToLocalBytes uint64)) {
+func (z *Zone) handleUDPProxyConnection(remoteAddr, localAddr string, data []byte, fnOnStart func(), fnOnEnd func(localToRemoteBytes, remoteToLocalBytes uint64)) {
 	h := log.NewHeader(fmt.Sprintf("UDP proxy: %v->%v", remoteAddr, localAddr))
 	h.Infof("handle new request")
 	a := z.chooseAgent()
 	if a == nil {
 		return
 	}
+	fnOnStart()
 	err := a.SendUDPData(localAddr, data)
 	if err != nil {
 		h.Errorf("send udp data error: %v", err)
@@ -404,7 +418,7 @@ func (z *Zone) chooseAgent() (a agent.IAgent) {
 	if len(tmpList) == 1 {
 		randIdx = 0
 	} else {
-		randIdx = rand.Intn(len(tmpList) - 1)
+		randIdx = rand.Intn(len(tmpList) - 1) //nolint:gosec
 	}
 	h.Infof("choose agent %v", tmpList[randIdx])
 	a = z.agents[tmpList[randIdx]]
@@ -455,6 +469,6 @@ func (z *Zone) restoreProxyConfig() error {
 	return nil
 }
 
-func (z *Zone) PutProxyConn(fromAgentId, localAddr string, c net.Conn) error {
-	return z.connectionPool.Put(localAddr, conn.NewWrappedConn(fromAgentId, c))
+func (z *Zone) PutProxyConn(ctx context.Context, fromAgentId, localAddr string, c net.Conn) error {
+	return z.connectionPool.Put(ctx, localAddr, conn.NewWrappedConn(fromAgentId, c))
 }
