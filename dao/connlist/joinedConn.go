@@ -37,8 +37,10 @@ func NewJoinedConnList(userName, zoneName string) *JoinedConnList {
 }
 
 func (l *JoinedConnList) Add(ctx context.Context, src, dst *conn.WrappedConn) uint {
-	span, _ := tracing.New(ctx, "JoinedConnList.Add")
-	defer span.Finish()
+	if ctx != nil {
+		span, _ := tracing.New(ctx, "JoinedConnList.Add")
+		defer span.Finish()
+	}
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
 	if l.list == nil {
