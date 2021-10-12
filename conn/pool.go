@@ -1,9 +1,12 @@
 package conn
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/cntechpower/utils/tracing"
 
 	"github.com/cntechpower/anywhere/constants"
 	"github.com/cntechpower/utils/log"
@@ -12,8 +15,8 @@ import (
 var ErrConnectionPoolFull = fmt.Errorf("connection pool is full")
 
 type ConnectionPool interface {
-	Get(proxyAddr string) (*WrappedConn, error)
-	Put(proxyAddr string, connection *WrappedConn) error
+	Get(ctx context.Context, proxyAddr string) (*WrappedConn, error)
+	Put(ctx context.Context, proxyAddr string, connection *WrappedConn) error
 }
 
 type connectionPool struct {
@@ -28,7 +31,7 @@ type connectionPool struct {
 func NewConnectionPool(newConnectionFn func(proxyAddr string)) ConnectionPool {
 	p := &connectionPool{
 		mu:                    sync.Mutex{},
-		pool:                  make(map[string] /*localAddr*/ chan *WrappedConn, 0),
+		pool:                  make(map[string] /*localAddr*/ chan *WrappedConn),
 		idleTimeout:           constants.ProxyConnMaxIdleTimeout * time.Second,
 		waitTimeout:           constants.ProxyConnGetRetryMilliseconds * time.Millisecond,
 		newConnectionFn:       newConnectionFn,
@@ -38,7 +41,9 @@ func NewConnectionPool(newConnectionFn func(proxyAddr string)) ConnectionPool {
 	return p
 }
 
-func (p *connectionPool) Get(proxyAddr string) (*WrappedConn, error) {
+func (p *connectionPool) Get(ctx context.Context, proxyAddr string) (*WrappedConn, error) {
+	span, _ := tracing.New(ctx, "connectionPool.Get")
+	defer span.Finish()
 	p.mu.Lock()
 	if _, ok := p.pool[proxyAddr]; !ok {
 		p.pool[proxyAddr] = make(chan *WrappedConn, constants.ProxyConnBufferForEachAgent)
@@ -57,7 +62,9 @@ func (p *connectionPool) Get(proxyAddr string) (*WrappedConn, error) {
 	return nil, fmt.Errorf("timeout while waiting for proxy conn for %v", proxyAddr)
 }
 
-func (p *connectionPool) Put(proxyAddr string, connection *WrappedConn) error {
+func (p *connectionPool) Put(ctx context.Context, proxyAddr string, connection *WrappedConn) error {
+	span, _ := tracing.New(ctx, "connectionPool.Put")
+	defer span.Finish()
 	if _, ok := p.pool[proxyAddr]; !ok {
 		p.pool[proxyAddr] = make(chan *WrappedConn, constants.ProxyConnBufferForEachAgent)
 	}

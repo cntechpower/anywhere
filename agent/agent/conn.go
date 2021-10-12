@@ -45,7 +45,7 @@ func (a *Agent) newProxyConn(localAddr string) {
 		_ = dst.Close()
 	}
 	h.Infof("called newProxyConn for %v", localAddr)
-	idx := a.joinedConns.Add(c, conn.NewWrappedConn("server", dst))
+	idx := a.joinedConns.Add(nil, c, conn.NewWrappedConn("server", dst))
 	conn.JoinConn(c.GetConn(), dst)
 	_ = a.joinedConns.Remove(idx)
 }

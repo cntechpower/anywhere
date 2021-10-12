@@ -9,6 +9,8 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/cntechpower/utils/tracing"
+
 	"github.com/cntechpower/anywhere/dao/connlist"
 
 	"github.com/cntechpower/anywhere/server/zone"
@@ -103,20 +105,22 @@ func (s *Server) Start(ctx context.Context) {
 				log.Infof(h, "server port accept conn error: %v", err)
 				continue
 			}
-			go s.handleNewConnection(c)
+			go s.handleNewServerConnection(c)
 
 		}
 	}()
 
 }
 
-func (s *Server) handleNewConnection(c net.Conn) {
+func (s *Server) handleNewServerConnection(c net.Conn) {
+	span, ctx := tracing.New(context.TODO(), "handleNewServerConnection")
+	defer span.Finish()
 	h := log.NewHeader("handleNewAgentConn")
 	var msg model.RequestMsg
 	d := json.NewDecoder(c)
 
 	if err := d.Decode(&msg); err != nil {
-		log.Errorf(h, "unmarshal init pkg from %s error: %v", c.RemoteAddr(), err)
+		h.Errorc(ctx, "unmarshal init pkg from %s error: %v", c.RemoteAddr(), err)
 		_ = c.Close()
 		return
 	}
@@ -124,34 +128,34 @@ func (s *Server) handleNewConnection(c net.Conn) {
 	case model.PkgControlConnRegister:
 		m, _ := model.ParseControlRegisterPkg(msg.Message)
 		if !s.userValidator.ValidateUserPass(m.UserName, m.PassWord) {
-			log.Errorf(h, "validate userName and password from %v fail", c.RemoteAddr())
+			h.Errorc(ctx, "validate userName and password from %v fail", c.RemoteAddr())
 			_ = conn.NewWrappedConn(m.AgentId, c).Send(model.NewAuthenticationFailMsg("validate userName and password fail"))
 			_ = c.Close()
 			return
 		}
 		if isUpdate := s.RegisterAgent(m.UserName, m.AgentGroup, m.AgentId, c); isUpdate {
-			log.Errorf(h, "rebuild control connection for agent: %v", m.AgentId)
+			h.Errorc(ctx, "rebuild control connection for agent: %v", m.AgentId)
 		} else {
-			log.Infof(h, "accept control connection from agent: %v", m.AgentId)
+			h.Errorc(ctx, "accept control connection from agent: %v", m.AgentId)
 		}
 	case model.PkgTunnelBegin:
 		m, err := model.ParseTunnelBeginPkg(msg.Message)
 		if err != nil {
-			log.Errorf(h, "get corrupted PkgTunnelBegin packet from %v", c.RemoteAddr())
+			h.Errorc(ctx, "get corrupted PkgTunnelBegin packet from %v", c.RemoteAddr())
 			_ = c.Close()
 			return
 		}
 		if !s.isZoneExist(m.UserName, m.AgentGroup) {
-			log.Errorf(h, "got data conn register pkg from unknown user %v, group %v", m.UserName, m.AgentGroup)
+			h.Errorc(ctx, "got data conn register pkg from unknown user %v, group %v", m.UserName, m.AgentGroup)
 			_ = c.Close()
 		} else {
-			log.Infof(h, "add data conn for %v from user %v, group %v", m.UserName, m.LocalAddr, m.AgentGroup)
-			if err := s.zones[m.UserName][m.AgentGroup].PutProxyConn(m.AgentId, m.LocalAddr, c); err != nil {
-				log.Errorf(h, "put proxy conn to agent error: %v", err)
+			h.Infoc(ctx, "add data conn for %v from user %v, group %v", m.UserName, m.LocalAddr, m.AgentGroup)
+			if err := s.zones[m.UserName][m.AgentGroup].PutProxyConn(ctx, m.AgentId, m.LocalAddr, c); err != nil {
+				h.Errorc(ctx, "put proxy conn to agent error: %v", err)
 			}
 		}
 	default:
-		log.Errorf(h, "unknown msg type %v from %v", msg.ReqType, c.RemoteAddr())
+		h.Errorc(ctx, "unknown msg type %v from %v", msg.ReqType, c.RemoteAddr())
 		_ = c.Close()
 
 	}
@@ -209,7 +213,7 @@ func (s *Server) ListZones() []*model.ZoneInfo {
 
 func (s *Server) RegisterAgent(userName, zoneName, agentId string, c net.Conn) (isUpdate bool) {
 	if _, ok := s.zones[userName]; !ok {
-		s.zones[userName] = make(map[string]zone.IZone, 0)
+		s.zones[userName] = make(map[string]zone.IZone)
 	}
 	if _, ok := s.zones[userName][zoneName]; !ok {
 		s.zones[userName][zoneName] = zone.NewZone(userName, zoneName)

@@ -98,7 +98,7 @@ func run(_ *cobra.Command, _ []string) error {
 	s.Start(ctx)
 
 	// start api
-	apiExitChan := make(chan error, 0)
+	apiExitChan := make(chan error)
 	err = api.Start(s, apiExitChan)
 	if err != nil {
 		panic(err)

@@ -23,17 +23,13 @@ require (
 	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/mattn/go-sqlite3 v1.14.7 // indirect
 	github.com/olekukonko/tablewriter v0.0.1
+	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pquerna/otp v1.2.0
-	github.com/prometheus/client_golang v1.9.0
-	github.com/robfig/cron/v3 v3.0.0
 	github.com/rs/cors v1.7.0
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20200625001655-4c5254603344
 	google.golang.org/grpc v1.34.0
-	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
-	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gorm.io/driver/sqlite v1.1.4
 	gorm.io/gorm v1.21.11
 )

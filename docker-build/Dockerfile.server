@@ -7,6 +7,7 @@ COPY docker-build/Dockerfile.server /docker-build/
 COPY test/config/anywhered.json /usr/local/anywhere/anywhered.json
 COPY test/config/proxy.json /usr/local/anywhere/proxy.json
 COPY test/config/proxy.db /usr/local/anywhere/proxy.db
+ENV TRACE_ADDR=10.0.0.2:6831
 
 WORKDIR /usr/local/anywhere/
 

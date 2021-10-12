@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -32,13 +33,13 @@ func NewWhiteListValidator(port int, name, localAddr, whiteCidrs string, enable 
 	}, nil
 }
 
-func (v *WhiteListValidator) AddrInWhiteList(addr string) bool {
-	ok := v.WhiteList.AddrInWhiteList(addr)
+func (v *WhiteListValidator) AddrInWhiteList(ctx context.Context, addr string) bool {
+	ok := v.WhiteList.AddrInWhiteList(ctx, addr)
 	return ok
 }
 
 func (v *WhiteListValidator) GinHandler(ctx *gin.Context) {
-	if !v.AddrInWhiteList(ctx.Request.RemoteAddr) {
+	if !v.AddrInWhiteList(ctx, ctx.Request.RemoteAddr) {
 		_ = ctx.AbortWithError(http.StatusUnauthorized, fmt.Errorf("your ip address is not in white list"))
 	}
 }
