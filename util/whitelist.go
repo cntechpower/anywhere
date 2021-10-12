@@ -1,9 +1,12 @@
 package util
 
 import (
+	"context"
 	"net"
 	"strings"
 	"sync"
+
+	"github.com/cntechpower/utils/tracing"
 )
 
 type WhiteList struct {
@@ -25,9 +28,9 @@ func getPrivateCidrs() []*net.IPNet {
 
 }
 
-func (l *WhiteList) AddrInWhiteList(addr string) bool {
+func (l *WhiteList) AddrInWhiteList(ctx context.Context, addr string) bool {
 	ip := strings.Split(addr, ":")[0]
-	return l.IpInWhiteList(ip)
+	return l.IpInWhiteList(ctx, ip)
 }
 
 func (l *WhiteList) AddCidrToList(cidrString string, reset bool) error {
@@ -97,7 +100,9 @@ func NewWhiteList(remotePort int, agentId, localAddr, cidrList string, enable bo
 	return l, nil
 }
 
-func (l *WhiteList) IpInWhiteList(ip string) (res bool) {
+func (l *WhiteList) IpInWhiteList(ctx context.Context, ip string) (res bool) {
+	span, _ := tracing.New(ctx, "WhiteList.IpInWhiteList")
+	defer span.Finish()
 	l.mutex.RLock()
 	defer l.mutex.RUnlock()
 	if !l.enable {

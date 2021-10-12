@@ -280,22 +280,22 @@ func (z *Zone) handleTCPTunnelConnection(h *log.Header, ln *net.TCPListener, con
 	onConnectionStart := func(span opentracing.Span) func() { return func() { span.Finish() } }
 	waitTime := time.Millisecond //default error wait time 1ms
 	for {
-		span, ctx := tracing.New(context.TODO(), "handleUDPTunnelConnection")
 		c, err := ln.AcceptTCP()
 		if err != nil {
 			//if got conn error, make a limiting
 			waitTime = waitTime * 2 //double wait time
 			time.Sleep(waitTime)
 			if closeFlag {
-				h.Infoc(ctx, "handler closed")
+				h.Infof("handler closed")
 				return
 			}
-			h.Errorc(ctx, "accept new conn error: %v", err)
+			h.Errorf("accept new conn error: %v", err)
 			continue
 		}
+		span, ctx := tracing.New(context.TODO(), "handleTCPTunnelConnection")
 		waitTime = time.Millisecond
 		ip := strings.Split(c.RemoteAddr().String(), ":")[0]
-		if !whiteList.IpInWhiteList(ip) {
+		if !whiteList.IpInWhiteList(ctx, ip) {
 			_ = c.Close()
 			h.Infoc(ctx, "refused %v connection because it is not in white list", c.RemoteAddr())
 			config.AddConnectRejectedCount(1)
@@ -333,23 +333,22 @@ func (z *Zone) handleUDPTunnelConnection(h *log.Header, ln *net.UDPConn, config 
 	waitTime := time.Millisecond //default error wait time 1ms
 	data := make([]byte, 1024)
 	for {
-		span, ctx := tracing.New(context.TODO(), "handleUDPTunnelConnection")
 		n, remoteAddr, err := ln.ReadFromUDP(data)
 		if err != nil {
 			//if got conn error, make a limiting
 			waitTime = waitTime * 2 //double wait time
 			time.Sleep(waitTime)
 			if closeFlag {
-				h.Infoc(ctx, "handler closed")
+				h.Infof("handler closed")
 				return
 			}
-			h.Errorc(ctx, "accept new conn error: %v", err)
-			span.Finish()
+			h.Errorf("accept new conn error: %v", err)
 			continue
 		}
+		span, ctx := tracing.New(context.TODO(), "handleUDPTunnelConnection")
 		waitTime = time.Millisecond
 		ip := strings.Split(remoteAddr.String(), ":")[0]
-		if !whiteList.IpInWhiteList(ip) {
+		if !whiteList.IpInWhiteList(ctx, ip) {
 			h.Infoc(ctx, "refused %v connection because it is not in white list", remoteAddr.String())
 			config.AddConnectRejectedCount(1)
 			go func() {
@@ -373,7 +372,7 @@ func (z *Zone) handleTCPProxyConnection(ctx context.Context, c net.Conn, localAd
 		return
 	}
 	h.Infoc(ctx, "get conn from pool success")
-	idx := z.joinedConns.Add(conn.NewWrappedConn(localAddr, c), dst)
+	idx := z.joinedConns.Add(ctx, conn.NewWrappedConn(localAddr, c), dst)
 	h.Infoc(ctx, "joinedConns.Add success")
 	fnOnStart()
 	localToRemoteBytes, remoteToLocalBytes := conn.JoinConn(dst.GetConn(), c)

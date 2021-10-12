@@ -6,6 +6,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/cntechpower/utils/tracing"
+
 	"github.com/cntechpower/anywhere/util"
 
 	"github.com/cntechpower/anywhere/conn"
@@ -30,7 +32,7 @@ func (a *Agent) mustGetTlsConnToServer() *_tls.Conn {
 	}
 }
 
-func (a *Agent) newProxyConn(localAddr string) {
+func (a *Agent) newProxyConn(ctx context.Context, localAddr string) {
 	h := log.NewHeader("newProxyConn")
 	dst, err := net.Dial("tcp", localAddr)
 	if err != nil {
@@ -45,7 +47,7 @@ func (a *Agent) newProxyConn(localAddr string) {
 		_ = dst.Close()
 	}
 	h.Infof("called newProxyConn for %v", localAddr)
-	idx := a.joinedConns.Add(c, conn.NewWrappedConn("server", dst))
+	idx := a.joinedConns.Add(ctx, c, conn.NewWrappedConn("server", dst))
 	conn.JoinConn(c.GetConn(), dst)
 	_ = a.joinedConns.Remove(idx)
 }
@@ -123,11 +125,12 @@ func (a *Agent) handleAdminConnection(ctx context.Context) {
 			a.initControlConn(1)
 			continue
 		}
+		span, ctx := tracing.New(context.TODO(), "handleAdminConnection")
 		switch msg.ReqType {
 		case model.PkgTunnelBegin:
 			m, _ := model.ParseTunnelBeginPkg(msg.Message)
 			h.Infof("got PkgDataConnTunnel for : %v", m.LocalAddr)
-			go a.newProxyConn(m.LocalAddr)
+			go a.newProxyConn(ctx, m.LocalAddr)
 		case model.PkgReqHeartBeatPong:
 			a.lastAckRcvTime = time.Now()
 
@@ -144,5 +147,6 @@ func (a *Agent) handleAdminConnection(ctx context.Context) {
 			h.Errorf("got unknown ReqType: %v, message is: %v", msg.ReqType, string(msg.Message))
 			_ = a.adminConn.Close()
 		}
+		span.Finish()
 	}
 }

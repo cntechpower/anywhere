@@ -1,8 +1,11 @@
 package connlist
 
 import (
+	"context"
 	"fmt"
 	"sync"
+
+	"github.com/cntechpower/utils/tracing"
 
 	"github.com/cntechpower/anywhere/conn"
 
@@ -33,7 +36,9 @@ func NewJoinedConnList(userName, zoneName string) *JoinedConnList {
 	}
 }
 
-func (l *JoinedConnList) Add(src, dst *conn.WrappedConn) uint {
+func (l *JoinedConnList) Add(ctx context.Context, src, dst *conn.WrappedConn) uint {
+	span, _ := tracing.New(ctx, "JoinedConnList.Add")
+	defer span.Finish()
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
 	if l.list == nil {

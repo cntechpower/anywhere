@@ -105,15 +105,15 @@ func (s *Server) Start(ctx context.Context) {
 				log.Infof(h, "server port accept conn error: %v", err)
 				continue
 			}
-			go s.handleNewConnection(c)
+			go s.handleNewServerConnection(c)
 
 		}
 	}()
 
 }
 
-func (s *Server) handleNewConnection(c net.Conn) {
-	span, ctx := tracing.New(context.TODO(), "handleNewConnection")
+func (s *Server) handleNewServerConnection(c net.Conn) {
+	span, ctx := tracing.New(context.TODO(), "handleNewServerConnection")
 	defer span.Finish()
 	h := log.NewHeader("handleNewAgentConn")
 	var msg model.RequestMsg
