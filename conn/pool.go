@@ -45,7 +45,7 @@ func NewConnectionPool(newConnectionFn func(proxyAddr string)) ConnectionPool {
 }
 
 func (p *connectionPool) Get(ctx context.Context, proxyAddr string) (c *WrappedConn, err error) {
-	span, _ := tracing.New(ctx, "connectionPool.Get")
+	span, ctxNew := tracing.New(ctx, "connectionPool.Get")
 	defer span.Finish()
 	p.mu.Lock()
 	if _, ok := p.pool[proxyAddr]; !ok {
@@ -53,7 +53,7 @@ func (p *connectionPool) Get(ctx context.Context, proxyAddr string) (c *WrappedC
 	}
 	p.mu.Unlock()
 	for i := 0; i < constants.ProxyConnGetMaxRetryCount; i++ {
-		_ = tracing.Do(ctx, fmt.Sprintf("connectionPool.Get.Wait-%v", i), func() error {
+		_ = tracing.Do(ctxNew, fmt.Sprintf("connectionPool.Get.Wait-%v", i), func() error {
 			//get connection first
 			p.newConnectionFn(proxyAddr)
 			select {
