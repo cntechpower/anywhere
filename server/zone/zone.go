@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -28,6 +29,7 @@ import (
 	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/util"
 	"github.com/cntechpower/utils/log"
+	"github.com/opentracing/opentracing-go/ext"
 )
 
 type IZone interface {
@@ -295,13 +297,19 @@ func (z *Zone) handleTCPTunnelConnection(h *log.Header, ln *net.TCPListener, con
 		span, ctx := tracing.New(context.TODO(), "handleTCPTunnelConnection")
 		waitTime = time.Millisecond
 		ip := strings.Split(c.RemoteAddr().String(), ":")[0]
+		span.SetTag("remote-ip", ip)
+		span.SetTag("local-addr", config.LocalAddr)
+		span.SetTag("server-port", config.RemotePort)
+		span.SetTag("zone-name", config.ZoneName)
 		if !whiteList.IpInWhiteList(ctx, ip) {
 			_ = c.Close()
 			h.Infoc(ctx, "refused %v connection because it is not in white list", c.RemoteAddr())
+			ext.HTTPStatusCode.Set(span, http.StatusForbidden)
 			config.AddConnectRejectedCount(1)
 			go func() {
 				_ = whitelist.AddWhiteListDenyIp(config.RemotePort, config.UserName, config.ZoneName, config.LocalAddr, ip)
 			}()
+			ext.Error.Set(span, true)
 			continue
 		}
 		go z.handleTCPProxyConnection(ctx, c, config.LocalAddr, onConnectionStart(span), onConnectionEnd)

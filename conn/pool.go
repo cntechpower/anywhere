@@ -3,8 +3,11 @@ package conn
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
+
+	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/cntechpower/utils/tracing"
 
@@ -41,7 +44,7 @@ func NewConnectionPool(newConnectionFn func(proxyAddr string)) ConnectionPool {
 	return p
 }
 
-func (p *connectionPool) Get(ctx context.Context, proxyAddr string) (*WrappedConn, error) {
+func (p *connectionPool) Get(ctx context.Context, proxyAddr string) (c *WrappedConn, err error) {
 	span, _ := tracing.New(ctx, "connectionPool.Get")
 	defer span.Finish()
 	p.mu.Lock()
@@ -50,15 +53,22 @@ func (p *connectionPool) Get(ctx context.Context, proxyAddr string) (*WrappedCon
 	}
 	p.mu.Unlock()
 	for i := 0; i < constants.ProxyConnGetMaxRetryCount; i++ {
-		select {
-		case c := <-p.pool[proxyAddr]:
-			return c, nil
-		case <-time.After(p.waitTimeout):
+		_ = tracing.Do(ctx, fmt.Sprintf("connectionPool.Get.Wait-%v", i), func() error {
+			//get connection first
+			p.newConnectionFn(proxyAddr)
+			select {
+			case c = <-p.pool[proxyAddr]:
+				return nil
+			case <-time.After(p.waitTimeout):
+			}
+			return nil
+		})
+		if c != nil {
+			return
 		}
-		//get connection timeout, try to request a new connection.
-		p.newConnectionFn(proxyAddr)
 	}
-
+	ext.HTTPStatusCode.Set(span, http.StatusRequestTimeout)
+	ext.Error.Set(span, true)
 	return nil, fmt.Errorf("timeout while waiting for proxy conn for %v", proxyAddr)
 }
 
