@@ -103,7 +103,7 @@ func (p *connectionPool) houseKeeper() {
 					break
 				}
 				checkedMap[c] = struct{}{}
-				if c.CreateTime.Add(p.idleTimeout).Before(time.Now()) { //connection is exceed idle timeout, closing it.
+				if c.CreateTime.Add(p.idleTimeout).Before(time.Now()) { //connection is exceeded idle timeout, closing it.
 					log.Infof(h, "connection for %v is exceed idle timeout, will close it.", proxyAddr)
 					_ = c.Close()
 				} else {
