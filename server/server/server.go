@@ -115,7 +115,7 @@ func (s *Server) Start(ctx context.Context) {
 func (s *Server) handleNewServerConnection(c net.Conn) {
 	span, ctx := tracing.New(context.TODO(), "handleNewServerConnection")
 	defer span.Finish()
-	h := log.NewHeader("handleNewAgentConn")
+	h := log.NewHeader("handleNewServerConnection")
 	var msg model.RequestMsg
 	d := json.NewDecoder(c)
 
@@ -126,7 +126,12 @@ func (s *Server) handleNewServerConnection(c net.Conn) {
 	}
 	switch msg.ReqType {
 	case model.PkgControlConnRegister:
-		m, _ := model.ParseControlRegisterPkg(msg.Message)
+		m, err := model.ParseControlRegisterPkg(msg.Message)
+		if err != nil {
+			h.Errorc(ctx, "get corrupted ControlRegister packet from %v", c.RemoteAddr())
+			_ = c.Close()
+			return
+		}
 		if !s.userValidator.ValidateUserPass(m.UserName, m.PassWord) {
 			h.Errorc(ctx, "validate userName and password from %v fail", c.RemoteAddr())
 			_ = conn.NewWrappedConn(m.AgentId, c).Send(model.NewAuthenticationFailMsg("validate userName and password fail"))
@@ -134,9 +139,9 @@ func (s *Server) handleNewServerConnection(c net.Conn) {
 			return
 		}
 		if isUpdate := s.RegisterAgent(m.UserName, m.AgentGroup, m.AgentId, c); isUpdate {
-			h.Errorc(ctx, "rebuild control connection for agent: %v", m.AgentId)
+			h.Errorc(ctx, "rebuild control connection for zone: %v, agent: %v", m.AgentGroup, m.AgentId)
 		} else {
-			h.Errorc(ctx, "accept control connection from agent: %v", m.AgentId)
+			h.Errorc(ctx, "accept control connection from zone: %v, agent: %v", m.AgentGroup, m.AgentId)
 		}
 	case model.PkgTunnelBegin:
 		m, err := model.ParseTunnelBeginPkg(msg.Message)
@@ -146,7 +151,7 @@ func (s *Server) handleNewServerConnection(c net.Conn) {
 			return
 		}
 		if !s.isZoneExist(m.UserName, m.AgentGroup) {
-			h.Errorc(ctx, "got data conn register pkg from unknown user %v, group %v", m.UserName, m.AgentGroup)
+			h.Errorc(ctx, "got data conn register pkg from unknown user %v, zone %v", m.UserName, m.AgentGroup)
 			_ = c.Close()
 		} else {
 			h.Infoc(ctx, "add data conn for %v from user %v, group %v", m.UserName, m.LocalAddr, m.AgentGroup)
@@ -164,10 +169,11 @@ func (s *Server) handleNewServerConnection(c net.Conn) {
 
 func (s *Server) isZoneExist(userName, zoneName string) (exists bool) {
 	if _, userExist := s.zones[userName]; !userExist {
-		s.zones[userName] = make(map[string]zone.IZone, 0)
+		exists = false
+		return
 	}
 	_, exists = s.zones[userName][zoneName]
-	return exists
+	return
 }
 
 func (s *Server) ListAgentInfo() (res []*model.AgentInfoInServer) {
