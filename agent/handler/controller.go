@@ -12,7 +12,6 @@ import (
 	"github.com/cntechpower/anywhere/agent/agent"
 	pb "github.com/cntechpower/anywhere/agent/rpc/definitions"
 	"github.com/cntechpower/anywhere/util"
-	"github.com/cntechpower/utils/log"
 
 	"github.com/olekukonko/tablewriter"
 
@@ -31,7 +30,7 @@ func StartRpcServer(agent *agent.Agent, addr string, errChan chan error) {
 		return
 	}
 	grpcServer := grpc.NewServer()
-	pb.RegisterAnywhereServer(grpcServer, &anywhereAgentRpcHandler{a: agent, logHeader: log.NewHeader("agent")})
+	pb.RegisterAnywhereServer(grpcServer, &anywhereAgentRpcHandler{a: agent})
 	if err := grpcServer.Serve(l); err != nil {
 		errChan <- err
 	}

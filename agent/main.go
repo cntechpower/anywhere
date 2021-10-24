@@ -9,7 +9,7 @@ import (
 	"github.com/cntechpower/anywhere/agent/handler"
 	"github.com/cntechpower/anywhere/dao"
 	"github.com/cntechpower/anywhere/model"
-	"github.com/cntechpower/utils/log"
+	log "github.com/cntechpower/utils/log.v2"
 	"github.com/cntechpower/utils/os"
 
 	"github.com/spf13/cobra"
@@ -29,13 +29,11 @@ var connIdToKill int
 func main() {
 	//init log
 	esAddr := xos.Getenv("ES_ADDR")
-	logOptions := make([]log.Option, 0)
-	logOptions = append(logOptions, log.WithStd(log.OutputTypeText))
 	if esAddr != "" {
-		logOptions = append(logOptions, log.WithEs(app, esAddr))
+		log.InitWithES(app, esAddr)
+	} else {
+		log.Init()
 	}
-	log.Init(logOptions...)
-	defer log.Close()
 
 	dao.Init(nil, model.GetTmpModels())
 	defer dao.Close()
@@ -119,7 +117,9 @@ func main() {
 }
 
 func run(_ *cobra.Command, _ []string) error {
-	h := log.NewHeader("agentMain")
+	fields := map[string]interface{}{
+		log.FieldNameBizName: "agent.run",
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	a := agent.InitAnyWhereAgent(zoneName, agentId, serverIp, user, password, serverPort)
@@ -135,9 +135,9 @@ func run(_ *cobra.Command, _ []string) error {
 
 	select {
 	case err := <-rpcExitChan:
-		h.Fatalf("Grpc existing unexpected: %v", err)
+		log.Fatalf(fields, "Grpc existing unexpected: %v", err)
 	case <-serverExitChan:
-		h.Infof("Agent Existing")
+		log.Infof(fields, "Agent Existing")
 	}
 
 	return nil

@@ -12,7 +12,7 @@ import (
 	"github.com/cntechpower/utils/tracing"
 
 	"github.com/cntechpower/anywhere/constants"
-	"github.com/cntechpower/utils/log"
+	log "github.com/cntechpower/utils/log.v2"
 )
 
 var ErrConnectionPoolFull = fmt.Errorf("connection pool is full")
@@ -87,7 +87,9 @@ func (p *connectionPool) Put(ctx context.Context, proxyAddr string, connection *
 }
 
 func (p *connectionPool) houseKeeper() {
-	h := log.NewHeader("connection_pool_housekeeper")
+	fields := map[string]interface{}{
+		log.FieldNameBizName: "connectionPool.houseKeeper",
+	}
 	for range time.NewTicker(p.houseKeepLoopInterval).C {
 		p.mu.Lock()
 		for proxyAddr, pool := range p.pool {
@@ -104,7 +106,7 @@ func (p *connectionPool) houseKeeper() {
 				}
 				checkedMap[c] = struct{}{}
 				if c.CreateTime.Add(p.idleTimeout).Before(time.Now()) { //connection is exceeded idle timeout, closing it.
-					log.Infof(h, "connection for %v is exceed idle timeout, will close it.", proxyAddr)
+					log.Infof(fields, "connection for %v is exceed idle timeout, will close it.", proxyAddr)
 					_ = c.Close()
 				} else {
 					p.pool[proxyAddr] <- c
