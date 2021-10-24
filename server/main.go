@@ -10,7 +10,7 @@ import (
 	"github.com/cntechpower/anywhere/server/conf"
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/tls"
-	"github.com/cntechpower/utils/log"
+	log "github.com/cntechpower/utils/log.v2"
 	"github.com/cntechpower/utils/os"
 	"github.com/cntechpower/utils/tracing"
 
@@ -29,13 +29,11 @@ var version string
 func main() {
 	//init log
 	esAddr := xos.Getenv("ES_ADDR")
-	logOptions := make([]log.Option, 0)
-	logOptions = append(logOptions, log.WithStd(log.OutputTypeText))
 	if esAddr != "" {
-		logOptions = append(logOptions, log.WithEs(app, esAddr))
+		log.InitWithES(app, esAddr)
+	} else {
+		log.Init()
 	}
-	log.Init(logOptions...)
-	defer log.Close()
 
 	//init conf
 	conf.Init()
@@ -60,7 +58,7 @@ func main() {
 		Long:  "anywhere server Version 0.0.1 -" + version,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := run(cmd, args); err != nil {
-				log.Fatalf(log.NewHeader("serverMain"), err.Error())
+				log.Fatalf(nil, err.Error())
 			}
 		},
 	}
@@ -84,7 +82,9 @@ func main() {
 }
 
 func run(_ *cobra.Command, _ []string) error {
-	h := log.NewHeader("serverMain")
+	fields := map[string]interface{}{
+		log.FieldNameBizName: "server.run",
+	}
 	s := server.InitServerInstance(conf.Conf.ServerId, conf.Conf.MainPort, conf.Conf.User)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -110,11 +110,11 @@ func run(_ *cobra.Command, _ []string) error {
 	serverExitChan := os.ListenKillSignal()
 	select {
 	case <-serverExitChan:
-		log.Infof(h, "Server Existing")
+		log.Infof(fields, "Server Existing")
 	case err := <-apiExitChan:
-		log.Fatalf(h, "api server exit with error: %v", err)
+		log.Fatalf(fields, "api server exit with error: %v", err)
 	case err := <-s.ExitChan:
-		log.Fatalf(h, "anywhere server exit with error: %v", err)
+		log.Fatalf(fields, "anywhere server exit with error: %v", err)
 	}
 	return nil
 }

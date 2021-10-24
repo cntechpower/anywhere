@@ -6,7 +6,7 @@ import (
 
 	"github.com/cntechpower/anywhere/constants"
 	"github.com/cntechpower/anywhere/model"
-	"github.com/cntechpower/utils/log"
+	log "github.com/cntechpower/utils/log.v2"
 )
 
 func SortDescAndLimitUsingHeap(a []*model.ProxyConfig, less func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool, limit int) []*model.ProxyConfig {
@@ -50,7 +50,9 @@ func SortDescAndLimit(a []*model.ProxyConfig, less func(p1 *model.ProxyConfig, p
 }
 
 func (s *Server) RefreshSummaryLoop(ctx context.Context) {
-	h := log.NewHeader("RefreshSummaryLoop")
+	fields := map[string]interface{}{
+		log.FieldNameBizName: "Server.RefreshSummaryLoop",
+	}
 	currentLoop := 0
 	shouldLog := func() bool {
 		if currentLoop == constants.CacheRefreshLogInhibition {
@@ -65,7 +67,7 @@ func (s *Server) RefreshSummaryLoop(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			h.Infoc(ctx, "existing")
+			log.Infof(fields, "existing")
 			return
 		case <-ticker.C:
 		}
@@ -105,7 +107,7 @@ func (s *Server) RefreshSummaryLoop(ctx context.Context) {
 		s.allProxyConfigList = allConfigList
 		s.statusRwMutex.Unlock()
 		if shouldLog() {
-			log.Infof(h, "refresh done, microseconds used %v", endTime.Sub(startTime).Microseconds())
+			log.Infof(fields, "refresh done, microseconds used %v", endTime.Sub(startTime).Microseconds())
 		}
 	}
 }

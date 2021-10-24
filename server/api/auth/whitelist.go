@@ -6,13 +6,11 @@ import (
 	"net/http"
 
 	"github.com/cntechpower/anywhere/util"
-	"github.com/cntechpower/utils/log"
 	"github.com/gin-gonic/gin"
 )
 
 type WhiteListValidator struct {
 	*util.WhiteList
-	logHeader *log.Header
 	//port, name, localAddr are used for prometheus metrics lables
 	port      int
 	name      string
@@ -29,7 +27,6 @@ func NewWhiteListValidator(port int, name, localAddr, whiteCidrs string, enable 
 		port:      port,
 		name:      name,
 		localAddr: localAddr,
-		logHeader: log.NewHeader("WhiteListValidator"),
 	}, nil
 }
 
