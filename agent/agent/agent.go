@@ -13,7 +13,7 @@ import (
 	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/tls"
 	"github.com/cntechpower/anywhere/util"
-	log "github.com/cntechpower/utils/log.v2"
+	"github.com/cntechpower/utils/log"
 )
 
 type Agent struct {
@@ -74,13 +74,10 @@ func (a *Agent) Start(ctx context.Context) {
 }
 
 func (a *Agent) Stop() {
-	fields := map[string]interface{}{
-		log.FieldNameBizName: "Agent.Stop",
-		"agent_id":           a.id,
-	}
+	h := log.NewHeader("agentMain")
 	if a.adminConn != nil {
 		_ = a.adminConn.Close()
-		log.Infof(fields, "Agent Stopping...")
+		log.Infof(h, "Agent Stopping...")
 	}
 	a.status = "STOPPED"
 }

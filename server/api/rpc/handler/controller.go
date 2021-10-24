@@ -16,7 +16,7 @@ import (
 	"github.com/cntechpower/anywhere/server/conf"
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/util"
-	log "github.com/cntechpower/utils/log.v2"
+	"github.com/cntechpower/utils/log"
 )
 
 var grpcAddress string
@@ -43,19 +43,17 @@ func StartRpcServer(s *server.Server, addr string, errChan chan error) {
 }
 
 func NewClient(silenceOutput bool) (pb.AnywhereServerClient, error) {
-	fields := map[string]interface{}{
-		log.FieldNameBizName: "rpc.handler.NewClient",
-	}
+	h := log.NewHeader("grpc")
 	cc, err := grpc.Dial(grpcAddress, grpc.WithInsecure(),
 		grpc.WithUnaryInterceptor(func(ctx context.Context, method string, req, reply interface{},
 			cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 			if !silenceOutput {
-				log.Infof(fields, "calling %v", method)
+				log.Infof(h, "calling %v", method)
 			}
 
 			err := invoker(ctx, method, req, reply, cc, opts...)
 			if !silenceOutput {
-				log.Infof(fields, "called %v, error: %v", method, err)
+				log.Infof(h, "called %v, error: %v", method, err)
 			}
 			return err
 		}))

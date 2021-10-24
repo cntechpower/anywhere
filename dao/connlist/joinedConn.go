@@ -11,7 +11,7 @@ import (
 
 	"github.com/cntechpower/anywhere/dao"
 
-	log "github.com/cntechpower/utils/log.v2"
+	"github.com/cntechpower/utils/log"
 
 	"github.com/cntechpower/anywhere/model"
 )
@@ -59,7 +59,7 @@ func (l *JoinedConnList) Add(ctx context.Context, src, dst *conn.WrappedConn) ui
 	err := dao.MemDB().Create(&item).Error
 
 	if err != nil {
-		log.ErrorC(ctx, nil, "add error: %+v", err)
+		log.NewHeader("JoinedConnList").Errorf("add error: %+v", err)
 	}
 
 	l.list[item.ID] = &joinedConn{

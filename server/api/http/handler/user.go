@@ -7,13 +7,11 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 
-	log "github.com/cntechpower/utils/log.v2"
+	"github.com/cntechpower/utils/log"
 )
 
 func SessionFilter(c *gin.Context) {
-	fields := map[string]interface{}{
-		log.FieldNameBizName: "http.handler.sessionFilter",
-	}
+	h := log.NewHeader("sessionFilter")
 	if strings.HasPrefix(c.Request.URL.Path, "/static/") {
 		c.Next()
 		return
@@ -30,13 +28,13 @@ func SessionFilter(c *gin.Context) {
 	authHeader := session.Get("auth")
 	tokenString, ok := authHeader.(string)
 	if !ok {
-		log.Warnf(fields, "get empty auth")
+		h.Warnf("get empty auth")
 		redirectToLogin(c)
 		return
 	}
 
 	if !jwtValidator.Validate("", tokenString) {
-		log.Warnf(fields, "validate jwt for %s fail", c.ClientIP())
+		h.Warnf("validate jwt for %s fail", c.ClientIP())
 		redirectToLogin(c)
 		return
 	}

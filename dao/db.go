@@ -1,21 +1,19 @@
 package dao
 
 import (
-	log "github.com/cntechpower/utils/log.v2"
+	"github.com/cntechpower/utils/log"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 var persistDB *gorm.DB
 var memDB *gorm.DB
-var fields map[string]interface{}
+var header *log.Header
 
 func Init(persistModels []interface{}, tmpModels []interface{}) {
-	fields = map[string]interface{}{
-		log.FieldNameBizName: "dao.db",
-	}
+	header = log.NewHeader("db")
 	initGorm(persistModels, tmpModels)
-	log.Infof(fields, "GORM init finish")
+	header.Infof("GORM init finish")
 }
 
 func initGorm(persistModels []interface{}, tmpModels []interface{}) {

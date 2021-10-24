@@ -1,14 +1,16 @@
 package handler
 
 import (
-	"context"
-
 	"github.com/cntechpower/anywhere/agent/agent"
 	pb "github.com/cntechpower/anywhere/agent/rpc/definitions"
+	"github.com/cntechpower/utils/log"
+
+	"context"
 )
 
 type anywhereAgentRpcHandler struct {
-	a *agent.Agent
+	a         *agent.Agent
+	logHeader *log.Header
 }
 
 func (h *anywhereAgentRpcHandler) ListConns(ctx context.Context, empty *pb.Empty) (res *pb.Conns, err error) {
