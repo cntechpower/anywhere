@@ -3,7 +3,7 @@ package config
 import (
 	"github.com/cntechpower/anywhere/dao"
 	"github.com/cntechpower/anywhere/model"
-	"github.com/cntechpower/utils/log"
+	log "github.com/cntechpower/utils/log.v2"
 )
 
 func Save(config *model.ProxyConfig) (err error) {
@@ -36,7 +36,9 @@ func IsExist(userName, zoneName string, remotePort int) (exist bool, err error) 
 }
 
 func Migrate() (err error) {
-	h := log.NewHeader("MigrateFileToDB")
+	fields := map[string]interface{}{
+		log.FieldNameBizName: "dao.config.Migrate",
+	}
 	cs, err := parseProxyConfigFile()
 	if err != nil {
 		return
@@ -44,7 +46,7 @@ func Migrate() (err error) {
 	for _, u := range cs.ProxyConfigs {
 		for _, c := range u {
 			if err = Save(c); err != nil {
-				h.Errorf("save %+v to db error: %v", c, err)
+				log.Errorf(fields, "save %+v to db error: %v", c, err)
 			}
 		}
 	}

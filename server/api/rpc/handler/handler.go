@@ -9,7 +9,6 @@ import (
 	pb "github.com/cntechpower/anywhere/server/api/rpc/definitions"
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/util"
-	"github.com/cntechpower/utils/log"
 )
 
 var (
@@ -17,14 +16,12 @@ var (
 )
 
 type rpcHandlers struct {
-	s         *server.Server
-	logHeader *log.Header
+	s *server.Server
 }
 
 func GetRpcHandlers(s *server.Server) *rpcHandlers {
 	return &rpcHandlers{
-		s:         s,
-		logHeader: log.NewHeader("rpcHandler"),
+		s: s,
 	}
 }
 

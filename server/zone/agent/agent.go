@@ -10,7 +10,7 @@ import (
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/constants"
 	"github.com/cntechpower/anywhere/model"
-	"github.com/cntechpower/utils/log"
+	log "github.com/cntechpower/utils/log.v2"
 )
 
 type IAgent interface {
@@ -72,35 +72,39 @@ func (a *Agent) getProxyConfigMapKey(remotePort int, localAddr string) string {
 }
 
 func (a *Agent) AskProxyConn(proxyAddr string) error {
-	h := log.NewHeader("agent.requestNewProxyConn")
+	fields := map[string]interface{}{
+		log.FieldNameBizName: "agent.requestNewProxyConn",
+	}
 	if err := a.adminConn.Send(model.NewTunnelBeginMsg(a.userName, a.zone, a.id, proxyAddr)); err != nil {
 		errMsg := fmt.Errorf("agent %v request for new proxy conn error %v", a.id, err)
-		log.Errorf(h, "%v", err)
+		log.Errorf(fields, "%v", err)
 		return errMsg
 	}
 	return nil
 }
 
 func (a *Agent) handleAdminConnection() {
-	h := log.NewHeader("handleAdminConnection")
+	fields := map[string]interface{}{
+		log.FieldNameBizName: "Agent.handleAdminConnection",
+	}
 	if !a.adminConn.IsValid() {
-		log.Errorf(h, "agent %v admin connection is invalid, skip handle loop", a.id)
+		log.Errorf(fields, "agent %v admin connection is invalid, skip handle loop", a.id)
 		return
 	}
 	defer func() {
 		// handleAdminConnection will not exit in normal
 		// when handleAdminConnection there is always error happen.
 		// so we need close adminConn and wait client reconnect.
-		log.Warnf(h, "handleAdminConnection for %v closed", a.id)
+		log.Warnf(fields, "handleAdminConnection for %v closed", a.id)
 		_ = a.adminConn.Close()
 	}()
 	msg := &model.RequestMsg{}
 	for {
 		if err := a.adminConn.Receive(&msg); err != nil {
 			if err == conn.ErrNilConn {
-				log.Errorf(h, "receive from agent %v admin conn error: %v, wait client reconnecting", a.id, err)
+				log.Errorf(fields, "receive from agent %v admin conn error: %v, wait client reconnecting", a.id, err)
 			} else {
-				log.Errorf(h, "receive from agent %v admin conn error: %v, will close this connection.", a.id, err)
+				log.Errorf(fields, "receive from agent %v admin conn error: %v, will close this connection.", a.id, err)
 				_ = a.adminConn.Close()
 			}
 			//TODO: make this configurable
@@ -110,18 +114,18 @@ func (a *Agent) handleAdminConnection() {
 		case model.PkgReqHeartBeatPing:
 			m, err := model.ParseHeartBeatPkg(msg.Message)
 			if err != nil {
-				log.Errorf(h, "got corrupted heartbeat ping packet from agent %v admin conn, will close it", a.id)
+				log.Errorf(fields, "got corrupted heartbeat ping packet from agent %v admin conn, will close it", a.id)
 				return
 			}
 			if err := a.adminConn.Send(model.NewHeartBeatPongMsg(a.adminConn.GetLocalAddr(), a.adminConn.GetRemoteAddr(), a.zone, a.id)); err != nil {
-				log.Errorf(h, "send pong msg to %v admin conn error, will close it", a.id)
+				log.Errorf(fields, "send pong msg to %v admin conn error, will close it", a.id)
 				return
 			} else {
 				a.adminConn.SetAck(m.SendTime, time.Now())
 			}
 
 		default:
-			log.Errorf(h, "got unknown ReqType: %v ,body: %v, will close admin conn", msg.ReqType, msg.Message)
+			log.Errorf(fields, "got unknown ReqType: %v ,body: %v, will close admin conn", msg.ReqType, msg.Message)
 			return
 		}
 	}

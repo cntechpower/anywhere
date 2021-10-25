@@ -3,7 +3,7 @@ module github.com/cntechpower/anywhere
 go 1.14
 
 require (
-	github.com/cntechpower/utils v0.0.0-20210804143408-41d01c6ff35a
+	github.com/cntechpower/utils v0.0.0-20211024082737-ea2f01032422
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/sessions v0.0.3
