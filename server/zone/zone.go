@@ -324,6 +324,7 @@ func (z *Zone) handleTCPTunnelConnection(fields map[string]interface{}, ln *net.
 				_ = whitelist.AddWhiteListDenyIp(config.RemotePort, config.UserName, config.ZoneName, config.LocalAddr, ip)
 			}()
 			ext.Error.Set(span, true)
+			span.Finish()
 			continue
 		}
 		go z.handleTCPProxyConnection(ctx, c, config.LocalAddr, onConnectionStart(span), onConnectionEnd)
@@ -389,6 +390,7 @@ func (z *Zone) handleTCPProxyConnection(ctx context.Context, c net.Conn, localAd
 	log.InfoC(ctx, fields, "handle new request")
 	dst, err := z.connectionPool.Get(ctx, localAddr)
 	if err != nil {
+		fnOnEnd(0, 0)
 		log.InfoC(ctx, fields, "get conn error: %v", err)
 		_ = c.Close()
 		return

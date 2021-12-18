@@ -47,6 +47,7 @@ func NewConnectionPool(newConnectionFn func(proxyAddr string)) ConnectionPool {
 func (p *connectionPool) Get(ctx context.Context, proxyAddr string) (c *WrappedConn, err error) {
 	span, ctxNew := tracing.New(ctx, "connectionPool.Get")
 	defer span.Finish()
+	span.SetTag("local_addr", proxyAddr)
 	p.mu.Lock()
 	if _, ok := p.pool[proxyAddr]; !ok {
 		p.pool[proxyAddr] = make(chan *WrappedConn, constants.ProxyConnBufferForEachAgent)
