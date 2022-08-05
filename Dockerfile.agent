@@ -2,7 +2,7 @@ From ubuntu:20.04
 COPY bin/* /usr/local/anywhere/bin/
 COPY credential/* /usr/local/anywhere/credential/
 COPY static/* /usr/local/anywhere/static/
-COPY docker-build/Dockerfile.agent /docker-build/
+COPY Dockerfile.agent /docker-build/
 ENV SERVER_ADDR=172.90.101.11
 ENV ZONE_NAME=asia-shanghai
 ENV USER_NAME=admin

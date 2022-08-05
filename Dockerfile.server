@@ -2,7 +2,7 @@ From ubuntu:20.04
 COPY bin/* /usr/local/anywhere/bin/
 COPY credential/* /usr/local/anywhere/credential/
 COPY static/* /usr/local/anywhere/static/
-COPY docker-build/Dockerfile.server /docker-build/
+COPY Dockerfile.server /docker-build/
 # Config files
 COPY test/config/anywhered.json /usr/local/anywhere/anywhered.json
 COPY test/config/proxy.json /usr/local/anywhere/proxy.json
