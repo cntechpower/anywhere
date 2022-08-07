@@ -4,7 +4,6 @@ PROJECT_NAME = anywhere
 DOCKER = $(shell which docker)
 DOCKER-COMPOSE = $(shell which docker-compose)
 LDFLAGS = -ldflags "-X 'main.version=\"${GIT_VERSION}\"'"
-DOCKER_IMAGE = 10.0.0.2:5000/actiontech/universe-compiler-go1.11-centos6:v2
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
 default: build
@@ -49,6 +48,10 @@ build_docker_image: build ui
 upload_docker_img: build ui
 	sudo $(DOCKER) build -t 10.0.0.2:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION} -f docker-build/Dockerfile.agent .
 	sudo $(DOCKER) push 10.0.0.2:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION}
+
+upload_docker_img_arm: build_arm
+	sudo $(DOCKER) build -t registry.cn-hangzhou.aliyuncs.com/cntechpower/${PROJECT_NAME}-agent-arm:${VERSION} -f docker-build/Dockerfile.agent .
+	sudo $(DOCKER) push registry.cn-hangzhou.aliyuncs.com/cntechpower/${PROJECT_NAME}-agent-arm:${VERSION}
 
 docker_test: docker_test_clean build_docker_image
 	sudo $(DOCKER-COMPOSE) -f test/composefiles/docker-compose.yml up -d
