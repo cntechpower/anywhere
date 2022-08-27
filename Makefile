@@ -4,7 +4,7 @@ PROJECT_NAME = anywhere
 DOCKER = $(shell which docker)
 DOCKER-COMPOSE = $(shell which docker-compose)
 LDFLAGS = -ldflags "-X 'main.version=\"${GIT_VERSION}\"'"
-DOCKER_IMAGE = 10.0.0.2:5000/actiontech/universe-compiler-go1.11-centos6:v2
+DOCKER_IMAGE = 10.0.0.4:5000/actiontech/universe-compiler-go1.11-centos6:v2
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
 default: build
@@ -47,16 +47,16 @@ build_docker_image: build ui
 	sudo $(DOCKER) build -t anywhere-test-image:latest -f docker-build/Dockerfile.agent .
 
 upload_docker_img: build ui
-	sudo $(DOCKER) build -t 10.0.0.2:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION} -f docker-build/Dockerfile.agent .
-	sudo $(DOCKER) push 10.0.0.2:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION}
+	sudo $(DOCKER) build -t 10.0.0.4:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION} -f docker-build/Dockerfile.agent .
+	sudo $(DOCKER) push 10.0.0.4:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION}
 
 docker_test: docker_test_clean build_docker_image
 	sudo $(DOCKER-COMPOSE) -f test/composefiles/docker-compose.yml up -d
 	sleep 20 #wait mysql init
-	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.2:5000/mysql/mysql_client:8.0.19 -h172.90.101.11 -P4444 -proot -e "select @@version"
-	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.2:5000/mysql/mysql_client:5.7.28 -h172.90.101.11 -P4445 -proot -e "select @@version"
-	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net --env PASSWD=sshpass 10.0.0.2:5000/centos:sshpass_client sshpass -p sshpass ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -n root@172.90.101.11 -p 4447 /usr/sbin/ip a
-	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.2:5000/cntechpower/busybox:1.31.1-glibc wget -O - http://172.90.101.11:4446
+	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.4:5000/mysql/mysql_client:8.0.19 -h172.90.101.11 -P4444 -proot -e "select @@version"
+	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.4:5000/mysql/mysql_client:5.7.28 -h172.90.101.11 -P4445 -proot -e "select @@version"
+	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net --env PASSWD=sshpass 10.0.0.4:5000/centos:sshpass_client sshpass -p sshpass ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -n root@172.90.101.11 -p 4447 /usr/sbin/ip a
+	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.4:5000/cntechpower/busybox:1.31.1-glibc wget -O - http://172.90.101.11:4446
 	sudo $(DOCKER) exec -t composefiles_anywhered_1 bash -c "/usr/local/anywhere/bin/anywhered agent list"
 	sudo $(DOCKER) logs composefiles_anywhered_1
 	sudo $(DOCKER) logs composefiles_anywhere-1_1
@@ -79,7 +79,7 @@ sonar:
 	sonar-scanner \
  	 -Dsonar.projectKey=Anywhere \
  	 -Dsonar.sources=. \
- 	 -Dsonar.host.url=http://10.0.0.2:9999 \
+ 	 -Dsonar.host.url=http://10.0.0.4:9999 \
  	 -Dsonar.login=fb582fcecc6a2363ca2b559e0e2bdd7ecc244903
 
 upload: upload_x86 upload_docker_img upload_arm
