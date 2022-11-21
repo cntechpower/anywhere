@@ -28,7 +28,7 @@ import (
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/util"
-	"github.com/cntechpower/utils/log"
+	log "github.com/cntechpower/utils/log.v2"
 	"github.com/opentracing/opentracing-go/ext"
 )
 
@@ -86,12 +86,14 @@ func NewZone(userName, zoneName string) IZone {
 
 func (z *Zone) houseKeepLoop() {
 	ticker := time.NewTicker(time.Second * 60)
-	h := log.NewHeader("houseKeepLoop")
+	fields := map[string]interface{}{
+		log.FieldNameBizName: "Zone.houseKeepLoop",
+	}
 	for range ticker.C {
 		z.agentsRwMutex.Lock()
 		for name, a := range z.agents {
 			if a.LastAckRcvTime().Add(time.Minute * 5).Before(time.Now()) {
-				h.Infof("a %v not receive ack for 5 min, will be delete", name)
+				log.Infof(fields, "agent %v not receive ack for 5 min, will be delete", name)
 				delete(z.agents, name)
 			}
 		}
@@ -100,16 +102,19 @@ func (z *Zone) houseKeepLoop() {
 }
 
 func (z *Zone) RegisterAgent(agentId string, c net.Conn) (isUpdate bool) {
-	h := log.NewHeader("RegisterAgent")
+	fields := map[string]interface{}{
+		log.FieldNameBizName: "Zone.RegisterAgent",
+		"agent_id":           agentId,
+	}
 	z.agentsRwMutex.Lock()
 	a, ok := z.agents[agentId]
 	isUpdate = ok
 	if isUpdate {
 		//close(s.agents[info.id].CloseChan)
-		h.Info("reset admin conn for user: %v, zoneName: %v, agentId: %v", z.userName, z.zoneName, agentId)
+		log.Infof(fields, "reset admin conn for user: %v, zoneName: %v, agentId: %v", z.userName, z.zoneName, agentId)
 		a.ResetAdminConn(c)
 	} else {
-		h.Info("build admin conn for user: %v, zoneName: %v, agentId: %v", z.userName, z.zoneName, agentId)
+		log.Infof(fields, "build admin conn for user: %v, zoneName: %v, agentId: %v", z.userName, z.zoneName, agentId)
 		z.agents[agentId] = agent.NewAgentInfo(z.userName, z.zoneName, agentId, c, make(chan error, 99))
 	}
 	z.agentsRwMutex.Unlock()
@@ -132,21 +137,25 @@ func (z *Zone) getProxyConfigMapKey(remotePort int, localAddr string) string {
 	return fmt.Sprintf("%v:%v", remotePort, localAddr)
 }
 func (z *Zone) AddProxyConfig(config *model.ProxyConfig) error {
-	h := log.NewHeader("AddProxyConfig")
+	fields := map[string]interface{}{
+		log.FieldNameBizName: "Zone.AddProxyConfig",
+		"remote_port":        config.RemotePort,
+		"local_addr":         config.LocalAddr,
+	}
 	key := z.getProxyConfigMapKey(config.RemotePort, config.LocalAddr)
 	if _, exist := z.proxyConfigs[key]; exist {
 		return fmt.Errorf("proxy config %v is already exist in zone  %v", key, z.zoneName)
 	}
 	z.proxyConfigMutex.Lock()
 	defer z.proxyConfigMutex.Unlock()
-	log.Infof(h, "adding proxy config: %v", config)
+	log.Infof(fields, "adding proxy config: %v", config)
 	closeChan := make(chan struct{})
 	pConfig := &ProxyConfigStats{
 		ProxyConfig: config,
 		closeChan:   closeChan,
 	}
 	go z.handleAddProxyConfig(pConfig)
-	log.Infof(h, "add %v done", config)
+	log.Infof(fields, "add %v done", config)
 	z.proxyConfigs[key] = pConfig
 	return nil
 }
@@ -235,32 +244,37 @@ func (z *Zone) UpdateProxyConfigWhiteListConfig(remotePort int, localAddr, white
 }
 
 func (z *Zone) handleAddProxyConfig(config *ProxyConfigStats) {
-	h := log.NewHeader(fmt.Sprintf("tunnel-%v-(%v->%v)", config.UserName, config.RemotePort, config.LocalAddr))
-	h.Infof("starting new %v port listening", config.ListenType)
+	fields := map[string]interface{}{
+		log.FieldNameBizName: "Zone.handleAddProxyConfig",
+		"user_name":          config.UserName,
+		"remote_port":        config.RemotePort,
+		"local_addr":         config.LocalAddr,
+	}
+	log.Infof(fields, "starting new %v port listening", config.ListenType)
 
 	if config.ListenType == model.ListenTypeUDP {
 		ln, err := util.ListenUdp("0.0.0.0:" + strconv.Itoa(config.RemotePort))
 		if err != nil {
 			errMsg := fmt.Errorf("zone %v handleAddProxyConfig got error %v", z.zoneName, err)
-			log.Errorf(h, "%v", errMsg)
+			log.Errorf(fields, "%v", errMsg)
 			z.errChan <- errMsg
 			return
 		}
-		go z.handleUDPTunnelConnection(h, ln, config)
+		go z.handleUDPTunnelConnection(fields, ln, config)
 	} else {
 		ln, err := util.ListenTcp("0.0.0.0:" + strconv.Itoa(config.RemotePort))
 		if err != nil {
 			errMsg := fmt.Errorf("zone %v handleAddProxyConfig got error %v", z.zoneName, err)
-			log.Errorf(h, "%v", errMsg)
+			log.Errorf(fields, "%v", errMsg)
 			z.errChan <- errMsg
 			return
 		}
-		go z.handleTCPTunnelConnection(h, ln, config)
+		go z.handleTCPTunnelConnection(fields, ln, config)
 	}
 
 }
 
-func (z *Zone) handleTCPTunnelConnection(h *log.Header, ln *net.TCPListener, config *ProxyConfigStats) {
+func (z *Zone) handleTCPTunnelConnection(fields map[string]interface{}, ln *net.TCPListener, config *ProxyConfigStats) {
 	closeFlag := false
 	go func() {
 		<-config.closeChan
@@ -271,7 +285,7 @@ func (z *Zone) handleTCPTunnelConnection(h *log.Header, ln *net.TCPListener, con
 	//always try to get a whitelist
 	whiteList, err := auth.NewWhiteListValidator(config.RemotePort, config.ZoneName, config.LocalAddr, config.WhiteCidrList, config.IsWhiteListOn)
 	if err != nil {
-		log.Errorf(h, "init white list error: %v", err)
+		log.Errorf(fields, "init white list error: %v", err)
 		return
 	}
 	config.acl = whiteList
@@ -288,10 +302,10 @@ func (z *Zone) handleTCPTunnelConnection(h *log.Header, ln *net.TCPListener, con
 			waitTime = waitTime * 2 //double wait time
 			time.Sleep(waitTime)
 			if closeFlag {
-				h.Infof("handler closed")
+				log.Infof(fields, "handler closed")
 				return
 			}
-			h.Errorf("accept new conn error: %v", err)
+			log.Errorf(fields, "accept new conn error: %v", err)
 			continue
 		}
 		span, ctx := tracing.New(context.TODO(), "handleTCPTunnelConnection")
@@ -303,13 +317,14 @@ func (z *Zone) handleTCPTunnelConnection(h *log.Header, ln *net.TCPListener, con
 		span.SetTag("zone-name", config.ZoneName)
 		if !whiteList.IpInWhiteList(ctx, ip) {
 			_ = c.Close()
-			h.Infoc(ctx, "refused %v connection because it is not in white list", c.RemoteAddr())
+			log.InfoC(ctx, fields, "refused %v connection because it is not in white list", c.RemoteAddr())
 			ext.HTTPStatusCode.Set(span, http.StatusForbidden)
 			config.AddConnectRejectedCount(1)
 			go func() {
 				_ = whitelist.AddWhiteListDenyIp(config.RemotePort, config.UserName, config.ZoneName, config.LocalAddr, ip)
 			}()
 			ext.Error.Set(span, true)
+			span.Finish()
 			continue
 		}
 		go z.handleTCPProxyConnection(ctx, c, config.LocalAddr, onConnectionStart(span), onConnectionEnd)
@@ -317,7 +332,7 @@ func (z *Zone) handleTCPTunnelConnection(h *log.Header, ln *net.TCPListener, con
 	}
 }
 
-func (z *Zone) handleUDPTunnelConnection(h *log.Header, ln *net.UDPConn, config *ProxyConfigStats) {
+func (z *Zone) handleUDPTunnelConnection(fields map[string]interface{}, ln *net.UDPConn, config *ProxyConfigStats) {
 	closeFlag := false
 	go func() {
 		<-config.closeChan
@@ -328,7 +343,7 @@ func (z *Zone) handleUDPTunnelConnection(h *log.Header, ln *net.UDPConn, config 
 	//always try to get a whitelist
 	whiteList, err := auth.NewWhiteListValidator(config.RemotePort, config.ZoneName, config.LocalAddr, config.WhiteCidrList, config.IsWhiteListOn)
 	if err != nil {
-		log.Errorf(h, "init white list error: %v", err)
+		log.Errorf(fields, "init white list error: %v", err)
 		return
 	}
 	config.acl = whiteList
@@ -346,16 +361,16 @@ func (z *Zone) handleUDPTunnelConnection(h *log.Header, ln *net.UDPConn, config 
 			waitTime = waitTime * 2 //double wait time
 			time.Sleep(waitTime)
 			if closeFlag {
-				h.Infof("handler closed")
+				log.Infof(fields, "handler closed")
 				return
 			}
-			h.Errorf("accept new conn error: %v", err)
+			log.Errorf(fields, "accept new conn error: %v", err)
 			continue
 		}
 		waitTime = time.Millisecond
 		ip := strings.Split(remoteAddr.String(), ":")[0]
 		if !whiteList.IpInWhiteList(nil, ip) {
-			h.Infof("refused %v connection because it is not in white list", remoteAddr.String())
+			log.Infof(fields, "refused %v connection because it is not in white list", remoteAddr.String())
 			config.AddConnectRejectedCount(1)
 			go func() {
 				_ = whitelist.AddWhiteListDenyIp(config.RemotePort, config.UserName, config.ZoneName, config.LocalAddr, ip)
@@ -367,43 +382,54 @@ func (z *Zone) handleUDPTunnelConnection(h *log.Header, ln *net.UDPConn, config 
 }
 
 func (z *Zone) handleTCPProxyConnection(ctx context.Context, c net.Conn, localAddr string, fnOnStart func(), fnOnEnd func(localToRemoteBytes, remoteToLocalBytes uint64)) {
-	h := log.NewHeader(fmt.Sprintf("proxy: %v->%v", c.RemoteAddr().String(), localAddr))
-	h.Infof("handle new request")
+	fields := map[string]interface{}{
+		log.FieldNameBizName: "Zone.handleTCPProxyConnection",
+		"remote_addr":        c.RemoteAddr().String(),
+		"local_addr":         localAddr,
+	}
+	log.InfoC(ctx, fields, "handle new request")
 	dst, err := z.connectionPool.Get(ctx, localAddr)
 	if err != nil {
-		log.Infof(h, "get conn error: %v", err)
+		fnOnEnd(0, 0)
+		log.InfoC(ctx, fields, "get conn error: %v", err)
 		_ = c.Close()
 		return
 	}
-	h.Infoc(ctx, "get conn from pool success")
+	log.InfoC(ctx, fields, "get conn from pool success")
 	idx := z.joinedConns.Add(ctx, conn.NewWrappedConn(localAddr, c), dst)
-	h.Infoc(ctx, "joinedConns.Add success")
+	log.InfoC(ctx, fields, "joinedConns.Add success")
 	fnOnStart()
 	localToRemoteBytes, remoteToLocalBytes := conn.JoinConn(dst.GetConn(), c)
 	fnOnEnd(localToRemoteBytes, remoteToLocalBytes)
 	if err := z.joinedConns.Remove(idx); err != nil {
-		h.Errorc(ctx, "remove conn from list error: %v", err)
+		log.ErrorC(ctx, fields, "remove conn from list error: %v", err)
 	}
-	h.Errorc(ctx, "proxy conn closed")
+	log.InfoC(ctx, fields, "proxy conn closed")
 
 }
 
 func (z *Zone) handleUDPProxyConnection(remoteAddr, localAddr string, data []byte, fnOnEnd func(localToRemoteBytes, remoteToLocalBytes uint64)) {
-	h := log.NewHeader(fmt.Sprintf("UDP proxy: %v->%v", remoteAddr, localAddr))
-	h.Infof("handle new request")
+	fields := map[string]interface{}{
+		log.FieldNameBizName: "Zone.handleUDPProxyConnection",
+		"remote_addr":        remoteAddr,
+		"local_addr":         localAddr,
+	}
+	log.Infof(fields, "handle new request")
 	a := z.chooseAgent()
 	if a == nil {
 		return
 	}
 	err := a.SendUDPData(localAddr, data)
 	if err != nil {
-		h.Errorf("send udp data error: %v", err)
+		log.Errorf(fields, "send udp data error: %v", err)
 	}
 	fnOnEnd(0, uint64(len(data)))
 }
 
 func (z *Zone) chooseAgent() (a agent.IAgent) {
-	h := log.NewHeader("chooseAgent")
+	fields := map[string]interface{}{
+		log.FieldNameBizName: "Zone.chooseAgent",
+	}
 	z.agentsRwMutex.RLock()
 	defer z.agentsRwMutex.RUnlock()
 	tmpList := make([]string, 0, len(z.agents))
@@ -413,7 +439,7 @@ func (z *Zone) chooseAgent() (a agent.IAgent) {
 		}
 	}
 	if len(tmpList) == 0 {
-		h.Errorf("can't find agent")
+		log.Errorf(fields, "can't find agent")
 		return
 	}
 	var randIdx int
@@ -422,21 +448,20 @@ func (z *Zone) chooseAgent() (a agent.IAgent) {
 	} else {
 		randIdx = rand.Intn(len(tmpList) - 1) //nolint:gosec
 	}
-	h.Infof("choose agent %v", tmpList[randIdx])
+	log.Infof(fields, "choose agent %v", tmpList[randIdx])
 	a = z.agents[tmpList[randIdx]]
 
 	return
 }
 
 func (z *Zone) requestNewProxyConn(localAddr string) {
-	h := log.NewHeader("requestNewProxyConn")
 	a := z.chooseAgent()
 	if a == nil {
 		return
 	}
 	if err := a.AskProxyConn(localAddr); err != nil {
 		errMsg := fmt.Errorf("agent %v request for new proxy conn error %v", a.Info().Id, err)
-		log.Errorf(h, "%v", err)
+		log.Errorf(nil, "%v", err)
 		z.errChan <- errMsg
 	}
 }
@@ -454,16 +479,20 @@ func (z *Zone) FlushJoinedConns() {
 }
 
 func (z *Zone) restoreProxyConfig() error {
-	header := log.NewHeader(fmt.Sprintf("restoreProxyConfig_%s_%s", z.userName, z.zoneName))
+	fields := map[string]interface{}{
+		log.FieldNameBizName: "Zone.restoreProxyConfig",
+		"user_name":          z.userName,
+		"zone_name":          z.zoneName,
+	}
 	if err := config.Iterator(func(config *model.ProxyConfig) {
 		var err error
 		if z.userName == config.UserName && z.zoneName == config.ZoneName {
 			err = z.AddProxyConfig(config)
-			header.Infof("restore config for user %v, zone %v remotePort(%v), localAddr(%v), error: %v",
+			log.Infof(fields, "restore config for user %v, zone %v remotePort(%v), localAddr(%v), error: %v",
 				config.UserName, config.ZoneName, config.RemotePort, config.LocalAddr, err)
 		}
 		if err != nil {
-			header.Errorf("restore config %+v error: %v", config, err)
+			log.Errorf(fields, "restore config %+v error: %v", config, err)
 		}
 	}); err != nil {
 		return err
