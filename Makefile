@@ -6,6 +6,7 @@ DOCKER-COMPOSE = ${DOCKER} compose
 LDFLAGS = -ldflags "-X 'main.version=\"${GIT_VERSION}\"'"
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
+PWD ?= $(shell pwd)
 default: build
 newkey:
 	mkdir -p credential/
@@ -29,16 +30,16 @@ api:
 build_server:
 	mkdir -p bin/
 	rm -rf bin/anywhered
-	sudo $(DOCKER) run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.19 go build ${LDFLAGS} -o bin/anywhered server/main.go
+	sudo $(DOCKER) run --rm -v ${PWD}:/usr/src/myapp -w /usr/src/myapp golang:1.19 go build ${LDFLAGS} -o bin/anywhered server/main.go
 
 build_agent:
 	mkdir -p bin/
 	rm -rf bin/anywhere
-	sudo $(DOCKER) run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.19 go build ${LDFLAGS} -o bin/anywhere agent/main.go
+	sudo $(DOCKER) run --rm -v ${PWD}:/usr/src/myapp -w /usr/src/myapp golang:1.19 go build ${LDFLAGS} -o bin/anywhere agent/main.go
 build_agent/arm:
 	mkdir -p bin/
 	rm -rf bin/anywhere
-	sudo $(DOCKER) run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:1.19 GOARCH=arm64 GOARM=7 go build ${LDFLAGS} -o bin/anywhere agent/main.go
+	sudo $(DOCKER) run --rm -v ${PWD}:/usr/src/myapp -w /usr/src/myapp golang:1.19 GOARCH=arm64 GOARM=7 go build ${LDFLAGS} -o bin/anywhere agent/main.go
 
 
 build_docker_image: build ui
