@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/cntechpower/anywhere/util"
 	"github.com/cntechpower/utils/log"
 	"github.com/gin-gonic/gin"
+
+	"github.com/cntechpower/anywhere/util"
 )
 
 type WhiteListValidator struct {
 	*util.WhiteList
 	logHeader *log.Header
-	//port, name, localAddr are used for prometheus metrics lables
+	// port, name, localAddr are used for prometheus metrics labels
 	port      int
 	name      string
 	localAddr string

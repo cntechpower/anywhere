@@ -5,8 +5,14 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/cntechpower/utils/tracing"
+)
+
+const (
+	connCountRefreshInterval = time.Minute
+	connCountRejectCount     = 1000
 )
 
 type WhiteList struct {
@@ -15,8 +21,11 @@ type WhiteList struct {
 	localAddr  string
 	enable     bool
 	cidrs      []*net.IPNet
-	//any r/w to cidrs should hold mutex by caller
+	// any r/w to cidrs should hold mutex by caller
 	mutex sync.RWMutex
+
+	connCountMu sync.Mutex
+	connCount   map[string]int64
 }
 
 func getPrivateCidrs() []*net.IPNet {
@@ -76,15 +85,25 @@ func (l *WhiteList) SetEnable(enable bool) {
 
 func NewWhiteList(remotePort int, agentId, localAddr, cidrList string, enable bool) (*WhiteList, error) {
 	l := &WhiteList{
-		remotePort: remotePort,
-		agentId:    agentId,
-		localAddr:  localAddr,
-		enable:     enable,
-		cidrs:      make([]*net.IPNet, 0),
-		mutex:      sync.RWMutex{},
+		remotePort:  remotePort,
+		agentId:     agentId,
+		localAddr:   localAddr,
+		enable:      enable,
+		cidrs:       make([]*net.IPNet, 0),
+		mutex:       sync.RWMutex{},
+		connCountMu: sync.Mutex{},
+		connCount:   make(map[string]int64, 0),
 	}
+	go func() {
+		for {
+			time.Sleep(connCountRefreshInterval)
+			l.connCountMu.Lock()
+			l.connCount = make(map[string]int64, 0)
+			l.connCountMu.Unlock()
+		}
+	}()
 
-	//add private to start of cidrs
+	// add private to start of cidrs
 	l.cidrs = append(l.cidrs, getPrivateCidrs()...)
 	if cidrList == "" {
 		return l, nil
@@ -105,9 +124,17 @@ func (l *WhiteList) IpInWhiteList(ctx context.Context, ip string) (res bool) {
 		span, _ := tracing.New(ctx, "WhiteList.IpInWhiteList")
 		defer span.Finish()
 	}
+	l.connCountMu.Lock()
+	defer l.connCountMu.Unlock()
+	if l.connCount[ip] > connCountRejectCount {
+		return false
+	}
 
 	l.mutex.RLock()
-	defer l.mutex.RUnlock()
+	defer func() {
+		l.mutex.RUnlock()
+		l.connCount[ip]++
+	}()
 	if !l.enable {
 		res = true
 		return
