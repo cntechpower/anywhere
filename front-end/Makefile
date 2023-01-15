@@ -8,8 +8,8 @@ build:
 upload:
 	tar -czvf anywhere-fe-${VERSION}.tar.gz build/
 	tar -czvf anywhere-fe-latest.tar.gz build/
-	curl -T anywhere-fe-${VERSION}.tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere-fe/
-	curl -T anywhere-fe-latest.tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere-fe/
+	curl -T anywhere-fe-${VERSION}.tar.gz -u ftp:ftp ftp://10.0.0.4/ci/anywhere-fe/
+	curl -T anywhere-fe-latest.tar.gz -u ftp:ftp ftp://10.0.0.4/ci/anywhere-fe/
 	rm -f anywhere-fe-${VERSION}.tar.gz
 	rm -f anywhere-fe-latest.tar.gz
 upgrade:
