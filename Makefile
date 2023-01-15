@@ -79,8 +79,8 @@ sonar:
 	sonar-scanner \
  	 -Dsonar.projectKey=Anywhere \
  	 -Dsonar.sources=. \
- 	 -Dsonar.host.url=http://10.0.0.4:9999 \
- 	 -Dsonar.login=fb582fcecc6a2363ca2b559e0e2bdd7ecc244903
+ 	 -Dsonar.host.url=http://sonar.h.co \
+ 	 -Dsonar.login=1aeb55ac4dd5c47c7ff8caa8585c08b1f6522b1e
 
 upload: upload_x86 upload_docker_img upload_arm
 upload_arm: build_arm ui
