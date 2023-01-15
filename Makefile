@@ -4,9 +4,9 @@ PROJECT_NAME = anywhere
 DOCKER = $(shell which docker)
 DOCKER-COMPOSE = ${DOCKER} compose
 LDFLAGS = -ldflags "-X 'main.version=\"${GIT_VERSION}\"'"
-DOCKER_IMAGE = 10.0.0.4:5000/actiontech/universe-compiler-go1.11-centos6:v2
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
+PWD ?= $(shell pwd)
 default: build
 newkey:
 	mkdir -p credential/
@@ -30,16 +30,16 @@ api:
 build_server:
 	mkdir -p bin/
 	rm -rf bin/anywhered
-	go build ${LDFLAGS} -o bin/anywhered server/main.go
+	sudo $(DOCKER) run --rm -v ${PWD}:/usr/src/myapp -w /usr/src/myapp golang:1.19 go build ${LDFLAGS} -o bin/anywhered server/main.go
 
 build_agent:
 	mkdir -p bin/
 	rm -rf bin/anywhere
-	go build ${LDFLAGS} -o bin/anywhere agent/main.go
+	sudo $(DOCKER) run --rm -v ${PWD}:/usr/src/myapp -w /usr/src/myapp golang:1.19 go build ${LDFLAGS} -o bin/anywhere agent/main.go
 build_agent/arm:
 	mkdir -p bin/
 	rm -rf bin/anywhere
-	GOARCH=arm64 GOARM=7 go build ${LDFLAGS} -o bin/anywhere agent/main.go
+	sudo $(DOCKER) run --rm -v ${PWD}:/usr/src/myapp -w /usr/src/myapp golang:1.19 GOARCH=arm64 GOARM=7 go build ${LDFLAGS} -o bin/anywhere agent/main.go
 
 
 build_docker_image: build ui
@@ -82,7 +82,7 @@ sonar:
  	 -Dsonar.host.url=http://sonar.h.co \
  	 -Dsonar.login=1aeb55ac4dd5c47c7ff8caa8585c08b1f6522b1e
 
-upload: upload_x86 upload_docker_img upload_arm
+upload: upload_x86 upload_docker_img
 upload_arm: build_arm ui
 	tar -czf anywhere-$(VERSION)-arm.tar.gz bin/ credential/ static/
 	tar -czf anywhere-latest-arm.tar.gz bin/ credential/ static/
