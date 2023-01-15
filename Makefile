@@ -86,15 +86,15 @@ upload: upload_x86 upload_docker_img upload_arm
 upload_arm: build_arm ui
 	tar -czf anywhere-$(VERSION)-arm.tar.gz bin/ credential/ static/
 	tar -czf anywhere-latest-arm.tar.gz bin/ credential/ static/
-	curl -T anywhere-$(VERSION)-arm.tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
-	curl -T anywhere-latest-arm.tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
+	curl -T anywhere-$(VERSION)-arm.tar.gz -u ftp:ftp ftp://10.0.0.4/ci/anywhere/
+	curl -T anywhere-latest-arm.tar.gz -u ftp:ftp ftp://10.0.0.4/ci/anywhere/
 	rm -rf anywhere-latest-arm.tar.gz
 	rm -rf anywhere-$(VERSION)-arm.tar.gz
 upload_x86: build ui
 	tar -czf anywhere-$(VERSION).tar.gz bin/ credential/ static/
 	tar -czf anywhere-latest.tar.gz bin/ credential/ static/
-	curl -T anywhere-$(VERSION).tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
-	curl -T anywhere-latest.tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere/
+	curl -T anywhere-$(VERSION).tar.gz -u ftp:ftp ftp://10.0.0.4/ci/anywhere/
+	curl -T anywhere-latest.tar.gz -u ftp:ftp ftp://10.0.0.4/ci/anywhere/
 	rm -rf anywhere-$(VERSION).tar.gz
 	rm -rf anywhere-latest.tar.gz
 upload_release:
@@ -113,7 +113,7 @@ build_release: vet build_server build_agent newkey ui
 
 ui:
 	rm -rf static
-	wget ftp://ftp:ftp@10.0.0.2/ci/anywhere-fe/anywhere-fe-latest.tar.gz
+	wget ftp://ftp:ftp@10.0.0.4/ci/anywhere-fe/anywhere-fe-latest.tar.gz
 	tar -xf anywhere-fe-latest.tar.gz
 	mv build static
 	rm -rf anywhere-fe-latest.tar.gz
@@ -124,8 +124,8 @@ update_ui:
 	/usr/local/nodejs/bin/yarn build
 	tar -czvf anywhere-fe-${VERSION}.tar.gz build/
 	tar -czvf anywhere-fe-latest.tar.gz build/
-	curl -T anywhere-fe-${VERSION}.tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere-fe/
-	curl -T anywhere-fe-latest.tar.gz -u ftp:ftp ftp://10.0.0.2/ci/anywhere-fe/
+	curl -T anywhere-fe-${VERSION}.tar.gz -u ftp:ftp ftp://10.0.0.4/ci/anywhere-fe/
+	curl -T anywhere-fe-latest.tar.gz -u ftp:ftp ftp://10.0.0.4/ci/anywhere-fe/
 	rm -f anywhere-fe-${VERSION}.tar.gz
 	rm -f anywhere-fe-latest.tar.gz
 
