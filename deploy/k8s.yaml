@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: anywhere-agent
-          image: 10.0.0.2:5000/cntechpower/anywhere-agent:3bf53b8
+          image: 10.0.0.4:5000/cntechpower/anywhere-agent:3bf53b8
           env:
             - name: SERVER_ADDR
               value: 47.103.62.227
