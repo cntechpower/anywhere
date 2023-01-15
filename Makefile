@@ -60,8 +60,8 @@ docker_test: docker_test_clean build_docker_image
 	sudo $(DOCKER) exec -t composefiles-anywhered-1 bash -c "/usr/local/anywhere/bin/anywhered agent list"
 	sudo $(DOCKER) logs composefiles-anywhered-1
 	sudo $(DOCKER) logs composefiles-anywhere-1-1
-	sudo $(DOCKER) logs composefiles_anywhere-2-1
-	sudo $(DOCKER) logs composefiles_anywhere-3-1
+	sudo $(DOCKER) logs composefiles-anywhere-2-1
+	sudo $(DOCKER) logs composefiles-anywhere-3-1
 	sudo $(DOCKER-COMPOSE) -f test/composefiles/docker-compose.yml down
 	sudo $(DOCKER) rmi anywhere-test-image:latest
 	sudo $(DOCKER) rmi anywhered-test-image:latest
