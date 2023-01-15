@@ -55,13 +55,13 @@ docker_test: docker_test_clean build_docker_image
 	sleep 20 #wait mysql init
 	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.4:5000/mysql/mysql_client:8.0.19 -h172.90.101.11 -P4444 -proot -e "select @@version"
 	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.4:5000/mysql/mysql_client:5.7.28 -h172.90.101.11 -P4445 -proot -e "select @@version"
-	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net --env PASSWD=sshpass 10.0.0.4:5000/centos:sshpass_client sshpass -p sshpass ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -n root@172.90.101.11 -p 4447 /usr/sbin/ip a
+	#sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net --env PASSWD=sshpass 10.0.0.4:5000/centos:sshpass_client sshpass -p sshpass ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -n root@172.90.101.11 -p 4447 /usr/sbin/ip a
 	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.4:5000/cntechpower/busybox:1.31.1-glibc wget -O - http://172.90.101.11:4446
-	sudo $(DOCKER) exec -t composefiles_anywhered_1 bash -c "/usr/local/anywhere/bin/anywhered agent list"
-	sudo $(DOCKER) logs composefiles_anywhered_1
-	sudo $(DOCKER) logs composefiles_anywhere-1_1
-	sudo $(DOCKER) logs composefiles_anywhere-2_1
-	sudo $(DOCKER) logs composefiles_anywhere-3_1
+	sudo $(DOCKER) exec -t composefiles-anywhered-1 bash -c "/usr/local/anywhere/bin/anywhered agent list"
+	sudo $(DOCKER) logs composefiles-anywhered-1
+	sudo $(DOCKER) logs composefiles-anywhere-1-1
+	sudo $(DOCKER) logs composefiles_anywhere-2-1
+	sudo $(DOCKER) logs composefiles_anywhere-3-1
 	sudo $(DOCKER-COMPOSE) -f test/composefiles/docker-compose.yml down
 	sudo $(DOCKER) rmi anywhere-test-image:latest
 	sudo $(DOCKER) rmi anywhered-test-image:latest
