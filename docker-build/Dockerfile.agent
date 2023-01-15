@@ -1,4 +1,4 @@
-From ubuntu:20.04
+From ubuntu:22.04
 COPY bin/* /usr/local/anywhere/bin/
 COPY credential/* /usr/local/anywhere/credential/
 COPY static/* /usr/local/anywhere/static/
