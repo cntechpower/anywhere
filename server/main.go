@@ -2,6 +2,11 @@ package main
 
 import (
 	"context"
+	xos "os"
+
+	"github.com/cntechpower/utils/log"
+	"github.com/cntechpower/utils/os"
+	"github.com/cntechpower/utils/tracing"
 
 	"github.com/cntechpower/anywhere/dao"
 	"github.com/cntechpower/anywhere/model"
@@ -10,24 +15,19 @@ import (
 	"github.com/cntechpower/anywhere/server/conf"
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/tls"
-	"github.com/cntechpower/utils/log"
-	"github.com/cntechpower/utils/os"
-	"github.com/cntechpower/utils/tracing"
 
 	"github.com/spf13/cobra"
-
-	xos "os"
 )
 
 const (
 	app = "main.anywhered"
 )
 
-//server global config
+// server global config
 var version string
 
 func main() {
-	//init log
+	// init log
 	esAddr := xos.Getenv("ES_ADDR")
 	logOptions := make([]log.Option, 0)
 	logOptions = append(logOptions, log.WithStd(log.OutputTypeText))
