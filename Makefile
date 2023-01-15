@@ -2,7 +2,7 @@ GIT_VERSION = $(shell git rev-parse --abbrev-ref HEAD) $(shell git rev-parse HEA
 VERSION = $(shell git rev-parse --short HEAD)
 PROJECT_NAME = anywhere
 DOCKER = $(shell which docker)
-DOCKER-COMPOSE = $(shell which docker-compose)
+DOCKER-COMPOSE = ${DOCKER} compose
 LDFLAGS = -ldflags "-X 'main.version=\"${GIT_VERSION}\"'"
 DOCKER_IMAGE = 10.0.0.4:5000/actiontech/universe-compiler-go1.11-centos6:v2
 GOOS ?= $(shell go env GOOS)
