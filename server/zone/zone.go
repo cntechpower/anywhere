@@ -295,7 +295,7 @@ func (z *Zone) handleTCPTunnelConnection(h *log.Header, ln *net.TCPListener, con
 			h.Errorf("accept new conn error: %v", err)
 			continue
 		}
-		span, ctx := tracing.New(nil, "handleTCPTunnelConnection")
+		span, ctx := tracing.New(context.TODO(), "handleTCPTunnelConnection")
 		waitTime = time.Millisecond
 		ip := strings.Split(c.RemoteAddr().String(), ":")[0]
 		span.SetTag("remote-ip", ip)
