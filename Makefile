@@ -79,7 +79,7 @@ sonar:
 	sonar-scanner \
  	 -Dsonar.projectKey=Anywhere \
  	 -Dsonar.sources=. \
- 	 -Dsonar.host.url=http://sonar.h.co \
+ 	 -Dsonar.host.url=http://sonar.stig.top \
  	 -Dsonar.login=1aeb55ac4dd5c47c7ff8caa8585c08b1f6522b1e
 
 upload: upload_x86 upload_docker_img
