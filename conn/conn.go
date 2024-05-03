@@ -89,9 +89,11 @@ func (c *WrappedConn) IsValid() bool {
 }
 
 func (c *WrappedConn) ResetConn(conn net.Conn) {
-	//close old connection if exist, let old goroutine stop.
-	c.Close()
+	// close old connection if existed, let old goroutine stop.
+	_ = c.Close()
 
+	c.connRwMu.Lock()
+	defer c.connRwMu.Unlock()
 	c.Conn = conn
 }
 

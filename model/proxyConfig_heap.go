@@ -2,7 +2,6 @@ package model
 
 import (
 	"fmt"
-	"strings"
 )
 
 type ProxyConfigHeap struct {
@@ -22,7 +21,7 @@ func (ph *ProxyConfigHeap) Push(config *ProxyConfig) bool {
 	if n < ph.maxLength {
 		ph.list = append(ph.list, config)
 		ph.up(len(ph.list) - 1)
-	} else { //len(ph.list) == ph.maxLength && !ph.less(config, ph.list[0])
+	} else { // len(ph.list) == ph.maxLength && !ph.less(config, ph.list[0])
 		ph.list[0] = config
 		ph.down(0, len(ph.list))
 	}
@@ -52,7 +51,7 @@ func (ph *ProxyConfigHeap) Pop() *ProxyConfig {
 	ph.down(0, len(ph.list)-1)
 	c := ph.list[n]
 	ph.list = ph.list[0:n]
-	//fmt.Printf("checking valid of ph: %v\n", ph.IsValid())
+	// fmt.Printf("checking valid of ph: %v\n", ph.IsValid())
 	return c
 
 }
@@ -65,7 +64,7 @@ func (ph *ProxyConfigHeap) down(i int, stop int) bool {
 	for {
 		leftNodeIdx := 2*iCopy + 1
 		if leftNodeIdx >= stop || leftNodeIdx < 0 {
-			//no below nodes or overflow
+			// no below nodes or overflow
 			break
 		}
 		smallerNodeIdx := leftNodeIdx
@@ -74,23 +73,13 @@ func (ph *ProxyConfigHeap) down(i int, stop int) bool {
 			smallerNodeIdx = rightNodeIdx
 		}
 		if !ph.less(ph.list[smallerNodeIdx], ph.list[iCopy]) {
-			//below smaller node it not smaller than parent
+			// below smaller node it not smaller than parent
 			break
 		}
 		ph.list[iCopy], ph.list[smallerNodeIdx] = ph.list[smallerNodeIdx], ph.list[iCopy]
 		iCopy = smallerNodeIdx
 	}
 	return iCopy > i
-}
-
-func (ph *ProxyConfigHeap) debugPrint() string {
-	s := strings.Builder{}
-	s.WriteString("[")
-	for _, c := range ph.list {
-		s.WriteString(fmt.Sprintf("%v,", c.NetworkFlowRemoteToLocalInBytes))
-	}
-	s.WriteString("]")
-	return s.String()
 }
 
 func (ph *ProxyConfigHeap) up(i int) bool {
@@ -112,8 +101,8 @@ func InitProxyConfigHeap(cs []*ProxyConfig, less func(i, j *ProxyConfig) bool, l
 	}
 	for _, c := range cs {
 		ph.Push(c)
-		//fmt.Printf("after push %v to heap result %v, heap is %v\n", c.NetworkFlowRemoteToLocalInBytes, ok, ph.debugPrint())
+		// fmt.Printf("after push %v to heap result %v, heap is %v\n", c.NetworkFlowRemoteToLocalInBytes, ok, ph.debugPrint())
 	}
-	//fmt.Printf("checking valid of ph: %v\n", ph.IsValid())
+	// fmt.Printf("checking valid of ph: %v\n", ph.IsValid())
 	return ph
 }

@@ -37,7 +37,6 @@ func initGorm(persistModels []interface{}, tmpModels []interface{}) {
 }
 
 func Close() {
-	return
 }
 
 func PersistDB() *gorm.DB {

@@ -41,7 +41,7 @@ func SessionFilter(c *gin.Context) {
 }
 
 func UserLogin(c *gin.Context) {
-	//get username/password/otpcode from form
+	// get username/password/otpcode from form
 	session := sessions.Default(c)
 	userName, ok := c.GetPostForm("username")
 	if !ok {
@@ -64,18 +64,14 @@ func UserLogin(c *gin.Context) {
 		return
 	}
 
-	//validate success, generate setCookie
+	// validate success, generate setCookie
 	token, err := jwtValidator.Generate(userName)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 	session.Set("auth", token)
-	_ = session.Save() //ignore session save error
+	_ = session.Save() // ignore session save error
 	c.JSON(http.StatusOK, RespUserLoginSuccess)
 	c.Next()
-	return
-}
-
-func userLogout(c *gin.Context) {
 }

@@ -25,15 +25,16 @@ import (
 
 	"github.com/cntechpower/anywhere/server/api/auth"
 
+	"github.com/cntechpower/utils/log"
+	"github.com/opentracing/opentracing-go/ext"
+
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/util"
-	"github.com/cntechpower/utils/log"
-	"github.com/opentracing/opentracing-go/ext"
 )
 
 type IZone interface {
-	//Agent
+	// Agent
 	IsAgentExists(agentId string) bool
 	RegisterAgent(agentId string, c net.Conn) (isUpdate bool)
 	AddProxyConfig(config *model.ProxyConfig) error
@@ -43,7 +44,7 @@ type IZone interface {
 	FlushJoinedConns()
 	GetCurrentConnectionCount() (int64, error)
 	UpdateProxyConfigWhiteListConfig(remotePort int, localAddr, whiteCidrs string, whiteListEnable bool) error
-	//status
+	// status
 	Infos() []*model.AgentInfoInServer
 	Info() *model.ZoneInfo
 	GetProxyConfigCount() int
@@ -105,7 +106,7 @@ func (z *Zone) RegisterAgent(agentId string, c net.Conn) (isUpdate bool) {
 	a, ok := z.agents[agentId]
 	isUpdate = ok
 	if isUpdate {
-		//close(s.agents[info.id].CloseChan)
+		// close(s.agents[info.id].CloseChan)
 		h.Info("reset admin conn for user: %v, zoneName: %v, agentId: %v", z.userName, z.zoneName, agentId)
 		a.ResetAdminConn(c)
 	} else {
@@ -195,8 +196,8 @@ func (z *Zone) ListProxyConfigs() []*model.ProxyConfig {
 	}
 	res := make([]*model.ProxyConfig, 0, len(z.proxyConfigs))
 	for _, c := range z.proxyConfigs {
-		//fmt.Printf("ListProxyConfigs: %v\n", c.NetworkFlowLocalToRemoteInBytes)
-		//fmt.Printf("ListProxyConfigs: %v\n", c.NetworkFlowRemoteToLocalInBytes)
+		// fmt.Printf("ListProxyConfigs: %v\n", c.NetworkFlowLocalToRemoteInBytes)
+		// fmt.Printf("ListProxyConfigs: %v\n", c.NetworkFlowRemoteToLocalInBytes)
 		tmpC := &model.ProxyConfig{
 			UserName:                        z.userName,
 			ZoneName:                        z.zoneName,
@@ -268,7 +269,7 @@ func (z *Zone) handleTCPTunnelConnection(h *log.Header, ln *net.TCPListener, con
 		closeFlag = true
 	}()
 
-	//always try to get a whitelist
+	// always try to get a whitelist
 	whiteList, err := auth.NewWhiteListValidator(config.RemotePort, config.ZoneName, config.LocalAddr, config.WhiteCidrList, config.IsWhiteListOn)
 	if err != nil {
 		log.Errorf(h, "init white list error: %v", err)
@@ -280,12 +281,12 @@ func (z *Zone) handleTCPTunnelConnection(h *log.Header, ln *net.TCPListener, con
 		config.AddConnectCount(1)
 	}
 	onConnectionStart := func(span opentracing.Span) func() { return func() { span.Finish() } }
-	waitTime := time.Millisecond //default error wait time 1ms
+	waitTime := time.Millisecond // default error wait time 1ms
 	for {
 		c, err := ln.AcceptTCP()
 		if err != nil {
-			//if got conn error, make a limiting
-			waitTime = waitTime * 2 //double wait time
+			// if got conn error, make a limiting
+			waitTime = waitTime * 2 // double wait time
 			time.Sleep(waitTime)
 			if closeFlag {
 				h.Infof("handler closed")
@@ -325,7 +326,7 @@ func (z *Zone) handleUDPTunnelConnection(h *log.Header, ln *net.UDPConn, config 
 		closeFlag = true
 	}()
 
-	//always try to get a whitelist
+	// always try to get a whitelist
 	whiteList, err := auth.NewWhiteListValidator(config.RemotePort, config.ZoneName, config.LocalAddr, config.WhiteCidrList, config.IsWhiteListOn)
 	if err != nil {
 		log.Errorf(h, "init white list error: %v", err)
@@ -337,13 +338,13 @@ func (z *Zone) handleUDPTunnelConnection(h *log.Header, ln *net.UDPConn, config 
 		config.AddConnectCount(1)
 	}
 
-	waitTime := time.Millisecond //default error wait time 1ms
+	waitTime := time.Millisecond // default error wait time 1ms
 	data := make([]byte, 1024)
 	for {
 		n, remoteAddr, err := ln.ReadFromUDP(data)
 		if err != nil {
-			//if got conn error, make a limiting
-			waitTime = waitTime * 2 //double wait time
+			// if got conn error, make a limiting
+			waitTime = waitTime * 2 // double wait time
 			time.Sleep(waitTime)
 			if closeFlag {
 				h.Infof("handler closed")
@@ -354,7 +355,7 @@ func (z *Zone) handleUDPTunnelConnection(h *log.Header, ln *net.UDPConn, config 
 		}
 		waitTime = time.Millisecond
 		ip := strings.Split(remoteAddr.String(), ":")[0]
-		if !whiteList.IpInWhiteList(nil, ip) {
+		if !whiteList.IpInWhiteList(context.TODO(), ip) {
 			h.Infof("refused %v connection because it is not in white list", remoteAddr.String())
 			config.AddConnectRejectedCount(1)
 			go func() {

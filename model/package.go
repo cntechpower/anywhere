@@ -145,12 +145,12 @@ func ParseTunnelBeginPkg(data []byte) (*TunnelBeginMsg, error) {
 }
 
 type AuthenticationFailMsg struct {
-	errorMsg string
+	ErrorMsg string
 }
 
 func NewAuthenticationFailMsg(errMsg string) *RequestMsg {
 	return newRequestMsg(PkgAuthenticationFail, "", "", "", &AuthenticationFailMsg{
-		errorMsg: errMsg,
+		ErrorMsg: errMsg,
 	})
 
 }

@@ -8,10 +8,11 @@ import (
 
 	"github.com/cntechpower/anywhere/util"
 
+	"github.com/cntechpower/utils/log"
+
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/tls"
-	"github.com/cntechpower/utils/log"
 )
 
 func (a *Agent) mustGetTlsConnToServer() *_tls.Conn {
@@ -37,7 +38,7 @@ func (a *Agent) newProxyConn(localAddr string) {
 		h.Errorf("error while dial to localAddr %v", err)
 		return
 	}
-	//let server use this local connection
+	// let server use this local connection
 	c := conn.NewWrappedConn("server", a.mustGetTlsConnToServer())
 	if err := c.Send(model.NewTunnelBeginMsg(a.user, a.zone, a.id, localAddr)); err != nil {
 		h.Errorf("error while send tunnel pkg : %v", err)
@@ -45,19 +46,9 @@ func (a *Agent) newProxyConn(localAddr string) {
 		_ = dst.Close()
 	}
 	h.Infof("called newProxyConn for %v", localAddr)
-	idx := a.joinedConns.Add(nil, c, conn.NewWrappedConn("server", dst))
+	idx := a.joinedConns.Add(context.TODO(), c, conn.NewWrappedConn("server", dst))
 	conn.JoinConn(c.GetConn(), dst)
 	_ = a.joinedConns.Remove(idx)
-}
-
-func (a *Agent) getTlsConnToServer() (*_tls.Conn, error) {
-	var c *_tls.Conn
-	c, err := tls.DialTlsServer(a.addr.IP.String(), a.addr.Port, a.credential)
-	if err != nil {
-		return nil, err
-	}
-	return c, nil
-
 }
 
 func (a *Agent) initControlConn(dur int) {

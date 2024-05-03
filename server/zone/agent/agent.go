@@ -5,18 +5,17 @@ import (
 	"net"
 	"time"
 
-	"github.com/cntechpower/anywhere/dao/connlist"
+	"github.com/cntechpower/utils/log"
 
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/constants"
 	"github.com/cntechpower/anywhere/model"
-	"github.com/cntechpower/utils/log"
 )
 
 type IAgent interface {
 	ResetAdminConn(c net.Conn)
 	AskProxyConn(proxyAddr string) error
-	//status
+	// status
 	Info() *model.AgentInfoInServer
 	IsHealthy() bool
 	LastAckRcvTime() time.Time
@@ -24,16 +23,14 @@ type IAgent interface {
 }
 
 type Agent struct {
-	zone         string
-	id           string
-	userName     string
-	version      string
-	RemoteAddr   net.Addr
-	adminConn    *conn.WrappedConn
-	errChan      chan error
-	CloseChan    chan struct{}
-	joinedConns  *connlist.JoinedConnList
-	connectCount uint64
+	zone       string
+	id         string
+	userName   string
+	version    string
+	RemoteAddr net.Addr
+	adminConn  *conn.WrappedConn
+	errChan    chan error
+	CloseChan  chan struct{}
 }
 
 func NewAgentInfo(userName, zoneName, agentId string, c net.Conn, errChan chan error) *Agent {
@@ -45,7 +42,7 @@ func NewAgentInfo(userName, zoneName, agentId string, c net.Conn, errChan chan e
 		RemoteAddr: c.RemoteAddr(),
 		adminConn:  conn.NewWrappedConn(agentId, c),
 		errChan:    errChan,
-		CloseChan:  make(chan struct{}, 0),
+		CloseChan:  make(chan struct{}),
 	}
 	go a.handleAdminConnection()
 	return a
@@ -65,10 +62,6 @@ func (a *Agent) Info() *model.AgentInfoInServer {
 func (a *Agent) ResetAdminConn(c net.Conn) {
 	a.adminConn.ResetConn(c)
 	go a.handleAdminConnection()
-}
-
-func (a *Agent) getProxyConfigMapKey(remotePort int, localAddr string) string {
-	return fmt.Sprintf("%v:%v", remotePort, localAddr)
 }
 
 func (a *Agent) AskProxyConn(proxyAddr string) error {
@@ -103,7 +96,7 @@ func (a *Agent) handleAdminConnection() {
 				log.Errorf(h, "receive from agent %v admin conn error: %v, will close this connection.", a.id, err)
 				_ = a.adminConn.Close()
 			}
-			//TODO: make this configurable
+			// TODO: make this configurable
 			time.Sleep(5 * time.Second)
 		}
 		switch msg.ReqType {

@@ -54,7 +54,7 @@ type ProxyConfig struct {
 	NetworkFlowLocalToRemoteInBytes uint64 `json:"network_out_bytes"`
 	ProxyConnectCount               uint64 `json:"proxy_connect_count"`
 	ProxyConnectRejectCount         uint64 `json:"proxy_connect_reject_count"`
-	//监听类型: TCP/UDP
+	// 监听类型: TCP/UDP
 	ListenType string `json:"listen_type"`
 }
 
@@ -113,18 +113,6 @@ func NewProxyConfig(userName, zoneName string, remotePort int, localAddr string,
 		WhiteCidrList: whiteListIps,
 		ListenType:    listenType,
 	}, nil
-}
-
-//TODO: sort
-func NewSortedProxyConfigList(list []*ProxyConfig, less func(i, j int) bool) []*ProxyConfig {
-	if len(list) <= 1 {
-		return list
-	}
-	res := make([]*ProxyConfig, len(list))
-	for _, c := range list {
-		res = append(res, c)
-	}
-	return res
 }
 
 func GetPersistModels() []interface{} {

@@ -5,12 +5,13 @@ import (
 	"fmt"
 	xos "os"
 
+	"github.com/cntechpower/utils/log"
+	"github.com/cntechpower/utils/os"
+
 	"github.com/cntechpower/anywhere/agent/agent"
 	"github.com/cntechpower/anywhere/agent/handler"
 	"github.com/cntechpower/anywhere/dao"
 	"github.com/cntechpower/anywhere/model"
-	"github.com/cntechpower/utils/log"
-	"github.com/cntechpower/utils/os"
 
 	"github.com/spf13/cobra"
 )
@@ -27,7 +28,7 @@ var grpcAddress string
 var connIdToKill int
 
 func main() {
-	//init log
+	// init log
 	esAddr := xos.Getenv("ES_ADDR")
 	logOptions := make([]log.Option, 0)
 	logOptions = append(logOptions, log.WithStd(log.OutputTypeText))
@@ -130,7 +131,7 @@ func run(_ *cobra.Command, _ []string) error {
 
 	go os.ListenTTINSignalLoop()
 	serverExitChan := os.ListenKillSignal()
-	rpcExitChan := make(chan error, 0)
+	rpcExitChan := make(chan error)
 	go handler.StartRpcServer(a, grpcAddress, rpcExitChan)
 
 	select {

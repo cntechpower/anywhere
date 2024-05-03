@@ -17,28 +17,27 @@ import (
 
 	configDao "github.com/cntechpower/anywhere/dao/config"
 
+	"github.com/cntechpower/utils/log"
+
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/server/api/auth"
 	"github.com/cntechpower/anywhere/util"
-	"github.com/cntechpower/utils/log"
 )
 
 type Server struct {
-	serverId                         string
-	serverAddr                       *net.TCPAddr
-	credential                       *_tls.Config
-	listener                         net.Listener
-	zones                            map[string] /*user*/ map[string] /*zone*/ zone.IZone
-	agentsRwMutex                    sync.RWMutex
-	ExitChan                         chan error
-	ErrChan                          chan error
-	statusRwMutex                    sync.RWMutex
-	statusCache                      model.ServerSummary
-	userValidator                    *auth.UserValidator
-	allProxyConfigList               []*model.ProxyConfig
-	networkFlowSortedProxyConfigList []*model.ProxyConfig
-	rejectCountSortedProxyConfigList []*model.ProxyConfig
+	serverId           string
+	serverAddr         *net.TCPAddr
+	credential         *_tls.Config
+	listener           net.Listener
+	zones              map[string] /*user*/ map[string] /*zone*/ zone.IZone
+	agentsRwMutex      sync.RWMutex
+	ExitChan           chan error
+	ErrChan            chan error
+	statusRwMutex      sync.RWMutex
+	statusCache        model.ServerSummary
+	userValidator      *auth.UserValidator
+	allProxyConfigList []*model.ProxyConfig
 }
 
 var serverInstance *Server
@@ -230,7 +229,7 @@ func (s *Server) RegisterAgent(userName, zoneName, agentId string, c net.Conn) (
 
 func (s *Server) ListJoinedConns(userName, zoneName string) (res []*model.GroupConnList, err error) {
 	res = make([]*model.GroupConnList, 0)
-	if userName != "" && zoneName != "" { //only get specified zone
+	if userName != "" && zoneName != "" { // only get specified zone
 		if !s.isZoneExist(userName, zoneName) {
 			return nil, fmt.Errorf("no such zone %v", zoneName)
 		}
@@ -246,11 +245,14 @@ func (s *Server) ListJoinedConns(userName, zoneName string) (res []*model.GroupC
 		})
 		return res, nil
 	}
-	//get all userName's group conn
+	// get all userName's group conn
 	for userName, zones := range s.zones {
 		for zoneName, z := range zones {
 			var list []*model.JoinedConnListItem
 			list, err = z.ListJoinedConns()
+			if err != nil {
+				return
+			}
 			res = append(res, &model.GroupConnList{
 				UserName: userName,
 				ZoneName: zoneName,

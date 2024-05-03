@@ -66,14 +66,11 @@ func (l *JoinedConnList) Add(ctx context.Context, src, dst *conn.WrappedConn) ui
 		src: src,
 		dst: dst,
 	}
-	return item.ID //return index
+	return item.ID // return index
 
 }
 
 func (l *JoinedConnList) KillById(id uint) (err error) {
-	if id < 0 {
-		return fmt.Errorf("illegal id %v", id)
-	}
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
 	if c, exist := l.list[id]; !exist {
@@ -87,9 +84,6 @@ func (l *JoinedConnList) KillById(id uint) (err error) {
 }
 
 func (l *JoinedConnList) Remove(id uint) (err error) {
-	if id < 0 {
-		return fmt.Errorf("illegal id %v", id)
-	}
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
 	if _, exist := l.list[id]; !exist {
@@ -98,7 +92,7 @@ func (l *JoinedConnList) Remove(id uint) (err error) {
 		delete(l.list, id)
 	}
 	err = dao.MemDB().Delete(&model.JoinedConnListItem{}, "id = ?", id).Error
-	return nil
+	return err
 }
 
 func (l *JoinedConnList) Flush() {
