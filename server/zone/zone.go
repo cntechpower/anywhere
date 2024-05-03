@@ -295,7 +295,7 @@ func (z *Zone) handleTCPTunnelConnection(h *log.Header, ln *net.TCPListener, con
 			h.Errorf("accept new conn error: %v", err)
 			continue
 		}
-		span, ctx := tracing.New(context.TODO(), "handleTCPTunnelConnection")
+		span, ctx := tracing.New(nil, "handleTCPTunnelConnection")
 		waitTime = time.Millisecond
 		ip := strings.Split(c.RemoteAddr().String(), ":")[0]
 		span.SetTag("remote-ip", ip)
@@ -355,7 +355,7 @@ func (z *Zone) handleUDPTunnelConnection(h *log.Header, ln *net.UDPConn, config 
 		}
 		waitTime = time.Millisecond
 		ip := strings.Split(remoteAddr.String(), ":")[0]
-		if !whiteList.IpInWhiteList(context.TODO(), ip) {
+		if !whiteList.IpInWhiteList(nil, ip) {
 			h.Infof("refused %v connection because it is not in white list", remoteAddr.String())
 			config.AddConnectRejectedCount(1)
 			go func() {

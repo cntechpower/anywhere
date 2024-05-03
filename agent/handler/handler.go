@@ -1,9 +1,10 @@
 package handler
 
 import (
+	"github.com/cntechpower/utils/log"
+
 	"github.com/cntechpower/anywhere/agent/agent"
 	pb "github.com/cntechpower/anywhere/agent/rpc/definitions"
-	"github.com/cntechpower/utils/log"
 
 	"context"
 )
@@ -14,7 +15,7 @@ type anywhereAgentRpcHandler struct {
 }
 
 func (h *anywhereAgentRpcHandler) ListConns(ctx context.Context, empty *pb.Empty) (res *pb.Conns, err error) {
-	conns, err := h.a.ListJoinedConns()
+	conns, err := h.a.ListJoinedConn()
 	if err != nil {
 		return
 	}
@@ -40,7 +41,7 @@ func (h *anywhereAgentRpcHandler) KillConnById(ctx context.Context, input *pb.Ki
 }
 
 func (h *anywhereAgentRpcHandler) KillAllConns(ctx context.Context, empty *pb.Empty) (*pb.Empty, error) {
-	h.a.FlushJoinedConns()
+	h.a.FlushJoinedConn()
 	return &pb.Empty{}, nil
 }
 

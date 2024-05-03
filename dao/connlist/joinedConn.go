@@ -32,19 +32,19 @@ func NewJoinedConnList(userName, zoneName string) *JoinedConnList {
 	return &JoinedConnList{
 		userName: userName,
 		zoneName: zoneName,
-		list:     make(map[uint]*joinedConn, 0),
+		list:     make(map[uint]*joinedConn),
 	}
 }
 
 func (l *JoinedConnList) Add(ctx context.Context, src, dst *conn.WrappedConn) uint {
-	if ctx != nil {
+	if ctx != nil && ctx != nil {
 		span, _ := tracing.New(ctx, "JoinedConnList.Add")
 		defer span.Finish()
 	}
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
 	if l.list == nil {
-		l.list = make(map[uint]*joinedConn, 0)
+		l.list = make(map[uint]*joinedConn)
 	}
 	item := &model.JoinedConnListItem{
 		UserName:      l.userName,

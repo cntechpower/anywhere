@@ -8,12 +8,13 @@ import (
 
 	"github.com/cntechpower/anywhere/dao/connlist"
 
+	"github.com/cntechpower/utils/log"
+
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/constants"
 	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/anywhere/tls"
 	"github.com/cntechpower/anywhere/util"
-	"github.com/cntechpower/utils/log"
 )
 
 type Agent struct {
@@ -24,7 +25,7 @@ type Agent struct {
 	addr            *net.TCPAddr
 	credential      *_tls.Config
 	adminConn       *conn.WrappedConn
-	joinedConns     *connlist.JoinedConnList
+	joinedConn      *connlist.JoinedConnList
 	version         string
 	status          string
 	lastAckSendTime time.Time
@@ -42,14 +43,14 @@ func InitAnyWhereAgent(zone, id, ip, user, password string, port int) *Agent {
 		panic(err)
 	}
 	agentInstance = &Agent{
-		zone:        zone,
-		id:          id,
-		user:        user,
-		password:    password,
-		addr:        addr,
-		joinedConns: connlist.NewJoinedConnList(user, zone),
-		version:     constants.AnywhereVersion,
-		status:      "INIT",
+		zone:       zone,
+		id:         id,
+		user:       user,
+		password:   password,
+		addr:       addr,
+		joinedConn: connlist.NewJoinedConnList(user, zone),
+		version:    constants.AnywhereVersion,
+		status:     "INIT",
 	}
 	return agentInstance
 }
@@ -82,16 +83,16 @@ func (a *Agent) Stop() {
 	a.status = "STOPPED"
 }
 
-func (a *Agent) ListJoinedConns() ([]*model.JoinedConnListItem, error) {
-	return a.joinedConns.List()
+func (a *Agent) ListJoinedConn() ([]*model.JoinedConnListItem, error) {
+	return a.joinedConn.List()
 }
 
 func (a *Agent) KillJoinedConnById(id uint) error {
-	return a.joinedConns.KillById(id)
+	return a.joinedConn.KillById(id)
 }
 
-func (a *Agent) FlushJoinedConns() {
-	a.joinedConns.Flush()
+func (a *Agent) FlushJoinedConn() {
+	a.joinedConn.Flush()
 }
 
 func (a *Agent) GetStatus() model.AgentInfoInAgent {
