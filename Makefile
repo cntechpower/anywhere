@@ -1,7 +1,7 @@
 GIT_VERSION = $(shell git rev-parse --abbrev-ref HEAD) $(shell git rev-parse HEAD)
 VERSION = $(shell git rev-parse --short HEAD)
 PROJECT_NAME = anywhere
-GO_BASE = golang:1.22
+GO_BASE = golang:1.19
 DOCKER = $(shell which docker)
 DOCKER-COMPOSE = ${DOCKER} compose
 LDFLAGS = -ldflags "-X 'main.version=\"${GIT_VERSION}\"'"
