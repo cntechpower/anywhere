@@ -1,6 +1,7 @@
 GIT_VERSION = $(shell git rev-parse --abbrev-ref HEAD) $(shell git rev-parse HEAD)
 VERSION = $(shell git rev-parse --short HEAD)
 PROJECT_NAME = anywhere
+GO_BASE = golang:1.22
 DOCKER = $(shell which docker)
 DOCKER-COMPOSE = ${DOCKER} compose
 LDFLAGS = -ldflags "-X 'main.version=\"${GIT_VERSION}\"'"
@@ -30,16 +31,16 @@ api:
 build_server:
 	mkdir -p bin/
 	rm -rf bin/anywhered
-	sudo $(DOCKER) run --rm -v ${PWD}:/usr/src/myapp -w /usr/src/myapp golang:1.19 go build ${LDFLAGS} -o bin/anywhered server/main.go
+	sudo $(DOCKER) run --rm -v ${PWD}:/usr/src/myapp -w /usr/src/myapp ${GO_BASE} go build ${LDFLAGS} -o bin/anywhered server/main.go
 
 build_agent:
 	mkdir -p bin/
 	rm -rf bin/anywhere
-	sudo $(DOCKER) run --rm -v ${PWD}:/usr/src/myapp -w /usr/src/myapp golang:1.19 go build ${LDFLAGS} -o bin/anywhere agent/main.go
+	sudo $(DOCKER) run --rm -v ${PWD}:/usr/src/myapp -w /usr/src/myapp ${GO_BASE} go build ${LDFLAGS} -o bin/anywhere agent/main.go
 build_agent/arm:
 	mkdir -p bin/
 	rm -rf bin/anywhere
-	sudo $(DOCKER) run --rm -v ${PWD}:/usr/src/myapp -w /usr/src/myapp golang:1.19 GOARCH=arm64 GOARM=7 go build ${LDFLAGS} -o bin/anywhere agent/main.go
+	sudo $(DOCKER) run --rm -v ${PWD}:/usr/src/myapp -w /usr/src/myapp ${GO_BASE} GOARCH=arm64 GOARM=7 go build ${LDFLAGS} -o bin/anywhere agent/main.go
 
 
 build_docker_image: build ui

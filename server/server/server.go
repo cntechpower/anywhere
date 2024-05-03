@@ -112,7 +112,7 @@ func (s *Server) Start(ctx context.Context) {
 }
 
 func (s *Server) handleNewServerConnection(c net.Conn) {
-	span, ctx := tracing.New(nil, "handleNewServerConnection")
+	span, ctx := tracing.New(context.TODO(), "handleNewServerConnection")
 	defer span.Finish()
 	h := log.NewHeader("handleNewServerConnection")
 	var msg model.RequestMsg
