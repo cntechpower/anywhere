@@ -78,10 +78,10 @@ unittest:
 
 sonar:
 	sonar-scanner \
- 	 -Dsonar.projectKey=Anywhere \
+ 	 -Dsonar.projectKey=anywhere \
  	 -Dsonar.sources=. \
  	 -Dsonar.host.url=http://sonar.stig.top \
- 	 -Dsonar.login=1aeb55ac4dd5c47c7ff8caa8585c08b1f6522b1e
+ 	 -Dsonar.login=sqp_2463b064b6d4c937e66fe70734f41725df5215a9
 
 upload: upload_x86 upload_docker_img
 upload_arm: build_arm ui
