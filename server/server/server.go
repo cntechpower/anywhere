@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	_tls "crypto/tls"
-	"encoding/json"
 	"fmt"
 	"net"
 	"sort"
@@ -116,9 +115,7 @@ func (s *Server) handleNewServerConnection(c net.Conn) {
 	defer span.Finish()
 	h := log.NewHeader("handleNewServerConnection")
 	var msg model.RequestMsg
-	d := json.NewDecoder(c)
-
-	if err := d.Decode(&msg); err != nil {
+	if err := conn.NewWrappedConn(s.serverId, c).Receive(&msg); err != nil {
 		h.Errorc(ctx, "unmarshal init pkg from %s error: %v", c.RemoteAddr(), err)
 		_ = c.Close()
 		return
