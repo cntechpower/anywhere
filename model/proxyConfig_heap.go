@@ -39,7 +39,7 @@ func (ph *ProxyConfigHeap) IsValid() bool {
 	}
 	for i := n/2 - 1; i >= 0; i-- {
 		if ph.less(ph.list[2*i+1], ph.list[i]) || (2*i+2 < n && ph.less(ph.list[2*i+2], ph.list[i])) {
-			fmt.Printf("invalid list[%v]: %v,list[%v]: %v,list[%v]: %v,\n", i, ph.list[i], 2*i+1, ph.list[2*i+1], 2*i+2, ph.list[2*i+2])
+			fmt.Printf("invalid list[%+v]: %+v,list[%+v]: %+v,list[%+v]: %+v,\n", i, ph.list[i], 2*i+1, ph.list[2*i+1], 2*i+2, ph.list[2*i+2])
 			return false
 		}
 	}
@@ -51,7 +51,7 @@ func (ph *ProxyConfigHeap) Pop() *ProxyConfig {
 	ph.down(0, len(ph.list)-1)
 	c := ph.list[n]
 	ph.list = ph.list[0:n]
-	// fmt.Printf("checking valid of ph: %v\n", ph.IsValid())
+	// fmt.Printf("checking valid of ph: %+v\n", ph.IsValid())
 	return c
 
 }
@@ -101,8 +101,8 @@ func InitProxyConfigHeap(cs []*ProxyConfig, less func(i, j *ProxyConfig) bool, l
 	}
 	for _, c := range cs {
 		ph.Push(c)
-		// fmt.Printf("after push %v to heap result %v, heap is %v\n", c.NetworkFlowRemoteToLocalInBytes, ok, ph.debugPrint())
+		// fmt.Printf("after push %+v to heap result %+v, heap is %+v\n", c.NetworkFlowRemoteToLocalInBytes, ok, ph.debugPrint())
 	}
-	// fmt.Printf("checking valid of ph: %v\n", ph.IsValid())
+	// fmt.Printf("checking valid of ph: %+v\n", ph.IsValid())
 	return ph
 }

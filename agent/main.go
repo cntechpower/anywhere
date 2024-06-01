@@ -62,7 +62,7 @@ func main() {
 		Long:  `list anywhere conns.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := handler.ListConns(grpcAddress); err != nil {
-				fmt.Printf("error query conn list: %v\n", err)
+				fmt.Printf("error query conn list: %+v\n", err)
 			}
 		},
 	}
@@ -73,7 +73,7 @@ func main() {
 		Long:  `kill anywhere conn.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := handler.KillConn(grpcAddress, connIdToKill); err != nil {
-				fmt.Printf("error query agent list: %v\n", err)
+				fmt.Printf("error query agent list: %+v\n", err)
 			}
 		},
 	}
@@ -83,7 +83,7 @@ func main() {
 		Long:  `flush anywhere conn.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := handler.FlushConns(grpcAddress); err != nil {
-				fmt.Printf("error query agent list: %v\n", err)
+				fmt.Printf("error query agent list: %+v\n", err)
 			}
 		},
 	}
@@ -93,7 +93,7 @@ func main() {
 		Long:  `show agent status`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := handler.ShowStatus(grpcAddress); err != nil {
-				fmt.Printf("error query agent status: %v\n", err)
+				fmt.Printf("error query agent status: %+v\n", err)
 			}
 		},
 	}
@@ -136,7 +136,7 @@ func run(_ *cobra.Command, _ []string) error {
 
 	select {
 	case err := <-rpcExitChan:
-		h.Fatalf("Grpc existing unexpected: %v", err)
+		h.Fatalf("Grpc existing unexpected: %+v", err)
 	case <-serverExitChan:
 		h.Infof("Agent Existing")
 	}

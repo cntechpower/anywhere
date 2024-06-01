@@ -100,7 +100,7 @@ func (s *Server) Start(ctx context.Context) {
 		for {
 			c, err := s.listener.Accept()
 			if err != nil {
-				log.Infof(h, "server port accept conn error: %v", err)
+				log.Infof(h, "server port accept conn error: %+v", err)
 				continue
 			}
 			go s.handleNewServerConnection(c)
@@ -116,7 +116,7 @@ func (s *Server) handleNewServerConnection(c net.Conn) {
 	h := log.NewHeader("handleNewServerConnection")
 	var msg model.RequestMsg
 	if err := conn.NewWrappedConn(s.serverId, c).Receive(&msg); err != nil {
-		h.Errorc(ctx, "unmarshal init pkg from %s error: %v", c.RemoteAddr(), err)
+		h.Errorc(ctx, "unmarshal init pkg from %s error: %+v", c.RemoteAddr(), err)
 		_ = c.Close()
 		return
 	}
@@ -124,39 +124,39 @@ func (s *Server) handleNewServerConnection(c net.Conn) {
 	case model.PkgControlConnRegister:
 		m, err := model.ParseControlRegisterPkg(msg.Message)
 		if err != nil {
-			h.Errorc(ctx, "get corrupted ControlRegister packet from %v", c.RemoteAddr())
+			h.Errorc(ctx, "get corrupted ControlRegister packet from %+v", c.RemoteAddr())
 			_ = c.Close()
 			return
 		}
 		if !s.userValidator.ValidateUserPass(m.UserName, m.PassWord) {
-			h.Errorc(ctx, "validate userName and password from %v fail", c.RemoteAddr())
+			h.Errorc(ctx, "validate userName and password from %+v fail", c.RemoteAddr())
 			_ = conn.NewWrappedConn(m.AgentId, c).Send(model.NewAuthenticationFailMsg("validate userName and password fail"))
 			_ = c.Close()
 			return
 		}
 		if isUpdate := s.RegisterAgent(m.UserName, m.AgentGroup, m.AgentId, c); isUpdate {
-			h.Errorc(ctx, "rebuild control connection for zone: %v, agent: %v", m.AgentGroup, m.AgentId)
+			h.Errorc(ctx, "rebuild control connection for zone: %+v, agent: %+v", m.AgentGroup, m.AgentId)
 		} else {
-			h.Errorc(ctx, "accept control connection from zone: %v, agent: %v", m.AgentGroup, m.AgentId)
+			h.Errorc(ctx, "accept control connection from zone: %+v, agent: %+v", m.AgentGroup, m.AgentId)
 		}
 	case model.PkgTunnelBegin:
 		m, err := model.ParseTunnelBeginPkg(msg.Message)
 		if err != nil {
-			h.Errorc(ctx, "get corrupted PkgTunnelBegin packet from %v", c.RemoteAddr())
+			h.Errorc(ctx, "get corrupted PkgTunnelBegin packet from %+v", c.RemoteAddr())
 			_ = c.Close()
 			return
 		}
 		if !s.isZoneExist(m.UserName, m.AgentGroup) {
-			h.Errorc(ctx, "got data conn register pkg from unknown user %v, zone %v", m.UserName, m.AgentGroup)
+			h.Errorc(ctx, "got data conn register pkg from unknown user %+v, zone %+v", m.UserName, m.AgentGroup)
 			_ = c.Close()
 		} else {
-			h.Infoc(ctx, "add data conn for %v from user %v, group %v", m.UserName, m.LocalAddr, m.AgentGroup)
-			if err := s.zones[m.UserName][m.AgentGroup].PutProxyConn(ctx, m.AgentId, m.LocalAddr, c); err != nil {
-				h.Errorc(ctx, "put proxy conn to agent error: %v", err)
+			h.Infoc(ctx, "add data conn for %+v from user %+v, group %+v", m.UserName, m.LocalAddr, m.AgentGroup)
+			if err := s.zones[m.UserName][m.AgentGroup].PutProxyConnection(ctx, m.AgentId, m.LocalAddr, c); err != nil {
+				h.Errorc(ctx, "put proxy conn to agent error: %+v", err)
 			}
 		}
 	default:
-		h.Errorc(ctx, "unknown msg type %v from %v", msg.ReqType, c.RemoteAddr())
+		h.Errorc(ctx, "unknown msg type %+v from %+v", msg.ReqType, c.RemoteAddr())
 		_ = c.Close()
 
 	}
@@ -228,10 +228,10 @@ func (s *Server) ListJoinedConns(userName, zoneName string) (res []*model.GroupC
 	res = make([]*model.GroupConnList, 0)
 	if userName != "" && zoneName != "" { // only get specified zone
 		if !s.isZoneExist(userName, zoneName) {
-			return nil, fmt.Errorf("no such zone %v", zoneName)
+			return nil, fmt.Errorf("no such zone %+v", zoneName)
 		}
 		var list []*model.JoinedConnListItem
-		list, err = s.zones[userName][zoneName].ListJoinedConns()
+		list, err = s.zones[userName][zoneName].ListJoinedConnections()
 		if err != nil {
 			return
 		}
@@ -246,7 +246,7 @@ func (s *Server) ListJoinedConns(userName, zoneName string) (res []*model.GroupC
 	for userName, zones := range s.zones {
 		for zoneName, z := range zones {
 			var list []*model.JoinedConnListItem
-			list, err = z.ListJoinedConns()
+			list, err = z.ListJoinedConnections()
 			if err != nil {
 				return
 			}
@@ -266,7 +266,7 @@ func (s *Server) killJoinedConn(userName, zoneName string, id uint) error {
 		return fmt.Errorf("zone is empty")
 	}
 	if !s.isZoneExist(userName, zoneName) {
-		return fmt.Errorf("no such zone %v", zoneName)
+		return fmt.Errorf("no such zone %+v", zoneName)
 	}
 	return s.zones[userName][zoneName].KillJoinedConnById(id)
 }
@@ -282,7 +282,7 @@ func (s *Server) KillJoinedConnById(id int64) (err error) {
 func (s *Server) FlushJoinedConns() {
 	for _, zones := range s.zones {
 		for _, z := range zones {
-			z.FlushJoinedConns()
+			z.FlushJoinedConnections()
 		}
 	}
 }
@@ -292,7 +292,7 @@ func (s *Server) UpdateProxyConfigWhiteList(userName, zoneName string, remotePor
 		return fmt.Errorf("zone is empty")
 	}
 	if !s.isZoneExist(userName, zoneName) {
-		return fmt.Errorf("no such zone %v", zoneName)
+		return fmt.Errorf("no such zone %+v", zoneName)
 	}
 	err = s.zones[userName][zoneName].UpdateProxyConfigWhiteListConfig(remotePort, localAddr, whiteCidrs, whiteListEnable)
 	if err == nil {
@@ -313,7 +313,7 @@ func (s *Server) LoadProxyConfigFile() error {
 	if err := configDao.Iterator(func(config *model.ProxyConfig) {
 		err := s.AddProxyConfigByModel(config)
 		if err != nil {
-			h.Errorf("load config %+v error: %v", config, err)
+			h.Errorf("load config %+v error: %+v", config, err)
 		}
 	}); err != nil {
 		return err

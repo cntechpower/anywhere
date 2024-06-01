@@ -10,11 +10,11 @@ import (
 )
 
 func genErrInvalidIp(ip string) error {
-	return fmt.Errorf("IP FORMAT INVALID: %v", ip)
+	return fmt.Errorf("IP FORMAT INVALID: %+v", ip)
 }
 
 func genErrInvalidPort(port string) error {
-	return fmt.Errorf("PORT FORMAT INVALID: %v", port)
+	return fmt.Errorf("PORT FORMAT INVALID: %+v", port)
 }
 
 func CheckAddrValid(addr string) error {
@@ -27,7 +27,7 @@ func CheckAddrValid(addr string) error {
 
 func CheckPortValid(port int) error {
 	if port <= 0 || port > 65535 {
-		return fmt.Errorf("invalid port %v", port)
+		return fmt.Errorf("invalid port %+v", port)
 	}
 	return nil
 }
@@ -39,7 +39,7 @@ func GetAddrByIpPort(ip string, port int) (*net.TCPAddr, error) {
 	if port > 65535 || port < 1 {
 		return nil, genErrInvalidPort(strconv.Itoa(port))
 	}
-	addrString := fmt.Sprintf("%v:%v", ip, port)
+	addrString := fmt.Sprintf("%+v:%+v", ip, port)
 	return net.ResolveTCPAddr("tcp", addrString)
 }
 

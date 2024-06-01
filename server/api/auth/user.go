@@ -1,8 +1,9 @@
 package auth
 
 import (
-	"github.com/cntechpower/anywhere/model"
 	"github.com/cntechpower/utils/log"
+
+	"github.com/cntechpower/anywhere/model"
 
 	"github.com/pquerna/otp/totp"
 )
@@ -30,19 +31,19 @@ func (v *UserValidator) Validate(userName, password, otpCode string) bool {
 func (v *UserValidator) ValidateUserPass(userName, auth string) bool {
 	user, ok := v.userPassMap[userName]
 	if !ok || (auth != user.UserPass) {
-		log.Infof(v.logHeader, "validate password for user %v fail", userName)
+		log.Infof(v.logHeader, "validate password for user %+v fail", userName)
 		return false
 	}
-	log.Infof(v.logHeader, "validate password for user %v success", userName)
+	log.Infof(v.logHeader, "validate password for user %+v success", userName)
 	return true
 }
 
 func (v *UserValidator) ValidateOtp(userName, otpCode string) bool {
 	user, ok := v.userPassMap[userName]
 	if !ok || (user.OtpEnable && !totp.Validate(otpCode, user.OtpCode)) {
-		log.Infof(v.logHeader, "validate totp for user %v fail", userName)
+		log.Infof(v.logHeader, "validate totp for user %+v fail", userName)
 		return false
 	}
-	log.Infof(v.logHeader, "validate totp for user %v success", userName)
+	log.Infof(v.logHeader, "validate totp for user %+v success", userName)
 	return true
 }

@@ -21,7 +21,7 @@ var resetConfigCmd = &cobra.Command{
 	Long:  `reset system config file 'anywhered.json'`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := conf.WriteInitConfigFile(); err != nil {
-			fmt.Printf("error reset proxy config: %v\n", err)
+			fmt.Printf("error reset proxy config: %+v\n", err)
 		}
 	},
 }
@@ -33,7 +33,7 @@ var migrateConfigCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := config.Migrate()
 		if err != nil {
-			fmt.Printf("error save new proxy config: %v\n", err)
+			fmt.Printf("error save new proxy config: %+v\n", err)
 		}
 	},
 }

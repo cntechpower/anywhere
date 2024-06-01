@@ -40,12 +40,12 @@ func ParseTlsConfig(certFile, keyFile, caFile string) (*tls.Config, error) {
 
 func DialTlsServer(ip string, port int, config *_tls.Config) (c *_tls.Conn, err error) {
 	if net.ParseIP(ip) == nil {
-		return nil, fmt.Errorf("wrong format of ip :%v", ip)
+		return nil, fmt.Errorf("wrong format of ip :%+v", ip)
 	}
 	if port < 1 || port > 65535 {
-		return nil, fmt.Errorf("wrong format of port: %v", port)
+		return nil, fmt.Errorf("wrong format of port: %+v", port)
 	}
-	addr := fmt.Sprintf("%v:%v", ip, port)
+	addr := fmt.Sprintf("%+v:%+v", ip, port)
 	c, err = _tls.DialWithDialer(getDialer(), "tcp", addr, config)
 	if err != nil {
 		return nil, err

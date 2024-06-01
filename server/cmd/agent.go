@@ -19,7 +19,7 @@ var agentListCmd = &cobra.Command{
 	Long:  `list anywhere agents.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := handler.ListAgent(); err != nil {
-			fmt.Printf("error query agent list: %v\n", err)
+			fmt.Printf("error query agent list: %+v\n", err)
 		}
 	},
 }

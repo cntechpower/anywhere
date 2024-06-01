@@ -2,6 +2,11 @@ package main
 
 import (
 	"context"
+	xos "os"
+
+	"github.com/cntechpower/utils/log"
+	"github.com/cntechpower/utils/os"
+	"github.com/cntechpower/utils/tracing"
 
 	"github.com/cntechpower/anywhere/dao"
 	"github.com/cntechpower/anywhere/model"
@@ -10,24 +15,19 @@ import (
 	"github.com/cntechpower/anywhere/server/conf"
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/tls"
-	"github.com/cntechpower/utils/log"
-	"github.com/cntechpower/utils/os"
-	"github.com/cntechpower/utils/tracing"
 
 	"github.com/spf13/cobra"
-
-	xos "os"
 )
 
 const (
 	app = "main.anywhered"
 )
 
-//server global config
+// server global config
 var version string
 
 func main() {
-	//init log
+	// init log
 	esAddr := xos.Getenv("ES_ADDR")
 	logOptions := make([]log.Option, 0)
 	logOptions = append(logOptions, log.WithStd(log.OutputTypeText))
@@ -37,12 +37,12 @@ func main() {
 	log.Init(logOptions...)
 	defer log.Close()
 
-	//init conf
+	// init conf
 	conf.Init()
 	dao.Init(model.GetPersistModels(), model.GetTmpModels())
 	defer dao.Close()
 
-	//init trace
+	// init trace
 	traceAddr := xos.Getenv("TRACE_ADDR")
 	if traceAddr != "" {
 		tracing.Init(app, traceAddr)
@@ -65,16 +65,16 @@ func main() {
 		},
 	}
 
-	//main service
+	// main service
 	rootCmd.AddCommand(startCmd)
 
-	//agent cmd
+	// agent cmd
 	rootCmd.AddCommand(cmd.Agent())
 
-	//config file manage cmd
+	// config file manage cmd
 	rootCmd.AddCommand(cmd.Config())
 
-	//conn cmd
+	// conn cmd
 	rootCmd.AddCommand(cmd.Conn())
 
 	if err := rootCmd.Execute(); err != nil {
@@ -94,7 +94,7 @@ func run(_ *cobra.Command, _ []string) error {
 	}
 	s.SetCredentials(tlsConfig)
 
-	//start main service
+	// start main service
 	s.Start(ctx)
 
 	// start api
@@ -104,7 +104,7 @@ func run(_ *cobra.Command, _ []string) error {
 		panic(err)
 	}
 
-	//wait for os kill signal. TODO: graceful shutdown
+	// wait for os kill signal. TODO: graceful shutdown
 	go os.ListenTTINSignalLoop()
 
 	serverExitChan := os.ListenKillSignal()
@@ -112,9 +112,9 @@ func run(_ *cobra.Command, _ []string) error {
 	case <-serverExitChan:
 		log.Infof(h, "Server Existing")
 	case err := <-apiExitChan:
-		log.Fatalf(h, "api server exit with error: %v", err)
+		log.Fatalf(h, "api server exit with error: %+v", err)
 	case err := <-s.ExitChan:
-		log.Fatalf(h, "anywhere server exit with error: %v", err)
+		log.Fatalf(h, "anywhere server exit with error: %+v", err)
 	}
 	return nil
 }

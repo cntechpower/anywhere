@@ -12,11 +12,12 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"google.golang.org/grpc"
 
+	"github.com/cntechpower/utils/log"
+
 	pb "github.com/cntechpower/anywhere/server/api/rpc/definitions"
 	"github.com/cntechpower/anywhere/server/conf"
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/util"
-	"github.com/cntechpower/utils/log"
 )
 
 var grpcAddress string
@@ -48,12 +49,12 @@ func NewClient(silenceOutput bool) (pb.AnywhereServerClient, error) {
 		grpc.WithUnaryInterceptor(func(ctx context.Context, method string, req, reply interface{},
 			cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 			if !silenceOutput {
-				log.Infof(h, "calling %v", method)
+				log.Infof(h, "calling %+v", method)
 			}
 
 			err := invoker(ctx, method, req, reply, cc, opts...)
 			if !silenceOutput {
-				log.Infof(h, "called %v, error: %v", method, err)
+				log.Infof(h, "called %+v, error: %+v", method, err)
 			}
 			return err
 		}))
@@ -97,7 +98,7 @@ func AddProxyConfig(userName, zoneName string, remotePort int, localAddr string,
 		WhiteCidrList: whiteListIps,
 	}}
 	if _, err = client.AddProxyConfig(context.Background(), input); err != nil {
-		return fmt.Errorf("add proxy config error: %v", err)
+		return fmt.Errorf("add proxy config error: %+v", err)
 	}
 	return nil
 
@@ -111,7 +112,7 @@ func ListProxyConfigs() error {
 	}
 	configs, err := client.ListProxyConfigs(context.Background(), &pb.Empty{})
 	if err != nil {
-		return fmt.Errorf("list proxy config error: %v", err)
+		return fmt.Errorf("list proxy config error: %+v", err)
 	}
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoFormatHeaders(false)

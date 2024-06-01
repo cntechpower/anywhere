@@ -74,7 +74,7 @@ func (l *JoinedConnList) KillById(id uint) (err error) {
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
 	if c, exist := l.list[id]; !exist {
-		return fmt.Errorf("no such id %v", id)
+		return fmt.Errorf("no such id %+v", id)
 	} else {
 		_ = c.src.Close()
 		_ = c.dst.Close()
@@ -87,7 +87,7 @@ func (l *JoinedConnList) Remove(id uint) (err error) {
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
 	if _, exist := l.list[id]; !exist {
-		return fmt.Errorf("no such id %v", id)
+		return fmt.Errorf("no such id %+v", id)
 	} else {
 		delete(l.list, id)
 	}

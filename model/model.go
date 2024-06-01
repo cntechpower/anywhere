@@ -99,10 +99,10 @@ type GroupConnList struct {
 
 func NewProxyConfig(userName, zoneName string, remotePort int, localAddr string, isWhiteListOn bool, whiteListIps, listenType string) (*ProxyConfig, error) {
 	if err := util.CheckPortValid(remotePort); err != nil {
-		return nil, fmt.Errorf("invalid remoteAddr %v in config, error: %v", localAddr, err)
+		return nil, fmt.Errorf("invalid remoteAddr %+v in config, error: %+v", localAddr, err)
 	}
 	if err := util.CheckAddrValid(localAddr); err != nil {
-		return nil, fmt.Errorf("invalid localAddr %v in config, error: %v", localAddr, err)
+		return nil, fmt.Errorf("invalid localAddr %+v in config, error: %+v", localAddr, err)
 	}
 	return &ProxyConfig{
 		UserName:      userName,

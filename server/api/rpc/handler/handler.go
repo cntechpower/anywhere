@@ -6,10 +6,11 @@ import (
 
 	"github.com/cntechpower/anywhere/constants"
 
+	"github.com/cntechpower/utils/log"
+
 	pb "github.com/cntechpower/anywhere/server/api/rpc/definitions"
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/util"
-	"github.com/cntechpower/utils/log"
 )
 
 var (
@@ -62,10 +63,10 @@ func (h *rpcHandlers) AddProxyConfig(ctx context.Context, input *pb.AddProxyConf
 	config := input.Config
 
 	if err := util.CheckPortValid(int(config.RemotePort)); err != nil {
-		return &pb.Empty{}, fmt.Errorf("invalid remoteAddr %v in config, error: %v", config.RemotePort, err)
+		return &pb.Empty{}, fmt.Errorf("invalid remoteAddr %+v in config, error: %+v", config.RemotePort, err)
 	}
 	if err := util.CheckAddrValid(config.LocalAddr); err != nil {
-		return &pb.Empty{}, fmt.Errorf("invalid localAddr %v in config, error: %v", config.LocalAddr, err)
+		return &pb.Empty{}, fmt.Errorf("invalid localAddr %+v in config, error: %+v", config.LocalAddr, err)
 	}
 	if err := s.AddProxyConfig(config.Username, config.ZoneName, int(config.RemotePort), config.LocalAddr, config.IsWhiteListOn, config.WhiteCidrList, ""); err != nil {
 		return nil, err
@@ -121,7 +122,7 @@ func (h *rpcHandlers) SaveProxyConfigToFile(ctx context.Context, input *pb.Empty
 	if s == nil {
 		return &pb.Empty{}, ErrServerNotInit
 	}
-	return &pb.Empty{}, nil //TODO: use config auto save and remove this api.
+	return &pb.Empty{}, nil // TODO: use config auto save and remove this api.
 }
 
 func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (*pb.Conns, error) {
