@@ -1,6 +1,9 @@
 package conn
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -9,6 +12,48 @@ import (
 )
 
 var ErrNilConn = fmt.Errorf("empty net.Conn")
+
+// encode 将消息编码
+func encode(message []byte) ([]byte, error) {
+	// 读取消息的长度，转换成int32类型（占4个字节）
+	var length = int32(len(message))
+	var pkg = new(bytes.Buffer)
+	// 写入消息头
+	err := binary.Write(pkg, binary.LittleEndian, length)
+	if err != nil {
+		return nil, err
+	}
+	// 写入消息实体
+	err = binary.Write(pkg, binary.LittleEndian, message)
+	if err != nil {
+		return nil, err
+	}
+	return pkg.Bytes(), nil
+}
+
+// decode 解码消息
+func decode(reader *bufio.Reader) ([]byte, error) {
+	// 读取消息的长度
+	lengthByte, _ := reader.Peek(4) // 读取前4个字节的数据
+	lengthBuff := bytes.NewBuffer(lengthByte)
+	var length int32
+	err := binary.Read(lengthBuff, binary.LittleEndian, &length)
+	if err != nil {
+		return nil, err
+	}
+	// Buffered返回缓冲中现有的可读取的字节数。
+	if int32(reader.Buffered()) < length+4 {
+		return nil, fmt.Errorf("size not enough")
+	}
+
+	// 读取真正的消息数据
+	pack := make([]byte, int(4+length))
+	_, err = reader.Read(pack)
+	if err != nil {
+		return nil, err
+	}
+	return pack[4:], nil
+}
 
 type WrappedConn struct {
 	RemoteName      string
@@ -37,7 +82,11 @@ func (c *WrappedConn) Send(m interface{}) error {
 	if err != nil {
 		return err
 	}
-	if _, err := c.Conn.Write(p); err != nil {
+	msg, err := encode(p)
+	if err != nil {
+		return err
+	}
+	if _, err := c.Conn.Write(msg); err != nil {
 		return err
 	}
 	return nil
@@ -49,8 +98,12 @@ func (c *WrappedConn) Receive(rsp interface{}) error {
 	if c.Conn == nil {
 		return ErrNilConn
 	}
-	d := json.NewDecoder(c.Conn)
-	if err := d.Decode(&rsp); err != nil {
+	reader := bufio.NewReader(c.Conn)
+	msg, err := decode(reader)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(msg, &rsp); err != nil {
 		return err
 	}
 	return nil
