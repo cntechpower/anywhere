@@ -26,7 +26,7 @@ func JoinConn(remote, local net.Conn) (uint64, uint64) {
 	var localToRemoteBytes, remoteToLocalBytes int64
 	go joinWithClose(remote, local, &localToRemoteBytes)
 	go joinWithClose(local, remote, &remoteToLocalBytes)
-	log.Infof(h, "joined conn %v and %v", remote.LocalAddr(), local.RemoteAddr())
+	log.Infof(h, "joined conn %+v and %+v", remote.LocalAddr(), local.RemoteAddr())
 	wg.Wait()
 	return uint64(localToRemoteBytes), uint64(remoteToLocalBytes)
 }

@@ -11,8 +11,9 @@ import (
 
 	"github.com/cntechpower/utils/tracing"
 
-	"github.com/cntechpower/anywhere/constants"
 	"github.com/cntechpower/utils/log"
+
+	"github.com/cntechpower/anywhere/constants"
 )
 
 var ErrConnectionPoolFull = fmt.Errorf("connection pool is full")
@@ -53,8 +54,8 @@ func (p *connectionPool) Get(ctx context.Context, proxyAddr string) (c *WrappedC
 	}
 	p.mu.Unlock()
 	for i := 0; i < constants.ProxyConnGetMaxRetryCount; i++ {
-		_ = tracing.Do(ctxNew, fmt.Sprintf("connectionPool.Get.Wait-%v", i), func() error {
-			//get connection first
+		_ = tracing.Do(ctxNew, fmt.Sprintf("connectionPool.Get.Wait-%+v", i), func() error {
+			// get connection first
 			p.newConnectionFn(proxyAddr)
 			select {
 			case c = <-p.pool[proxyAddr]:
@@ -69,7 +70,7 @@ func (p *connectionPool) Get(ctx context.Context, proxyAddr string) (c *WrappedC
 	}
 	ext.HTTPStatusCode.Set(span, http.StatusRequestTimeout)
 	ext.Error.Set(span, true)
-	return nil, fmt.Errorf("timeout while waiting for proxy conn for %v", proxyAddr)
+	return nil, fmt.Errorf("timeout while waiting for proxy conn for %+v", proxyAddr)
 }
 
 func (p *connectionPool) Put(ctx context.Context, proxyAddr string, connection *WrappedConn) error {
@@ -97,14 +98,14 @@ func (p *connectionPool) houseKeeper() {
 			checkedMap := make(map[*WrappedConn]struct{}, len(pool))
 			select {
 			case c := <-p.pool[proxyAddr]:
-				//this connection is already checked
-				//because channel is FIFO, so that means all connection in channel has been checked.
+				// this connection is already checked
+				// because channel is FIFO, so that means all connection in channel has been checked.
 				if _, ok := checkedMap[c]; ok {
 					break
 				}
 				checkedMap[c] = struct{}{}
-				if c.CreateTime.Add(p.idleTimeout).Before(time.Now()) { //connection is exceeded idle timeout, closing it.
-					log.Infof(h, "connection for %v is exceed idle timeout, will close it.", proxyAddr)
+				if c.CreateTime.Add(p.idleTimeout).Before(time.Now()) { // connection is exceeded idle timeout, closing it.
+					log.Infof(h, "connection for %+v is exceed idle timeout, will close it.", proxyAddr)
 					_ = c.Close()
 				} else {
 					p.pool[proxyAddr] <- c

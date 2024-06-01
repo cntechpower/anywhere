@@ -1,9 +1,10 @@
 package config
 
 import (
+	"github.com/cntechpower/utils/log"
+
 	"github.com/cntechpower/anywhere/dao"
 	"github.com/cntechpower/anywhere/model"
-	"github.com/cntechpower/utils/log"
 )
 
 func Save(config *model.ProxyConfig) (err error) {
@@ -44,7 +45,7 @@ func Migrate() (err error) {
 	for _, u := range cs.ProxyConfigs {
 		for _, c := range u {
 			if err = Save(c); err != nil {
-				h.Errorf("save %+v to db error: %v", c, err)
+				h.Errorf("save %+v to db error: %+v", c, err)
 			}
 		}
 	}

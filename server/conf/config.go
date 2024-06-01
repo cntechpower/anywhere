@@ -86,7 +86,7 @@ func newConfigMissedError(sectionName, configName string) error {
 
 func newConfigIllegalError(sectionName, configName string, err error) error {
 	printSection, printName := getConfigJsonTag(sectionName, configName)
-	return fmt.Errorf("%s is illegal in config section [%s], reason: %v", printName, printSection, err)
+	return fmt.Errorf("%s is illegal in config section [%s], reason: %+v", printName, printSection, err)
 }
 
 func parseSystemConfigFile() (*model.SystemConfig, error) {

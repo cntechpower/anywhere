@@ -22,7 +22,7 @@ func (s *Server) AddProxyConfig(userName, zoneName string, remotePort int, local
 
 func (s *Server) AddProxyConfigByModel(config *model.ProxyConfig) error {
 	if !s.isZoneExist(config.UserName, config.ZoneName) {
-		return fmt.Errorf("group %v not exist", config.ZoneName)
+		return fmt.Errorf("group %+v not exist", config.ZoneName)
 	}
 	s.agentsRwMutex.Lock()
 	defer s.agentsRwMutex.Unlock()
@@ -34,10 +34,10 @@ func (s *Server) AddProxyConfigByModel(config *model.ProxyConfig) error {
 
 func (s *Server) RemoveProxyConfig(userName string, zoneName string, remotePort int, localAddr string) (err error) {
 	if !s.isZoneExist(userName, zoneName) {
-		return fmt.Errorf("zoneName %v not exist", zoneName)
+		return fmt.Errorf("zoneName %+v not exist", zoneName)
 	}
 	if err := util.CheckAddrValid(localAddr); err != nil {
-		return fmt.Errorf("invalid localAddr %v, error: %v", localAddr, err)
+		return fmt.Errorf("invalid localAddr %+v, error: %+v", localAddr, err)
 	}
 	s.agentsRwMutex.Lock()
 	defer s.agentsRwMutex.Unlock()

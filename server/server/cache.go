@@ -4,9 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/cntechpower/utils/log"
+
 	"github.com/cntechpower/anywhere/constants"
 	"github.com/cntechpower/anywhere/model"
-	"github.com/cntechpower/utils/log"
 )
 
 func SortDescAndLimitUsingHeap(a []*model.ProxyConfig, less func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool, limit int) []*model.ProxyConfig {
@@ -105,7 +106,7 @@ func (s *Server) RefreshSummaryLoop(ctx context.Context) {
 		s.allProxyConfigList = allConfigList
 		s.statusRwMutex.Unlock()
 		if shouldLog() {
-			log.Infof(h, "refresh done, microseconds used %v", endTime.Sub(startTime).Microseconds())
+			log.Infof(h, "refresh done, microseconds used %+v", endTime.Sub(startTime).Microseconds())
 		}
 	}
 }
