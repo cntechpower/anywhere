@@ -17,7 +17,6 @@ require (
 	github.com/go-openapi/swag v0.19.8
 	github.com/go-openapi/validate v0.19.8
 	github.com/go-sql-driver/mysql v1.5.0
-	github.com/golang/protobuf v1.4.3
 	github.com/gorilla/sessions v1.2.0 // indirect
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/mattn/go-runewidth v0.0.4 // indirect
@@ -28,8 +27,10 @@ require (
 	github.com/rs/cors v1.7.0
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20200625001655-4c5254603344
 	google.golang.org/grpc v1.34.0
+	google.golang.org/protobuf v1.25.0
 	gorm.io/driver/sqlite v1.1.4
 	gorm.io/gorm v1.21.11
 )
