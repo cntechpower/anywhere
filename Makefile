@@ -23,9 +23,11 @@ newkey:
 	openssl genrsa -out credential/http.key 2048
 	openssl req -new -key credential/http.key -out credential/http.csr -subj "/CN=cntechpower_anywhere"
 	openssl x509 -req -in credential/http.csr -CA credential/ca.crt -CAkey credential/ca.key -CAcreateserial -out credential/http.crt -days 3650
+	tar -czf anywhere-credential.tar.gz credential/
+	curl -T anywhere-credential.tar.gz -u ftp:ftp ftp://10.0.0.4/ci/anywhere/
 rpc:
-	protoc --go_out=plugins=grpc:. server/api/rpc/definitions/*.proto
-	protoc --go_out=plugins=grpc:. agent/rpc/definitions/*.proto
+	protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=.  --go-grpc_opt=paths=source_relative server/api/rpc/definitions/*.proto
+	protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=.  --go-grpc_opt=paths=source_relative server/api/rpc/definitions/*.proto agent/rpc/definitions/*.proto
 api:
 	swagger23 generate server -t server/api/http/api --exclude-main -f server/api/http/definition/anywhere.yml
 build_server:
@@ -37,11 +39,6 @@ build_agent:
 	mkdir -p bin/
 	rm -rf bin/anywhere
 	sudo $(DOCKER) run --rm -v ${PWD}:/usr/src/myapp -w /usr/src/myapp ${GO_BASE} go build ${LDFLAGS} -o bin/anywhere agent/main.go
-build_agent/arm:
-	mkdir -p bin/
-	rm -rf bin/anywhere
-	sudo $(DOCKER) run --rm -v ${PWD}:/usr/src/myapp -w /usr/src/myapp ${GO_BASE} GOARCH=arm64 GOARM=7 go build ${LDFLAGS} -o bin/anywhere agent/main.go
-
 
 build_docker_image: build ui
 	sudo $(DOCKER) build -t anywhered-test-image:latest -f docker-build/Dockerfile.server .
@@ -84,13 +81,14 @@ sonar:
  	 -Dsonar.login=sqp_2463b064b6d4c937e66fe70734f41725df5215a9
 
 upload: upload_x86 upload_docker_img
-upload_arm: build_arm ui
-	tar -czf anywhere-$(VERSION)-arm.tar.gz bin/ credential/ static/
-	tar -czf anywhere-latest-arm.tar.gz bin/ credential/ static/
-	curl -T anywhere-$(VERSION)-arm.tar.gz -u ftp:ftp ftp://10.0.0.4/ci/anywhere/
-	curl -T anywhere-latest-arm.tar.gz -u ftp:ftp ftp://10.0.0.4/ci/anywhere/
-	rm -rf anywhere-latest-arm.tar.gz
-	rm -rf anywhere-$(VERSION)-arm.tar.gz
+
+get_credential:
+	rm -rf credential
+	wget ftp://ftp:ftp@10.0.0.4/ci/anywhere/anywhere-credential.tar.gz
+	tar -xf anywhere-credential.tar.gz
+	rm -rf anywhere-credential.tar.gz
+delete_credential:
+	rm -rf credential
 upload_x86: build ui
 	tar -czf anywhere-$(VERSION).tar.gz bin/ credential/ static/
 	tar -czf anywhere-latest.tar.gz bin/ credential/ static/
@@ -105,8 +103,7 @@ upload_release:
 clean:
 	rm -rf bin/
 	rm -rf *.tar.gz
-build: vet build_server build_agent
-build_arm: vet build_server build_agent/arm
+build: get_credential vet build_server build_agent delete_credential
 
 build_release: vet build_server build_agent newkey ui
 	tar -czvf anywhere-$(VERSION).tar.gz bin/ credential/ static/
