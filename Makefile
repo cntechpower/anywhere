@@ -48,7 +48,7 @@ upload_docker_img: build ui
 	sudo $(DOCKER) build -t 10.0.0.4:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION} -f docker-build/Dockerfile.agent .
 	sudo $(DOCKER) push 10.0.0.4:5000/cntechpower/${PROJECT_NAME}-agent:${VERSION}
 
-docker_test: docker_test_clean get_credential build_docker_image delete_credential
+docker_test: delete_credential docker_test_clean get_credential build_docker_image delete_credential
 	sudo $(DOCKER-COMPOSE) -f test/composefiles/docker-compose.yml up -d
 	sleep 20 #wait mysql init
 	sudo $(DOCKER) run -t --rm --network composefiles_anywhere_test_net 10.0.0.4:5000/mysql/mysql_client:8.0.19 -h172.90.101.11 -P4444 -proot -e "select @@version"
@@ -80,7 +80,7 @@ sonar:
  	 -Dsonar.host.url=http://sonar.stig.top \
  	 -Dsonar.login=sqp_2463b064b6d4c937e66fe70734f41725df5215a9
 
-upload: get_credential upload_x86 upload_docker_img delete_credential
+upload: delete_credential get_credential upload_x86 upload_docker_img delete_credential
 
 get_credential:
 	rm -rf credential
