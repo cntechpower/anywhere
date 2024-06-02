@@ -1,5 +1,6 @@
 syntax = "proto3";
 
+option go_package = "github.com/cntechpower/anywhere/server_pb";
 
 package anywhereRpc;
 
@@ -10,9 +11,9 @@ service AnywhereServer {
     rpc RemoveProxyConfig(RemoveProxyConfigInput)returns(Empty){}
     rpc LoadProxyConfigFile(Empty)returns(Empty){}
     rpc SaveProxyConfigToFile(Empty)returns(Empty){}
-    rpc ListConns(ListConnsInput)returns(Conns){}
+    rpc ListConnections(ListConnsInput)returns(Conns){}
     rpc KillConnById(KillConnByIdInput)returns(Empty){}
-    rpc KillAllConns(Empty)returns(Empty){}
+    rpc KillAllConnections(Empty)returns(Empty){}
     rpc UpdateProxyConfigWhiteList(UpdateProxyConfigWhiteListInput)returns(Empty){}
     rpc GetSummary(Empty)returns(GetSummaryOutput){}
 }

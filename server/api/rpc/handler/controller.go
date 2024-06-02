@@ -3,16 +3,17 @@ package handler
 import (
 	"bufio"
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"os"
 	"strconv"
 	"strings"
 
+	"github.com/cntechpower/utils/log"
 	"github.com/olekukonko/tablewriter"
 	"google.golang.org/grpc"
-
-	"github.com/cntechpower/utils/log"
+	"google.golang.org/grpc/credentials"
 
 	pb "github.com/cntechpower/anywhere/server/api/rpc/definitions"
 	"github.com/cntechpower/anywhere/server/conf"
@@ -26,7 +27,7 @@ func init() {
 	grpcAddress, _ = conf.GetGrpcAddr()
 }
 
-func StartRpcServer(s *server.Server, addr string, errChan chan error) {
+func StartRpcServer(s *server.Server, addr string, tlsConfig *tls.Config, errChan chan error) {
 	if err := util.CheckAddrValid(addr); err != nil {
 		errChan <- err
 		return
@@ -36,7 +37,7 @@ func StartRpcServer(s *server.Server, addr string, errChan chan error) {
 		errChan <- err
 		return
 	}
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.Creds(credentials.NewTLS(tlsConfig)))
 	pb.RegisterAnywhereServerServer(grpcServer, GetRpcHandlers(s))
 	if err := grpcServer.Serve(l); err != nil {
 		errChan <- err
@@ -178,7 +179,7 @@ func ListConns(zoneName string) error {
 	if err != nil {
 		return err
 	}
-	res, err := client.ListConns(context.Background(), &pb.ListConnsInput{
+	res, err := client.ListConnections(context.Background(), &pb.ListConnsInput{
 		ZoneName: zoneName,
 	})
 	if err != nil {
@@ -209,7 +210,7 @@ func KillConn(id int64) error {
 	return err
 }
 
-func FlushConns() error {
+func FlushConnections() error {
 	fmt.Println("ATTENTION: are you sure to flush all connections?")
 	fmt.Println("y/n ?")
 	reader := bufio.NewReader(os.Stdin)
@@ -222,6 +223,6 @@ func FlushConns() error {
 	if err != nil {
 		return err
 	}
-	_, err = client.KillAllConns(context.Background(), &pb.Empty{})
+	_, err = client.KillAllConnections(context.Background(), &pb.Empty{})
 	return err
 }

@@ -9,10 +9,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cntechpower/utils/log"
+
 	"github.com/cntechpower/anywhere/agent/agent"
 	pb "github.com/cntechpower/anywhere/agent/rpc/definitions"
 	"github.com/cntechpower/anywhere/util"
-	"github.com/cntechpower/utils/log"
 
 	"github.com/olekukonko/tablewriter"
 
@@ -31,26 +32,26 @@ func StartRpcServer(agent *agent.Agent, addr string, errChan chan error) {
 		return
 	}
 	grpcServer := grpc.NewServer()
-	pb.RegisterAnywhereServer(grpcServer, &anywhereAgentRpcHandler{a: agent, logHeader: log.NewHeader("agent")})
+	pb.RegisterAnywhereAgentServer(grpcServer, &anywhereAgentRpcHandler{a: agent, logHeader: log.NewHeader("agent")})
 	if err := grpcServer.Serve(l); err != nil {
 		errChan <- err
 	}
 }
 
-func NewClient(addr string) (pb.AnywhereClient, error) {
+func NewClient(addr string) (pb.AnywhereAgentClient, error) {
 	cc, err := grpc.Dial(addr, grpc.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
-	return pb.NewAnywhereClient(cc), nil
+	return pb.NewAnywhereAgentClient(cc), nil
 }
 
-func ListConns(grpcAddr string) error {
+func ListConnections(grpcAddr string) error {
 	client, err := NewClient(grpcAddr)
 	if err != nil {
 		return err
 	}
-	res, err := client.ListConns(context.Background(), &pb.Empty{})
+	res, err := client.ListConnections(context.Background(), &pb.Empty{})
 	if err != nil {
 		return err
 	}
@@ -92,7 +93,7 @@ func FlushConns(grpcAddr string) error {
 	if err != nil {
 		return err
 	}
-	_, err = client.KillAllConns(context.Background(), &pb.Empty{})
+	_, err = client.KillAllConnections(context.Background(), &pb.Empty{})
 	return err
 }
 

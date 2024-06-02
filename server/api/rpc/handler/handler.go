@@ -17,19 +17,20 @@ var (
 	ErrServerNotInit = fmt.Errorf("anywhere server not init")
 )
 
-type rpcHandlers struct {
+type RpcHandlers struct {
 	s         *server.Server
 	logHeader *log.Header
+	pb.UnimplementedAnywhereServerServer
 }
 
-func GetRpcHandlers(s *server.Server) *rpcHandlers {
-	return &rpcHandlers{
+func GetRpcHandlers(s *server.Server) *RpcHandlers {
+	return &RpcHandlers{
 		s:         s,
 		logHeader: log.NewHeader("rpcHandler"),
 	}
 }
 
-func (h *rpcHandlers) ListAgent(ctx context.Context, empty *pb.Empty) (*pb.Agents, error) {
+func (h *RpcHandlers) ListAgent(_ context.Context, _ *pb.Empty) (*pb.Agents, error) {
 	s := server.GetServerInstance()
 	if s == nil {
 		return &pb.Agents{}, ErrServerNotInit
@@ -52,7 +53,7 @@ func (h *rpcHandlers) ListAgent(ctx context.Context, empty *pb.Empty) (*pb.Agent
 	return res, nil
 }
 
-func (h *rpcHandlers) AddProxyConfig(ctx context.Context, input *pb.AddProxyConfigInput) (*pb.Empty, error) {
+func (h *RpcHandlers) AddProxyConfig(_ context.Context, input *pb.AddProxyConfigInput) (*pb.Empty, error) {
 	if input.Config == nil {
 		return nil, fmt.Errorf("config not vaild: nil")
 	}
@@ -74,7 +75,7 @@ func (h *rpcHandlers) AddProxyConfig(ctx context.Context, input *pb.AddProxyConf
 	return &pb.Empty{}, nil
 }
 
-func (h *rpcHandlers) ListProxyConfigs(ctx context.Context, input *pb.Empty) (*pb.ListProxyConfigsOutput, error) {
+func (h *RpcHandlers) ListProxyConfigs(_ context.Context, _ *pb.Empty) (*pb.ListProxyConfigsOutput, error) {
 	s := server.GetServerInstance()
 	if s == nil {
 		return nil, ErrServerNotInit
@@ -100,7 +101,7 @@ func (h *rpcHandlers) ListProxyConfigs(ctx context.Context, input *pb.Empty) (*p
 	return res, nil
 }
 
-func (h *rpcHandlers) RemoveProxyConfig(ctx context.Context, input *pb.RemoveProxyConfigInput) (*pb.Empty, error) {
+func (h *RpcHandlers) RemoveProxyConfig(_ context.Context, input *pb.RemoveProxyConfigInput) (*pb.Empty, error) {
 	s := server.GetServerInstance()
 	if s == nil {
 		return &pb.Empty{}, ErrServerNotInit
@@ -108,7 +109,7 @@ func (h *rpcHandlers) RemoveProxyConfig(ctx context.Context, input *pb.RemovePro
 	return &pb.Empty{}, s.RemoveProxyConfigById(uint(input.Id))
 }
 
-func (h *rpcHandlers) LoadProxyConfigFile(ctx context.Context, input *pb.Empty) (*pb.Empty, error) {
+func (h *RpcHandlers) LoadProxyConfigFile(_ context.Context, _ *pb.Empty) (*pb.Empty, error) {
 
 	s := server.GetServerInstance()
 	if s == nil {
@@ -117,16 +118,16 @@ func (h *rpcHandlers) LoadProxyConfigFile(ctx context.Context, input *pb.Empty) 
 	return &pb.Empty{}, s.LoadProxyConfigFile()
 }
 
-func (h *rpcHandlers) SaveProxyConfigToFile(ctx context.Context, input *pb.Empty) (*pb.Empty, error) {
+func (h *RpcHandlers) SaveProxyConfigToFile(_ context.Context, _ *pb.Empty) (*pb.Empty, error) {
 	s := server.GetServerInstance()
 	if s == nil {
 		return &pb.Empty{}, ErrServerNotInit
 	}
-	return &pb.Empty{}, nil // TODO: use config auto save and remove this api.
+	return &pb.Empty{}, nil
 }
 
-func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (*pb.Conns, error) {
-	agentConns, err := h.s.ListJoinedConns("", input.ZoneName)
+func (h *RpcHandlers) ListConnections(_ context.Context, input *pb.ListConnsInput) (*pb.Conns, error) {
+	agentConnections, err := h.s.ListJoinedConns("", input.ZoneName)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +135,7 @@ func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (
 		Conn: make([]*pb.Conn, 0),
 	}
 
-	for _, agentConn := range agentConns {
+	for _, agentConn := range agentConnections {
 		for _, conn := range agentConn.List {
 			res.Conn = append(res.Conn, &pb.Conn{
 				AgentId:       conn.DstName,
@@ -153,20 +154,20 @@ func (h *rpcHandlers) ListConns(ctx context.Context, input *pb.ListConnsInput) (
 	return res, nil
 }
 
-func (h *rpcHandlers) KillConnById(ctx context.Context, input *pb.KillConnByIdInput) (*pb.Empty, error) {
+func (h *RpcHandlers) KillConnById(_ context.Context, input *pb.KillConnByIdInput) (*pb.Empty, error) {
 	return &pb.Empty{}, h.s.KillJoinedConnById(input.Id)
 }
 
-func (h *rpcHandlers) KillAllConns(ctx context.Context, empty *pb.Empty) (*pb.Empty, error) {
+func (h *RpcHandlers) KillAllConnections(_ context.Context, _ *pb.Empty) (*pb.Empty, error) {
 	h.s.FlushJoinedConns()
 	return &pb.Empty{}, nil
 }
 
-func (h *rpcHandlers) UpdateProxyConfigWhiteList(ctx context.Context, input *pb.UpdateProxyConfigWhiteListInput) (*pb.Empty, error) {
+func (h *RpcHandlers) UpdateProxyConfigWhiteList(_ context.Context, input *pb.UpdateProxyConfigWhiteListInput) (*pb.Empty, error) {
 	return &pb.Empty{}, h.s.UpdateProxyConfigWhiteList(input.UserName, input.ZoneName, int(input.RemotePort), input.LocalAddr, input.WhiteCidrs, input.WhiteListEnable)
 }
 
-func (h *rpcHandlers) GetSummary(ctx context.Context, empty *pb.Empty) (*pb.GetSummaryOutput, error) {
+func (h *RpcHandlers) GetSummary(_ context.Context, _ *pb.Empty) (*pb.GetSummaryOutput, error) {
 	s := h.s.GetSummary()
 	res := &pb.GetSummaryOutput{
 		AgentCount:                  int64(s.AgentTotalCount),

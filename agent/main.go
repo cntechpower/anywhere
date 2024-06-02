@@ -61,7 +61,7 @@ func main() {
 		Short: "list conns",
 		Long:  `list anywhere conns.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := handler.ListConns(grpcAddress); err != nil {
+			if err := handler.ListConnections(grpcAddress); err != nil {
 				fmt.Printf("error query conn list: %+v\n", err)
 			}
 		},

@@ -42,7 +42,7 @@ var connFlushCmd = &cobra.Command{
 	Short: "flush conn",
 	Long:  `flush anywhere conn.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := handler.FlushConns(); err != nil {
+		if err := handler.FlushConnections(); err != nil {
 			fmt.Printf("error query agent list: %+v\n", err)
 		}
 	},

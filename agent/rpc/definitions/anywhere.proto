@@ -1,12 +1,13 @@
 syntax = "proto3";
 
+option go_package = "github.com/cntechpower/anywhere/agent_pb";
 
 package anywhereAgentRpc;
 
-service Anywhere {
-    rpc ListConns(Empty)returns(Conns){}
+service AnywhereAgent {
+    rpc ListConnections(Empty)returns(Conns){}
     rpc KillConnById(KillConnByIdInput)returns(Empty){}
-    rpc KillAllConns(Empty)returns(Empty){}
+    rpc KillAllConnections(Empty)returns(Empty){}
     rpc ShowStatus(Empty)returns(ShowStatusOutput) {}
 }
 
