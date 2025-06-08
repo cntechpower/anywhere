@@ -4,7 +4,7 @@ import (
 	"github.com/cntechpower/utils/log"
 
 	"github.com/cntechpower/anywhere/agent/agent"
-	pb "github.com/cntechpower/anywhere/agent/rpc/definitions"
+	pb "github.com/cntechpower/anywhere/gen/go/github.com/cntechpower/anywhere/gen/go/agent_pb"
 
 	"context"
 )
@@ -21,11 +21,11 @@ func (h *anywhereAgentRpcHandler) ListConnections(ctx context.Context, empty *pb
 		return
 	}
 	res = &pb.Conns{
-		Conn: make([]*pb.Conn, 0),
+		Conns: make([]*pb.Conn, 0),
 	}
 
 	for _, conn := range connections {
-		res.Conn = append(res.Conn, &pb.Conn{
+		res.Conns = append(res.Conns, &pb.Conn{
 			ConnId:        int64(conn.ID),
 			SrcRemoteAddr: conn.SrcRemoteAddr,
 			SrcLocalAddr:  conn.SrcLocalAddr,

@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	pb "github.com/cntechpower/anywhere/server/api/rpc/definitions"
+	pb "github.com/cntechpower/anywhere/gen/go/github.com/cntechpower/anywhere/gen/go/server_pb"
 	"github.com/cntechpower/anywhere/server/conf"
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/util"
@@ -77,7 +77,7 @@ func ListAgent() error {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoFormatHeaders(false)
 	table.SetHeader([]string{"UserName", "ZoneName", "AgentId", "AgentAddr", "LastAckSend", "LastAckRcv"})
-	for _, agent := range res.Agent {
+	for _, agent := range res.Agents {
 		table.Append([]string{agent.UserName, agent.ZoneName, agent.Id, agent.RemoteAddr, agent.LastAckSend, agent.LastAckRcv})
 	}
 	table.Render()
@@ -91,7 +91,7 @@ func AddProxyConfig(userName, zoneName string, remotePort int, localAddr string,
 		return err
 	}
 	input := &pb.AddProxyConfigInput{Config: &pb.ProxyConfig{
-		Username:      userName,
+		UserName:      userName,
 		ZoneName:      zoneName,
 		RemotePort:    int64(remotePort),
 		LocalAddr:     localAddr,
@@ -118,9 +118,9 @@ func ListProxyConfigs() error {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoFormatHeaders(false)
 	table.SetHeader([]string{"UserName", "ZoneName", "ServerPort", "LocalAddr", "IsWhiteListOn", "IpWhiteList", "ConnectCount", "ConnectRejectCount", "TotalNetFlowsInMB"})
-	for _, config := range configs.Config {
+	for _, config := range configs.Configs {
 		table.Append([]string{
-			config.Username, config.ZoneName, strconv.FormatInt(config.RemotePort, 10),
+			config.UserName, config.ZoneName, strconv.FormatInt(config.RemotePort, 10),
 			config.LocalAddr, util.BoolToString(config.IsWhiteListOn), config.WhiteCidrList,
 			strconv.FormatInt(config.ProxyConnectCount, 10), strconv.FormatInt(config.ProxyConnectRejectCount, 10),
 			strconv.FormatFloat(float64(config.NetworkFlowRemoteToLocalInBytes+config.NetworkFlowLocalToRemoteInBytes)/1024/1024, 'f', 5, 64),
@@ -185,14 +185,14 @@ func ListConns(zoneName string) error {
 	if err != nil {
 		return err
 	}
-	if len(res.Conn) == 0 {
+	if len(res.Conns) == 0 {
 		fmt.Println("no conn exist")
 		return nil
 	}
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoFormatHeaders(false)
 	table.SetHeader([]string{"UserName", "ZoneName", "AgentId", "ConnId", "SrcRemoteAddr", "SrcLocalAddr", "DstRemoteAddr", "DstLocalAddr"})
-	for _, conn := range res.Conn {
+	for _, conn := range res.Conns {
 		table.Append([]string{conn.UserName, conn.ZoneName, conn.AgentId, strconv.Itoa(int(conn.ConnId)), conn.SrcRemoteAddr, conn.SrcLocalAddr, conn.DstRemoteAddr, conn.DstLocalAddr})
 	}
 	table.Render()

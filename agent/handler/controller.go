@@ -12,7 +12,7 @@ import (
 	"github.com/cntechpower/utils/log"
 
 	"github.com/cntechpower/anywhere/agent/agent"
-	pb "github.com/cntechpower/anywhere/agent/rpc/definitions"
+	pb "github.com/cntechpower/anywhere/gen/go/github.com/cntechpower/anywhere/gen/go/agent_pb"
 	"github.com/cntechpower/anywhere/util"
 
 	"github.com/olekukonko/tablewriter"
@@ -55,14 +55,14 @@ func ListConnections(grpcAddr string) error {
 	if err != nil {
 		return err
 	}
-	if len(res.Conn) == 0 {
+	if len(res.Conns) == 0 {
 		fmt.Println("no conn exist")
 		return nil
 	}
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoFormatHeaders(false)
 	table.SetHeader([]string{"ConnId", "SrcRemoteAddr", "SrcLocalAddr", "DstRemoteAddr", "DstLocalAddr"})
-	for _, conn := range res.Conn {
+	for _, conn := range res.Conns {
 		table.Append([]string{strconv.Itoa(int(conn.ConnId)), conn.SrcRemoteAddr, conn.SrcLocalAddr, conn.DstRemoteAddr, conn.DstLocalAddr})
 	}
 	table.Render()

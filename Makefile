@@ -30,12 +30,12 @@ rpc:
 	protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=.  --go-grpc_opt=paths=source_relative server/api/rpc/definitions/*.proto agent/rpc/definitions/*.proto
 api:
 	swagger23 generate server -t server/api/http/api --exclude-main -f server/api/http/definition/anywhere.yml
-build_server:
+build_server: buf-generate
 	mkdir -p bin/
 	rm -rf bin/anywhered
 	sudo $(DOCKER) run --rm -v ${PWD}:/usr/src/myapp -w /usr/src/myapp ${GO_BASE} go build ${LDFLAGS} -o bin/anywhered server/main.go
 
-build_agent:
+build_agent: buf-generate
 	mkdir -p bin/
 	rm -rf bin/anywhere
 	sudo $(DOCKER) run --rm -v ${PWD}:/usr/src/myapp -w /usr/src/myapp ${GO_BASE} go build ${LDFLAGS} -o bin/anywhere agent/main.go
@@ -103,9 +103,12 @@ upload_release:
 clean:
 	rm -rf bin/
 	rm -rf *.tar.gz
-build: vet build_server build_agent
+build: buf-generate vet build_server build_agent
 
-build_release: vet build_server build_agent newkey ui
+buf-generate:
+	buf generate
+
+build_release: buf-generate vet build_server build_agent newkey ui
 	tar -czvf anywhere-$(VERSION).tar.gz bin/ credential/ static/
 	tar -czvf anywhere-latest.tar.gz bin/ credential/ static/
 
@@ -138,7 +141,7 @@ update_fe_in_repo_ci: build_fe_ci
 	rm -rf static
 	mv front-end/build static
 
-build_ci: vet build_server build_agent newkey update_fe_in_repo_ci
+build_ci: buf-generate vet build_server build_agent newkey update_fe_in_repo_ci
 	tar -czvf anywhere-master.tar.gz bin/ credential/ static/ anywhered.json Makefile
 
 .PHONY: help

@@ -8,7 +8,7 @@ import (
 
 	"github.com/cntechpower/utils/log"
 
-	pb "github.com/cntechpower/anywhere/server/api/rpc/definitions"
+	pb "github.com/cntechpower/anywhere/gen/go/github.com/cntechpower/anywhere/gen/go/server_pb"
 	"github.com/cntechpower/anywhere/server/server"
 	"github.com/cntechpower/anywhere/util"
 )
@@ -36,11 +36,11 @@ func (h *RpcHandlers) ListAgent(_ context.Context, _ *pb.Empty) (*pb.Agents, err
 		return &pb.Agents{}, ErrServerNotInit
 	}
 	res := &pb.Agents{
-		Agent: make([]*pb.Agent, 0),
+		Agents: make([]*pb.Agent, 0),
 	}
 	agents := s.ListAgentInfo()
 	for _, agent := range agents {
-		res.Agent = append(res.Agent, &pb.Agent{
+		res.Agents = append(res.Agents, &pb.Agent{
 			UserName:         agent.UserName,
 			Id:               agent.Id,
 			ZoneName:         agent.ZoneName,
@@ -69,7 +69,7 @@ func (h *RpcHandlers) AddProxyConfig(_ context.Context, input *pb.AddProxyConfig
 	if err := util.CheckAddrValid(config.LocalAddr); err != nil {
 		return &pb.Empty{}, fmt.Errorf("invalid localAddr %+v in config, error: %+v", config.LocalAddr, err)
 	}
-	if err := s.AddProxyConfig(config.Username, config.ZoneName, int(config.RemotePort), config.LocalAddr, config.IsWhiteListOn, config.WhiteCidrList, ""); err != nil {
+	if err := s.AddProxyConfig(config.UserName, config.ZoneName, int(config.RemotePort), config.LocalAddr, config.IsWhiteListOn, config.WhiteCidrList, ""); err != nil {
 		return nil, err
 	}
 	return &pb.Empty{}, nil
@@ -81,12 +81,12 @@ func (h *RpcHandlers) ListProxyConfigs(_ context.Context, _ *pb.Empty) (*pb.List
 		return nil, ErrServerNotInit
 	}
 	res := &pb.ListProxyConfigsOutput{
-		Config: make([]*pb.ProxyConfig, 0),
+		Configs: make([]*pb.ProxyConfig, 0),
 	}
 	configs := s.ListProxyConfigs()
 	for _, config := range configs {
-		res.Config = append(res.Config, &pb.ProxyConfig{
-			Username:                        config.UserName,
+		res.Configs = append(res.Configs, &pb.ProxyConfig{
+			UserName:                        config.UserName,
 			ZoneName:                        config.ZoneName,
 			RemotePort:                      int64(config.RemotePort),
 			LocalAddr:                       config.LocalAddr,
@@ -132,12 +132,12 @@ func (h *RpcHandlers) ListConnections(_ context.Context, input *pb.ListConnsInpu
 		return nil, err
 	}
 	res := &pb.Conns{
-		Conn: make([]*pb.Conn, 0),
+		Conns: make([]*pb.Conn, 0),
 	}
 
 	for _, agentConn := range agentConnections {
 		for _, conn := range agentConn.List {
-			res.Conn = append(res.Conn, &pb.Conn{
+			res.Conns = append(res.Conns, &pb.Conn{
 				AgentId:       conn.DstName,
 				ZoneName:      agentConn.ZoneName,
 				UserName:      agentConn.UserName,

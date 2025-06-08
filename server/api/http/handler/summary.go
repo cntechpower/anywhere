@@ -3,8 +3,8 @@ package handler
 import (
 	"context"
 
+	pb "github.com/cntechpower/anywhere/gen/go/github.com/cntechpower/anywhere/gen/go/server_pb"
 	"github.com/cntechpower/anywhere/server/api/http/api/models"
-	pb "github.com/cntechpower/anywhere/server/api/rpc/definitions"
 	"github.com/cntechpower/anywhere/server/api/rpc/handler"
 )
 
@@ -29,7 +29,7 @@ func GetSummaryV1() (*models.SummaryStatistic, error) {
 	}
 	for _, p := range s.ConfigConnectFailTop10 {
 		res.ProxyConnectRejectCountTop10 = append(res.ProxyConnectRejectCountTop10, &models.ProxyConfig{
-			UserName:                        p.Username,
+			UserName:                        p.UserName,
 			ZoneName:                        p.ZoneName,
 			IsWhitelistOn:                   p.IsWhiteListOn,
 			LocalAddr:                       p.LocalAddr,
@@ -44,7 +44,7 @@ func GetSummaryV1() (*models.SummaryStatistic, error) {
 
 	for _, p := range s.ConfigNetFlowTop10 {
 		res.ProxyNetworkFlowTop10 = append(res.ProxyNetworkFlowTop10, &models.ProxyConfig{
-			UserName:                        p.Username,
+			UserName:                        p.UserName,
 			ZoneName:                        p.ZoneName,
 			IsWhitelistOn:                   p.IsWhiteListOn,
 			LocalAddr:                       p.LocalAddr,

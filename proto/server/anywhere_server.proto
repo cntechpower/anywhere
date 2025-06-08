@@ -1,0 +1,135 @@
+syntax = "proto3";
+
+// 包名建议小写下划线风格
+package anywhere_rpc;
+
+// go_package 建议加分号和包名
+option go_package = "github.com/cntechpower/anywhere/gen/go/server_pb;server_pb";
+
+// AnywhereServer 服务定义
+service AnywhereServer {
+    // 列出所有 agent
+    rpc ListAgent(Empty) returns (Agents) {}
+    // 新增代理配置
+    rpc AddProxyConfig(AddProxyConfigInput) returns (Empty) {}
+    // 列出所有代理配置
+    rpc ListProxyConfigs(Empty) returns (ListProxyConfigsOutput) {}
+    // 移除代理配置
+    rpc RemoveProxyConfig(RemoveProxyConfigInput) returns (Empty) {}
+    // 从文件加载代理配置
+    rpc LoadProxyConfigFile(Empty) returns (Empty) {}
+    // 保存代理配置到文件
+    rpc SaveProxyConfigToFile(Empty) returns (Empty) {}
+    // 列出所有连接
+    rpc ListConnections(ListConnsInput) returns (Conns) {}
+    // 按 ID 断开连接
+    rpc KillConnById(KillConnByIdInput) returns (Empty) {}
+    // 断开所有连接
+    rpc KillAllConnections(Empty) returns (Empty) {}
+    // 更新代理配置白名单
+    rpc UpdateProxyConfigWhiteList(UpdateProxyConfigWhiteListInput) returns (Empty) {}
+    // 获取系统摘要信息
+    rpc GetSummary(Empty) returns (GetSummaryOutput) {}
+}
+
+// 空消息
+message Empty {
+    // 预留空消息用于无参数调用
+}
+
+// Agent 信息
+message Agent {
+    string user_name = 1; // 用户名
+    string zone_name = 2; // 区域名
+    string id = 3; // agent ID
+    string remote_addr = 4; // 远程地址
+    string last_ack_rcv = 5; // 最后接收时间
+    string last_ack_send = 6; // 最后发送时间
+    int64 proxy_config_count = 7; // 代理配置数量
+}
+
+// Agent 列表
+message Agents {
+    repeated Agent agents = 1;
+}
+
+// 代理配置
+message ProxyConfig {
+    string user_name = 1; // 用户名
+    string zone_name = 2; // 区域名
+    int64 remote_port = 3; // 远程端口
+    string local_addr = 4; // 本地地址
+    bool is_white_list_on = 5; // 是否启用白名单
+    string white_cidr_list = 6; // 白名单 CIDR 列表
+    int64 network_flow_remote_to_local_in_bytes = 7; // 入流量
+    int64 network_flow_local_to_remote_in_bytes = 8; // 出流量
+    int64 proxy_connect_count = 9; // 连接次数
+    int64 proxy_connect_reject_count = 10; // 拒绝连接次数
+}
+
+// 新增代理配置输入
+message AddProxyConfigInput {
+    ProxyConfig config = 1;
+}
+
+// 代理配置列表输出
+message ListProxyConfigsOutput {
+    repeated ProxyConfig configs = 1;
+}
+
+// 移除代理配置输入
+message RemoveProxyConfigInput {
+    int64 id = 1;
+}
+
+// 列出连接输入
+message ListConnsInput {
+    string user_name = 1;
+    string zone_name = 2;
+}
+
+// 连接信息
+message Conn {
+    string user_name = 1;
+    string zone_name = 2;
+    string agent_id = 3;
+    int64 conn_id = 4;
+    string src_remote_addr = 5;
+    string src_local_addr = 6;
+    string dst_remote_addr = 7;
+    string dst_local_addr = 8;
+}
+
+// 连接列表
+message Conns {
+    repeated Conn conns = 1;
+}
+
+// 按 ID 断开连接输入
+message KillConnByIdInput {
+    int64 id = 1;
+}
+
+// 更新代理配置白名单输入
+message UpdateProxyConfigWhiteListInput {
+    int64 id = 1;
+    string user_name = 2;
+    string zone_name = 3;
+    string local_addr = 4;
+    string white_cidrs = 5;
+    bool white_list_enable = 6;
+    int64 remote_port = 7;
+}
+
+// 系统摘要信息输出
+message GetSummaryOutput {
+    int64 agent_count = 1;
+    int64 proxy_count = 2;
+    int64 current_proxy_connection_count = 3;
+    int64 proxy_connect_count = 4;
+    int64 proxy_net_flow_in_bytes = 5;
+    repeated ProxyConfig config_net_flow_top10 = 6;
+    repeated ProxyConfig config_connect_fail_top10 = 7;
+    int64 admin_web_ui_auth_fail_count = 8;
+    int64 group_count = 9;
+}
