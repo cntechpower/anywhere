@@ -106,6 +106,12 @@ clean:
 build: buf-generate vet build_server build_agent
 
 buf-generate:
+	@if ! command -v buf >/dev/null 2>&1; then \
+		 echo "buf not found, installing..."; \
+		 curl -sSL "https://github.com/bufbuild/buf/releases/latest/download/buf-$(shell uname -s)-$(shell uname -m).tar.gz" | tar -xz -C /tmp; \
+		 sudo mv /tmp/buf /usr/local/bin/buf; \
+		 echo "buf installed."; \
+	fi
 	buf generate
 
 build_release: buf-generate vet build_server build_agent newkey ui

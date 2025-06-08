@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+// 包名建议小写下划线风格
+package anywhere_agent_rpc;
+
+// go_package 建议加分号和包名
+option go_package = "github.com/cntechpower/anywhere/agent_pb;agent_pb";
+
+// AnywhereAgent 服务定义
+service AnywhereAgent {
+    // 列出所有连接
+    rpc ListConnections(Empty) returns (Conns) {}
+    // 按 ID 断开连接
+    rpc KillConnById(KillConnByIdInput) returns (Empty) {}
+    // 断开所有连接
+    rpc KillAllConnections(Empty) returns (Empty) {}
+    // 显示代理状态
+    rpc ShowStatus(Empty) returns (ShowStatusOutput) {}
+}
+
+// 空消息
+message Empty {
+    // 预留空消息用于无参数调用
+}
+
+// 连接信息
+message Conn {
+    int64 conn_id = 1; // 连接ID
+    string src_remote_addr = 2; // 源远程地址
+    string src_local_addr = 3; // 源本地地址
+    string dst_remote_addr = 4; // 目标远程地址
+    string dst_local_addr = 5; // 目标本地地址
+}
+
+// 连接列表
+message Conns {
+    repeated Conn conns = 1;
+}
+
+// 按 ID 断开连接输入
+message KillConnByIdInput {
+    int64 conn_id = 1;
+}
+
+// 显示状态输出
+message ShowStatusOutput {
+    string agent_id = 1; // agent ID
+    string local_addr = 2; // 本地地址
+    string server_addr = 3; // 服务器地址
+    string last_ack_send_time = 4; // 最后发送时间
+    string last_ack_rcv_time = 5; // 最后接收时间
+} 
