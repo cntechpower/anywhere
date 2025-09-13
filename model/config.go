@@ -30,6 +30,7 @@ type UiConfig struct {
 	IsWebEnable bool   `json:"is_web_enable"`
 	WebAddr     string `json:"web_ui_listen_addr"`
 	DebugMode   bool   `json:"debug"`
+	EnableTLS   bool   `json:"enable_tls"`
 }
 
 type SslConfig struct {

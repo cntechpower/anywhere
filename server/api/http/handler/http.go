@@ -8,15 +8,16 @@ import (
 
 	"github.com/cntechpower/anywhere/server/conf"
 
-	"github.com/cntechpower/anywhere/server/api/auth"
-	"github.com/cntechpower/anywhere/server/server"
-	"github.com/cntechpower/anywhere/util"
 	mhttp "github.com/cntechpower/utils/monitor/http"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
+
+	"github.com/cntechpower/anywhere/server/api/auth"
+	"github.com/cntechpower/anywhere/server/server"
+	"github.com/cntechpower/anywhere/util"
 )
 
 var userValidator *auth.UserValidator
@@ -112,10 +113,10 @@ func StartUIAndAPIService(restHandler http.Handler, serverI *server.Server, errC
 
 	userValidator = server.GetServerInstance().GetUserValidator()
 	jwtValidator = auth.NewJwtValidator()
-	//session auth
+	// session auth
 	store := cookie.NewStore([]byte(util.RandString(16)))
 	router.Use(sessions.Sessions("anywhere", store))
-	//support frontend development
+	// support frontend development
 	if !conf.Conf.UiConfig.SkipLogin {
 		router.Use(SessionFilter)
 	}
@@ -127,5 +128,9 @@ func StartUIAndAPIService(restHandler http.Handler, serverI *server.Server, errC
 	if err := addAPIRouter(router, restHandler); err != nil {
 		errChan <- err
 	}
-	errChan <- router.RunTLS(conf.Conf.UiConfig.WebAddr, conf.Conf.HttpSSL.CertFile, conf.Conf.HttpSSL.KeyFile)
+	if conf.Conf.UiConfig.EnableTLS {
+		errChan <- router.RunTLS(conf.Conf.UiConfig.WebAddr, conf.Conf.HttpSSL.CertFile, conf.Conf.HttpSSL.KeyFile)
+	} else {
+		errChan <- router.Run(conf.Conf.UiConfig.WebAddr)
+	}
 }
