@@ -89,12 +89,10 @@ cd /usr/local/anywhere
 
 修改`anywhered.json`中的默认用户配置:
 将 otp_enable 改为 true, 用户名和密码自行设置.
+重新生成OTP代码,并使用新代码修改 otp_code
 
-勾选大写字母和数字,长度 32 位,重新生成动态密码口令,并使用新密码修改 otp_code
+[OTP代码生成工具](https://www.ol-tools.com/otp-generator)
 
-![动态密码](./docs/rand_pwd.png)
-
-[密码生成工具](https://suijimimashengcheng.bmcx.com/)
 
 ```
                 "user_name": "admin",
