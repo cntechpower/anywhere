@@ -48,18 +48,13 @@ func UserLogin(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, RespUserPassIsRequired)
 		return
 	}
-	password, ok := c.GetPostForm("password")
-	if !ok {
-		c.AbortWithStatusJSON(http.StatusBadRequest, RespUserPassIsRequired)
-		return
-	}
 	otpCode, ok := c.GetPostForm("otpcode")
 	if !ok {
 		c.AbortWithStatusJSON(http.StatusBadRequest, RespUserPassIsRequired)
 		return
 	}
 
-	if !userValidator.Validate(userName, password, otpCode) {
+	if !userValidator.Validate(userName, otpCode) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, RespUserPassWrong)
 		return
 	}

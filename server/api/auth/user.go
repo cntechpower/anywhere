@@ -24,8 +24,8 @@ func NewUserValidator(users *model.UserConfig) *UserValidator {
 	return u
 }
 
-func (v *UserValidator) Validate(userName, password, otpCode string) bool {
-	return v.ValidateOtp(userName, otpCode) && v.ValidateUserPass(userName, password)
+func (v *UserValidator) Validate(userName, otpCode string) bool {
+	return v.ValidateOtp(userName, otpCode)
 }
 
 func (v *UserValidator) ValidateUserPass(userName, auth string) bool {
