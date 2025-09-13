@@ -1,11 +1,11 @@
-import { Form, Input, Button, notification, Checkbox } from "antd";
-import { Redirect } from "react-router";
+import {Form, Input, Button, notification} from "antd";
+import {Redirect} from "react-router";
 import React from "react";
 import "./css/login.css";
 import qs from "qs";
 import apis from "../../apis/apis";
 import axios from "axios";
-import { UserDeleteOutlined, LockOutlined } from "@ant-design/icons";
+import {UserDeleteOutlined, LockOutlined} from "@ant-design/icons";
 
 class Login extends React.Component {
   constructor(props) {
@@ -26,7 +26,7 @@ class Login extends React.Component {
     console.log(values);
     const options = {
       method: "POST",
-      headers: { "content-type": "application/x-www-form-urlencoded" },
+      headers: {"content-type": "application/x-www-form-urlencoded"},
       data: qs.stringify({
         username: values.username,
         otpcode: values.otpcode,
@@ -72,13 +72,13 @@ class Login extends React.Component {
         <Form.Item
           label="用户名"
           name="username"
-          rules={[{ required: true, message: "Username is required" }]}
+          rules={[{required: true, message: "Username is required"}]}
         >
           <Input
             prefix={
               <UserDeleteOutlined
                 type="user"
-                style={{ color: "rgba(0,0,0,.25)" }}
+                style={{color: "rgba(0,0,0,.25)"}}
               />
             }
             placeholder="Username"
@@ -87,11 +87,11 @@ class Login extends React.Component {
         <Form.Item
           label="动态码"
           name="otpcode"
-          rules={[{ required: true, message: "OtpCode is required" }]}
+          rules={[{required: true, message: "OtpCode is required"}]}
         >
           <Input
             prefix={
-              <LockOutlined type="lock" style={{ color: "rgba(0,0,0,.25)" }} />
+              <LockOutlined type="lock" style={{color: "rgba(0,0,0,.25)"}} />
             }
             type="password"
             placeholder="OTP Code"

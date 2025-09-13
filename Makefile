@@ -74,11 +74,12 @@ unittest:
 	 go test -count=1 -v  ./anywhere/...
 
 sonar:
-	sonar-scanner \
- 	 -Dsonar.projectKey=anywhere \
- 	 -Dsonar.sources=. \
- 	 -Dsonar.host.url=http://sonar.stig.top \
- 	 -Dsonar.login=sqp_2463b064b6d4c937e66fe70734f41725df5215a9
+	sudo $(DOCKER) run \
+        --rm \
+        -e SONAR_HOST_URL="http://sonar.stig.top"  \
+        -e SONAR_TOKEN="sqp_2463b064b6d4c937e66fe70734f41725df5215a9" \
+        -v "${PWD}:/usr/src" \
+        sonarsource/sonar-scanner-cli
 
 upload: delete_credential get_credential upload_x86 upload_docker_img delete_credential
 
@@ -96,9 +97,6 @@ upload_x86: build ui
 	curl -T anywhere-latest.tar.gz -u ftp:ftp ftp://10.0.0.4/ci/anywhere/
 	rm -rf anywhere-$(VERSION).tar.gz
 	rm -rf anywhere-latest.tar.gz
-upload_release:
-	mv anywhere-$(VERSION).tar.gz /var/www/html/
-	rm -rf /var/www/html/anywhere-latest.tar.gz && mv anywhere-latest.tar.gz /var/www/html/
 
 clean:
 	rm -rf bin/
