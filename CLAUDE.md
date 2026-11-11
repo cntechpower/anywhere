@@ -31,6 +31,9 @@ make newkey         # regenerate CA/server/client/http certs (SAN: anywhere.loca
 make rpc            # regenerate protobuf code (needs protoc + plugins)
 make api            # regenerate swagger server code (needs go-swagger v0.30.5)
 make ui             # npm ci + vite build into ./static
+make build_linux    # Linux binaries for the container E2E (golang:1.22 in Docker)
+make docker_test    # container E2E: 3 agents + HTTP/UDP/MySQL/console (needs Docker)
+make docker_test_clean
 cd front-end && npm run dev   # Vite dev server on :3000 (VITE_API_PREFIX optional)
 cd front-end && npm run lint  # ESLint (TypeScript)
 cd front-end && npm test      # Vitest + jsdom
@@ -110,7 +113,7 @@ Toolchain: Go 1.22+, Node 20+, OpenSSL 1.1.1+.
 
 ## Frontend
 
-- Toolchain: Vite 5 + React 17 + TypeScript 5 + Ant Design 4. Entry: `src/main.tsx`,
+- Toolchain: Vite 8 + React 17 + TypeScript 5 + Ant Design 4; Vitest 5. Entry: `src/main.tsx`,
   config: `vite.config.ts` (output `build/`), tests: Vitest + jsdom.
 - Design system: `design-system/anywhere/MASTER.md` (dark operations console, Fira Sans/Code,
   green accent, glass panels). Keep new pages consistent with it.
@@ -130,6 +133,9 @@ Toolchain: Go 1.22+, Node 20+, OpenSSL 1.1.1+.
   whole control/data path including token validation.
 - `server/zone/zone_test.go` covers listener binding, token binding and UDP echo.
 - Tests use an in-memory SQLite database via `ANYWHERE_DB_DSN`; never point tests at `proxy.db`.
+- `make docker_test` runs `test/e2e/run.sh`: builds Linux binaries/images, starts compose targets,
+  logs in through the HTTP API, creates TCP/UDP/MySQL proxies and verifies each data path plus the
+  console assets. `KEEP=1` keeps the project running for debugging; `SKIP_UI=1` reuses `./static`.
 
 ## Dependency notes
 

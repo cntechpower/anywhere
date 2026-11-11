@@ -1,6 +1,6 @@
 # Anywhere Console
 
-Vite 5 + React 17 + TypeScript 5 + Ant Design 4.
+Vite 8 + React 17 + TypeScript 5 + Ant Design 4 (Vitest 5).
 
 ## Scripts
 

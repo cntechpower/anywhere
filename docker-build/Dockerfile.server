@@ -1,6 +1,7 @@
 FROM ubuntu:22.04
 
-COPY bin/* /usr/local/anywhere/bin/
+# Linux binaries are produced by `make build_linux` (golang:1.22 builder).
+COPY bin/linux/* /usr/local/anywhere/bin/
 COPY credential/* /usr/local/anywhere/credential/
 COPY static/ /usr/local/anywhere/static/
 # Test fixture config; mount a real anywhered.json in production.

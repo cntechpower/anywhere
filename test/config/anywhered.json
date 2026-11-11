@@ -15,8 +15,9 @@
         "skip_login": false,
         "grpc_addr": "127.0.0.1:1113",
         "is_web_enable": true,
-        "web_ui_listen_addr": "127.0.0.1:1114",
-        "debug": true
+        "web_ui_listen_addr": "0.0.0.0:1114",
+        "debug": false,
+        "enable_tls": true
     },
     "user_config": {
         "users": [

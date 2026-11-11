@@ -73,7 +73,12 @@ make newkey       # 生成 CA / server / client / http 证书(SAN 包含 anywher
 make ui           # npm ci + vite build，产物输出到 ./static
 make test         # 单元测试
 make race         # 竞态检测
+make docker_test  # 容器端到端测试(需要 Docker)
 ```
+
+容器端到端测试会构建 Linux 二进制与 server/agent 镜像，启动 3 个 Agent、HTTP/UDP/MySQL
+目标服务，通过登录后的 HTTP API 创建代理配置，并验证 TCP、UDP、MySQL 与 Console 静态资源。
+失败时可设置 `KEEP=1` 保留容器现场，`make docker_test_clean` 清理。
 
 也可以从 [Actions](https://github.com/cntechpower/anywhere/actions?query=branch%3Amaster) 的 Artifacts 下载构建产物, 但请务必重新执行 `make newkey` 生成自己的证书, 不要使用仓库或安装包内的示例证书.
 

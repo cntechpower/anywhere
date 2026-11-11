@@ -2,6 +2,10 @@ GO ?= go
 DOCKER ?= docker
 GO_PKG := ./...
 GO_BASE ?= golang:1.22
+GO_IMAGE ?= golang:1.22
+GO_MOD_CACHE_VOLUME ?= anywhere-go-mod-cache
+GOPROXY ?= https://goproxy.cn,direct
+E2E_PROJECT ?= anywhere-e2e
 
 BIN_DIR := bin
 CREDENTIAL_DIR := credential
@@ -18,7 +22,7 @@ CERT_DAYS ?= 825
 
 default: build
 
-.PHONY: help build build_server build_agent test race vet fmt clean newkey rpc api ui build_ci docker_build
+.PHONY: help build build_server build_agent test race vet fmt clean newkey rpc api ui build_ci docker_build build_linux docker_test docker_test_clean
 
 help:
 	@echo "targets:"
@@ -33,6 +37,9 @@ help:
 	@echo "  rpc            regenerate protobuf code"
 	@echo "  api            regenerate swagger server code"
 	@echo "  ui             build the frontend into ./static"
+	@echo "  build_linux    cross-build Linux binaries for the container E2E"
+	@echo "  docker_test    run the container end-to-end test (TCP/UDP/MySQL/UI)"
+	@echo "  docker_test_clean  stop and remove the E2E containers/network"
 	@echo "  clean          remove build artifacts"
 
 build_server:
@@ -104,7 +111,23 @@ ui:
 	rm -rf static
 	mv front-end/build static
 
-docker_build:
+# Linux binaries used by the runtime images. CGO is required by the SQLite
+# driver, so the build runs inside the official Go Debian image.
+build_linux:
+	@mkdir -p bin/linux
+	$(DOCKER) run --rm -v "$(CURDIR)":/src -w /src \
+		-e GOPROXY=$(GOPROXY) -e GOSUMDB=off \
+		-v $(GO_MOD_CACHE_VOLUME):/go/pkg/mod \
+		-v anywhere-go-build-cache:/root/.cache/go-build \
+		$(GO_IMAGE) sh -c 'CGO_ENABLED=1 go build -o bin/linux/anywhered server/main.go && CGO_ENABLED=1 go build -o bin/linux/anywhere agent/main.go'
+
+docker_test:
+	E2E_PROJECT=$(E2E_PROJECT) ./test/e2e/run.sh
+
+docker_test_clean:
+	$(DOCKER) compose -p $(E2E_PROJECT) -f test/composefiles/docker-compose.yml down -v --remove-orphans
+
+docker_build: build_linux ui
 	$(DOCKER) build -t anywhered:$(VERSION) -f docker-build/Dockerfile.server .
 	$(DOCKER) build -t anywhere:$(VERSION) -f docker-build/Dockerfile.agent .
 

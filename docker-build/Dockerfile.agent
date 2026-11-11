@@ -1,6 +1,7 @@
 FROM ubuntu:22.04
 
-COPY bin/* /usr/local/anywhere/bin/
+# Linux binaries are produced by `make build_linux` (golang:1.22 builder).
+COPY bin/linux/* /usr/local/anywhere/bin/
 COPY credential/* /usr/local/anywhere/credential/
 
 WORKDIR /usr/local/anywhere/
@@ -9,6 +10,7 @@ WORKDIR /usr/local/anywhere/
 ENV SERVER_ADDR=127.0.0.1 \
     ZONE_NAME=asia-shanghai \
     USER_NAME=admin \
-    TLS_SERVER_NAME=anywhere.local
+    TLS_SERVER_NAME=anywhere.local \
+    AGENT_ID=""
 
-CMD ["sh", "-c", "./bin/anywhere -i \"$HOSTNAME\" -s \"$SERVER_ADDR\" -u \"$USER_NAME\" -z \"$ZONE_NAME\" --pass \"$PASSWORD\" --tls-server-name \"$TLS_SERVER_NAME\""]
+CMD ["sh", "-c", "./bin/anywhere -i \"${AGENT_ID:-$HOSTNAME}\" -s \"$SERVER_ADDR\" -u \"$USER_NAME\" -z \"$ZONE_NAME\" --pass \"$PASSWORD\" --tls-server-name \"$TLS_SERVER_NAME\""]
