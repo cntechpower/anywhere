@@ -16,7 +16,8 @@ import (
 // PostV1ConnectionKillOKCode is the HTTP code returned for type PostV1ConnectionKillOK
 const PostV1ConnectionKillOKCode int = 200
 
-/*PostV1ConnectionKillOK generic response
+/*
+PostV1ConnectionKillOK generic response
 
 swagger:response postV1ConnectionKillOK
 */
@@ -57,7 +58,8 @@ func (o *PostV1ConnectionKillOK) WriteResponse(rw http.ResponseWriter, producer 
 	}
 }
 
-/*PostV1ConnectionKillDefault generic errors
+/*
+PostV1ConnectionKillDefault generic errors
 
 swagger:response postV1ConnectionKillDefault
 */

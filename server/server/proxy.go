@@ -9,54 +9,51 @@ import (
 )
 
 func (s *Server) AddProxyConfig(userName, zoneName string, remotePort int, localAddr string, isWhiteListOn bool, whiteList, listenType string) error {
-	pkg, err := model.NewProxyConfig(userName, zoneName, remotePort, localAddr, isWhiteListOn, whiteList, listenType)
+	cfg, err := model.NewProxyConfig(userName, zoneName, remotePort, localAddr, isWhiteListOn, whiteList, listenType)
 	if err != nil {
 		return err
 	}
-	if err := s.AddProxyConfigByModel(pkg); err != nil {
-		return err
+	// Persist first so the row ID is known before the config is published to
+	// readers; the embedded config must not be mutated after publication.
+	if err := config.Save(cfg); err != nil {
+		return fmt.Errorf("save proxy config: %w", err)
 	}
-	return config.Save(pkg)
-
-}
-
-func (s *Server) AddProxyConfigByModel(config *model.ProxyConfig) error {
-	if !s.isZoneExist(config.UserName, config.ZoneName) {
-		return fmt.Errorf("group %+v not exist", config.ZoneName)
-	}
-	s.agentsRwMutex.Lock()
-	defer s.agentsRwMutex.Unlock()
-	if err := s.zones[config.UserName][config.ZoneName].AddProxyConfig(config); err != nil {
+	if err := s.AddProxyConfigByModel(cfg); err != nil {
+		_ = config.Remove(cfg.ID)
 		return err
 	}
 	return nil
 }
 
-func (s *Server) RemoveProxyConfig(userName string, zoneName string, remotePort int, localAddr string) (err error) {
-	if !s.isZoneExist(userName, zoneName) {
-		return fmt.Errorf("zoneName %+v not exist", zoneName)
+func (s *Server) AddProxyConfigByModel(cfg *model.ProxyConfig) error {
+	z, ok := s.getZone(cfg.UserName, cfg.ZoneName)
+	if !ok {
+		return fmt.Errorf("zone %s of user %s does not exist", cfg.ZoneName, cfg.UserName)
 	}
-	if err := util.CheckAddrValid(localAddr); err != nil {
-		return fmt.Errorf("invalid localAddr %+v, error: %+v", localAddr, err)
-	}
-	s.agentsRwMutex.Lock()
-	defer s.agentsRwMutex.Unlock()
-	if err = s.zones[userName][zoneName].RemoveProxyConfig(remotePort, localAddr); err != nil {
-		return err
-	}
-	return
-
+	return z.AddProxyConfig(cfg)
 }
 
-func (s *Server) RemoveProxyConfigById(id uint) (err error) {
+func (s *Server) RemoveProxyConfig(userName, zoneName string, remotePort int, localAddr string) error {
+	z, ok := s.getZone(userName, zoneName)
+	if !ok {
+		return fmt.Errorf("zone %s of user %s does not exist", zoneName, userName)
+	}
+	if err := util.CheckAddrValid(localAddr); err != nil {
+		return fmt.Errorf("invalid localAddr %s: %w", localAddr, err)
+	}
+	if err := z.RemoveProxyConfig(remotePort, localAddr); err != nil {
+		return err
+	}
+	return config.RemoveByKey(userName, zoneName, remotePort, localAddr)
+}
+
+func (s *Server) RemoveProxyConfigById(id uint) error {
 	pc, err := config.GetById(int64(id))
 	if err != nil {
-		return
+		return err
 	}
-	err = s.RemoveProxyConfig(pc.UserName, pc.ZoneName, pc.RemotePort, pc.LocalAddr)
-	if err != nil {
-		return
+	if err := s.RemoveProxyConfig(pc.UserName, pc.ZoneName, pc.RemotePort, pc.LocalAddr); err != nil {
+		return err
 	}
-	err = config.Remove(id)
-	return
+	return config.Remove(uint(id))
 }

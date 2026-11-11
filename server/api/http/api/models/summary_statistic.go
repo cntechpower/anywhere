@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -62,7 +63,6 @@ func (m *SummaryStatistic) Validate(formats strfmt.Registry) error {
 }
 
 func (m *SummaryStatistic) validateProxyConnectRejectCountTop10(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ProxyConnectRejectCountTop10) { // not required
 		return nil
 	}
@@ -76,6 +76,8 @@ func (m *SummaryStatistic) validateProxyConnectRejectCountTop10(formats strfmt.R
 			if err := m.ProxyConnectRejectCountTop10[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("proxy_connect_reject_count_top10" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("proxy_connect_reject_count_top10" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -87,7 +89,6 @@ func (m *SummaryStatistic) validateProxyConnectRejectCountTop10(formats strfmt.R
 }
 
 func (m *SummaryStatistic) validateProxyNetworkFlowTop10(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ProxyNetworkFlowTop10) { // not required
 		return nil
 	}
@@ -101,6 +102,76 @@ func (m *SummaryStatistic) validateProxyNetworkFlowTop10(formats strfmt.Registry
 			if err := m.ProxyNetworkFlowTop10[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("proxy_network_flow_top10" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("proxy_network_flow_top10" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this summary statistic based on the context it is used
+func (m *SummaryStatistic) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateProxyConnectRejectCountTop10(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateProxyNetworkFlowTop10(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *SummaryStatistic) contextValidateProxyConnectRejectCountTop10(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.ProxyConnectRejectCountTop10); i++ {
+
+		if m.ProxyConnectRejectCountTop10[i] != nil {
+
+			if swag.IsZero(m.ProxyConnectRejectCountTop10[i]) { // not required
+				return nil
+			}
+
+			if err := m.ProxyConnectRejectCountTop10[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("proxy_connect_reject_count_top10" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("proxy_connect_reject_count_top10" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *SummaryStatistic) contextValidateProxyNetworkFlowTop10(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.ProxyNetworkFlowTop10); i++ {
+
+		if m.ProxyNetworkFlowTop10[i] != nil {
+
+			if swag.IsZero(m.ProxyNetworkFlowTop10[i]) { // not required
+				return nil
+			}
+
+			if err := m.ProxyNetworkFlowTop10[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("proxy_network_flow_top10" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("proxy_network_flow_top10" + "." + strconv.Itoa(i))
 				}
 				return err
 			}

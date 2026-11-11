@@ -29,10 +29,10 @@ func NewGetV1SupportIP(ctx *middleware.Context, handler GetV1SupportIPHandler) *
 	return &GetV1SupportIP{Context: ctx, Handler: handler}
 }
 
-/*GetV1SupportIP swagger:route GET /v1/support/ip getV1SupportIp
+/*
+	GetV1SupportIP swagger:route GET /v1/support/ip getV1SupportIp
 
 Returns this server's public ip.
-
 */
 type GetV1SupportIP struct {
 	Context *middleware.Context
@@ -42,17 +42,15 @@ type GetV1SupportIP struct {
 func (o *GetV1SupportIP) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	route, rCtx, _ := o.Context.RouteInfo(r)
 	if rCtx != nil {
-		r = rCtx
+		*r = *rCtx
 	}
 	var Params = NewGetV1SupportIPParams()
-
 	if err := o.Context.BindValidRequest(r, route, &Params); err != nil { // bind params
 		o.Context.Respond(rw, r, route.Produces, route, err)
 		return
 	}
 
 	res := o.Handler.Handle(Params) // actually handle the request
-
 	o.Context.Respond(rw, r, route.Produces, route, res)
 
 }

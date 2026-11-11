@@ -3,15 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	xos "os"
+	"os"
 
 	"github.com/cntechpower/utils/log"
-	"github.com/cntechpower/utils/os"
+	xos "github.com/cntechpower/utils/os"
 
 	"github.com/cntechpower/anywhere/agent/agent"
 	"github.com/cntechpower/anywhere/agent/handler"
-	"github.com/cntechpower/anywhere/dao"
-	"github.com/cntechpower/anywhere/model"
 
 	"github.com/spf13/cobra"
 )
@@ -23,13 +21,15 @@ const (
 var serverPort int
 var serverIp, agentId, user, password, certFile, keyFile, caFile string
 var zoneName, version string
+var tlsServerName string
+var tlsInsecure bool
 
 var grpcAddress string
 var connIdToKill int
 
 func main() {
 	// init log
-	esAddr := xos.Getenv("ES_ADDR")
+	esAddr := os.Getenv("ES_ADDR")
 	logOptions := make([]log.Option, 0)
 	logOptions = append(logOptions, log.WithStd(log.OutputTypeText))
 	if esAddr != "" {
@@ -38,8 +38,6 @@ func main() {
 	log.Init(logOptions...)
 	defer log.Close()
 
-	dao.Init(nil, model.GetTmpModels())
-	defer dao.Close()
 	var rootCmd = &cobra.Command{
 		Use:   "anywhere --help",
 		Short: "This is A Proxy Agent ",
@@ -101,12 +99,16 @@ func main() {
 	rootCmd.PersistentFlags().IntVarP(&serverPort, "server-port", "p", 1111, "anywhered server port")
 	rootCmd.PersistentFlags().StringVarP(&zoneName, "zone-name", "z", "asia-shanghai", "anywhere agent group")
 	rootCmd.PersistentFlags().StringVarP(&agentId, "agent-id", "i", "anywhere-agent-1", "anywhere agent id")
-	rootCmd.PersistentFlags().StringVar(&grpcAddress, "grpc-address", "127.0.0.1:1110", "anywhere agent grpc address")
+	rootCmd.PersistentFlags().StringVar(&grpcAddress, "grpc-address", "127.0.0.1:1110", "anywhere agent grpc address (loopback only)")
 	rootCmd.PersistentFlags().StringVarP(&user, "user", "u", "none", "anywhere user")
 	rootCmd.PersistentFlags().StringVarP(&password, "pass", "", "none", "anywhere password")
 	rootCmd.PersistentFlags().StringVar(&certFile, "cert", "credential/client.crt", "cert file")
 	rootCmd.PersistentFlags().StringVar(&keyFile, "key", "credential/client.key", "key file")
 	rootCmd.PersistentFlags().StringVar(&caFile, "ca", "credential/ca.crt", "ca file")
+	rootCmd.PersistentFlags().StringVar(&tlsServerName, "tls-server-name", "anywhere.local",
+		"server certificate name (must match a SAN of the server certificate)")
+	rootCmd.PersistentFlags().BoolVar(&tlsInsecure, "tls-insecure", false,
+		"skip server certificate verification (only for legacy certificates, insecure)")
 	connCmd.AddCommand(connListCmd)
 	connKillCmd.PersistentFlags().IntVar(&connIdToKill, "id", -1, "conn id to kill")
 	connCmd.AddCommand(connKillCmd)
@@ -123,23 +125,31 @@ func run(_ *cobra.Command, _ []string) error {
 	h := log.NewHeader("agentMain")
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	a := agent.InitAnyWhereAgent(zoneName, agentId, serverIp, user, password, serverPort)
-	if err := a.SetCredentials(certFile, keyFile, caFile); err != nil {
+	a, err := agent.New(zoneName, agentId, serverIp, user, password, serverPort)
+	if err != nil {
 		return err
 	}
-	go a.Start(ctx)
+	if err := a.SetCredentials(certFile, keyFile, caFile, tlsServerName, tlsInsecure); err != nil {
+		return err
+	}
+	if tlsInsecure {
+		h.Warnf("TLS certificate verification is disabled, do not use this in production")
+	}
+	a.Start(ctx)
 
-	go os.ListenTTINSignalLoop()
-	serverExitChan := os.ListenKillSignal()
-	rpcExitChan := make(chan error)
+	go xos.ListenTTINSignalLoop()
+	serverExitChan := xos.ListenKillSignal()
+	rpcExitChan := make(chan error, 1)
 	go handler.StartRpcServer(a, grpcAddress, rpcExitChan)
 
 	select {
 	case err := <-rpcExitChan:
-		h.Fatalf("Grpc existing unexpected: %+v", err)
+		h.Errorf("grpc server exited unexpectedly: %v", err)
 	case <-serverExitChan:
-		h.Infof("Agent Existing")
+		h.Infof("agent exiting")
 	}
 
+	cancel()
+	a.Stop()
 	return nil
 }

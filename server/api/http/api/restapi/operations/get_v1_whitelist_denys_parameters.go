@@ -61,7 +61,6 @@ func (o *GetV1WhitelistDenysParams) BindRequest(r *http.Request, route *middlewa
 	if err := o.bindLimit(qLimit, qhkLimit, route.Formats); err != nil {
 		res = append(res, err)
 	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -77,6 +76,7 @@ func (o *GetV1WhitelistDenysParams) bindLimit(rawData []string, hasKey bool, for
 
 	// Required: false
 	// AllowEmptyValue: false
+
 	if raw == "" { // empty values pass all other validations
 		// Default values have been previously initialized by NewGetV1WhitelistDenysParams()
 		return nil

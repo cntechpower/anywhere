@@ -16,7 +16,8 @@ import (
 // GetV1ZoneListOKCode is the HTTP code returned for type GetV1ZoneListOK
 const GetV1ZoneListOKCode int = 200
 
-/*GetV1ZoneListOK A JSON array of zone
+/*
+GetV1ZoneListOK A JSON array of zone
 
 swagger:response getV1ZoneListOK
 */
@@ -60,7 +61,8 @@ func (o *GetV1ZoneListOK) WriteResponse(rw http.ResponseWriter, producer runtime
 	}
 }
 
-/*GetV1ZoneListDefault generic errors
+/*
+GetV1ZoneListDefault generic errors
 
 swagger:response getV1ZoneListDefault
 */

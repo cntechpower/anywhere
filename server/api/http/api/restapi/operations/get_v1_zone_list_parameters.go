@@ -13,7 +13,8 @@ import (
 )
 
 // NewGetV1ZoneListParams creates a new GetV1ZoneListParams object
-// no default values defined in spec.
+//
+// There are no default values defined in the spec.
 func NewGetV1ZoneListParams() GetV1ZoneListParams {
 
 	return GetV1ZoneListParams{}

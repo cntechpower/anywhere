@@ -16,7 +16,8 @@ import (
 // PostV1ProxyAddOKCode is the HTTP code returned for type PostV1ProxyAddOK
 const PostV1ProxyAddOKCode int = 200
 
-/*PostV1ProxyAddOK A JSON array of user names
+/*
+PostV1ProxyAddOK A JSON array of user names
 
 swagger:response postV1ProxyAddOK
 */
@@ -57,7 +58,8 @@ func (o *PostV1ProxyAddOK) WriteResponse(rw http.ResponseWriter, producer runtim
 	}
 }
 
-/*PostV1ProxyAddDefault generic errors
+/*
+PostV1ProxyAddDefault generic errors
 
 swagger:response postV1ProxyAddDefault
 */

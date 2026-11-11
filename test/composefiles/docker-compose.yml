@@ -15,7 +15,10 @@ services:
         ipv4_address: 172.90.101.12
     environment:
       - SERVER_ADDR=172.90.101.11
-      - AGENT_ID=anywhere-agent-1
+      - ZONE_NAME=asia-shanghai
+      - USER_NAME=admin
+      - PASSWORD=${AGENT_PASSWORD:-admin}
+      - TLS_SERVER_NAME=anywhere.local
     depends_on:
       - anywhered
   anywhere-2:
@@ -25,7 +28,10 @@ services:
         ipv4_address: 172.90.101.13
     environment:
       - SERVER_ADDR=172.90.101.11
-      - AGENT_ID=anywhere-agent-2
+      - ZONE_NAME=asia-shanghai
+      - USER_NAME=admin
+      - PASSWORD=${AGENT_PASSWORD:-admin}
+      - TLS_SERVER_NAME=anywhere.local
     depends_on:
       - anywhered
   anywhere-3:
@@ -35,34 +41,37 @@ services:
         ipv4_address: 172.90.101.14
     environment:
       - SERVER_ADDR=172.90.101.11
-      - AGENT_ID=anywhere-agent-3
+      - ZONE_NAME=asia-shanghai
+      - USER_NAME=admin
+      - PASSWORD=${AGENT_PASSWORD:-admin}
+      - TLS_SERVER_NAME=anywhere.local
     depends_on:
       - anywhered
 
 # Services
   mysql-8.0:
-    image: "10.0.0.4:5000/mysql/mysql:8.0.19"
+    image: "${TEST_REGISTRY:-docker.io}/mysql/mysql:8.0.19"
     command: --default-authentication-plugin=mysql_native_password
     environment:
-      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-root}"
     networks:
       anywhere_test_net:
         ipv4_address: 172.90.101.21
   mysql-5.7:
-    image: "10.0.0.4:5000/mysql/mysql:5.7.29"
+    image: "${TEST_REGISTRY:-docker.io}/mysql/mysql:5.7.29"
     command: --default-authentication-plugin=mysql_native_password
     environment:
-      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-root}"
     networks:
       anywhere_test_net:
         ipv4_address: 172.90.101.22
   nginx-1.17:
-    image: "10.0.0.4:5000/cntechpower/nginx:1.17.6"
+    image: "${TEST_REGISTRY:-docker.io}/cntechpower/nginx:1.17.6"
     networks:
       anywhere_test_net:
         ipv4_address: 172.90.101.23
   sshd:
-    image: "10.0.0.4:5000/cntechpwer/centos-systemd:7"
+    image: "${TEST_REGISTRY:-docker.io}/cntechpwer/centos-systemd:7"
     privileged: true
     networks:
       anywhere_test_net:

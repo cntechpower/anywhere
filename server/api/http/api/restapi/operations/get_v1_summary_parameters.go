@@ -13,7 +13,8 @@ import (
 )
 
 // NewGetV1SummaryParams creates a new GetV1SummaryParams object
-// no default values defined in spec.
+//
+// There are no default values defined in the spec.
 func NewGetV1SummaryParams() GetV1SummaryParams {
 
 	return GetV1SummaryParams{}

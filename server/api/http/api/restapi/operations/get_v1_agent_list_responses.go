@@ -16,7 +16,8 @@ import (
 // GetV1AgentListOKCode is the HTTP code returned for type GetV1AgentListOK
 const GetV1AgentListOKCode int = 200
 
-/*GetV1AgentListOK A JSON array of user names
+/*
+GetV1AgentListOK A JSON array of user names
 
 swagger:response getV1AgentListOK
 */
@@ -60,7 +61,8 @@ func (o *GetV1AgentListOK) WriteResponse(rw http.ResponseWriter, producer runtim
 	}
 }
 
-/*GetV1AgentListDefault generic errors
+/*
+GetV1AgentListDefault generic errors
 
 swagger:response getV1AgentListDefault
 */

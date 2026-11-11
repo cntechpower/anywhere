@@ -1,14 +1,14 @@
-From ubuntu:22.04
+FROM ubuntu:22.04
+
 COPY bin/* /usr/local/anywhere/bin/
 COPY credential/* /usr/local/anywhere/credential/
-COPY static/* /usr/local/anywhere/static/
-COPY docker-build/Dockerfile.agent /docker-build/
-ENV SERVER_ADDR=172.90.101.11
-ENV ZONE_NAME=asia-shanghai
-ENV USER_NAME=admin
-ENV PASSWORD=admin
 
 WORKDIR /usr/local/anywhere/
 
+# Provide these at run time; PASSWORD has no default on purpose.
+ENV SERVER_ADDR=127.0.0.1 \
+    ZONE_NAME=asia-shanghai \
+    USER_NAME=admin \
+    TLS_SERVER_NAME=anywhere.local
 
-CMD ["sh","-c","./bin/anywhere -i $HOSTNAME -s $SERVER_ADDR -u $USER_NAME -z $ZONE_NAME  --pass $PASSWORD"]
+CMD ["sh", "-c", "./bin/anywhere -i \"$HOSTNAME\" -s \"$SERVER_ADDR\" -u \"$USER_NAME\" -z \"$ZONE_NAME\" --pass \"$PASSWORD\" --tls-server-name \"$TLS_SERVER_NAME\""]

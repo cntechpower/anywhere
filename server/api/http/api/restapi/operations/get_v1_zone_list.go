@@ -29,10 +29,10 @@ func NewGetV1ZoneList(ctx *middleware.Context, handler GetV1ZoneListHandler) *Ge
 	return &GetV1ZoneList{Context: ctx, Handler: handler}
 }
 
-/*GetV1ZoneList swagger:route GET /v1/zone/list getV1ZoneList
+/*
+	GetV1ZoneList swagger:route GET /v1/zone/list getV1ZoneList
 
 Returns a list of all zones.
-
 */
 type GetV1ZoneList struct {
 	Context *middleware.Context
@@ -42,17 +42,15 @@ type GetV1ZoneList struct {
 func (o *GetV1ZoneList) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	route, rCtx, _ := o.Context.RouteInfo(r)
 	if rCtx != nil {
-		r = rCtx
+		*r = *rCtx
 	}
 	var Params = NewGetV1ZoneListParams()
-
 	if err := o.Context.BindValidRequest(r, route, &Params); err != nil { // bind params
 		o.Context.Respond(rw, r, route.Produces, route, err)
 		return
 	}
 
 	res := o.Handler.Handle(Params) // actually handle the request
-
 	o.Context.Respond(rw, r, route.Produces, route, res)
 
 }

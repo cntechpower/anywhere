@@ -17,10 +17,28 @@ func Remove(id uint) (err error) {
 	return
 }
 
+// RemoveByKey deletes the row matching the natural key of a proxy config.
+func RemoveByKey(userName, zoneName string, remotePort int, localAddr string) (err error) {
+	err = dao.PersistDB().Where("user_name = ?", userName).
+		Where("zone_name = ?", zoneName).
+		Where("remote_port = ?", remotePort).
+		Where("local_addr = ?", localAddr).
+		Delete(&model.ProxyConfig{}).Error
+	return
+}
+
+// Update only touches the whitelist columns. It must not use Save with a
+// partially filled struct: Save would insert a new row instead of updating.
 func Update(config *model.ProxyConfig) (err error) {
-	err = dao.PersistDB().Where("user_name=?", config.UserName).
-		Where("zone_name=?", config.ZoneName).
-		Where("remote_port=?", config.RemotePort).Save(config).Error
+	err = dao.PersistDB().Model(&model.ProxyConfig{}).
+		Where("user_name = ?", config.UserName).
+		Where("zone_name = ?", config.ZoneName).
+		Where("remote_port = ?", config.RemotePort).
+		Where("local_addr = ?", config.LocalAddr).
+		Updates(map[string]interface{}{
+			"is_white_list_on": config.IsWhiteListOn,
+			"white_cidr_list":  config.WhiteCidrList,
+		}).Error
 	return
 }
 
@@ -50,6 +68,21 @@ func Migrate() (err error) {
 		}
 	}
 	return
+}
+
+// IteratorByZone streams the proxy configs of a single zone instead of
+// scanning the whole table for every zone.
+func IteratorByZone(userName, zoneName string, fn func(c *model.ProxyConfig)) (err error) {
+	res := make([]*model.ProxyConfig, 0)
+	err = dao.PersistDB().Where("user_name = ?", userName).
+		Where("zone_name = ?", zoneName).Find(&res).Error
+	if err != nil {
+		return err
+	}
+	for _, c := range res {
+		fn(c)
+	}
+	return nil
 }
 
 func Iterator(fn func(c *model.ProxyConfig)) (err error) {

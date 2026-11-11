@@ -5,11 +5,11 @@ import (
 	"github.com/cntechpower/anywhere/server/api/http/api/models"
 )
 
-func ListAgentV1() ([]*models.AgentListInfo, error) {
+func (a *API) ListAgentV1() ([]*models.AgentListInfo, error) {
 	res := make([]*models.AgentListInfo, 0)
-	agents := serverInst.ListAgentInfo()
+	agents := a.server.ListAgentInfo()
 	for _, agent := range agents {
-		a := &models.AgentListInfo{
+		info := &models.AgentListInfo{
 			UserName:         agent.UserName,
 			ZoneName:         agent.ZoneName,
 			AgentAdminAddr:   agent.RemoteAddr,
@@ -18,7 +18,7 @@ func ListAgentV1() ([]*models.AgentListInfo, error) {
 			LastAckRcv:       agent.LastAckRcv.Local().Format(constants.DefaultTimeFormat),
 			ProxyConfigCount: int64(agent.ProxyConfigCount),
 		}
-		res = append(res, a)
+		res = append(res, info)
 	}
 	return res, nil
 }

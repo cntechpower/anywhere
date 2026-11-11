@@ -25,6 +25,12 @@ func StartRpcServer(agent *agent.Agent, addr string, errChan chan error) {
 		errChan <- err
 		return
 	}
+	// The agent admin API has no authentication, so it must never be exposed
+	// beyond the loopback interface.
+	if !util.IsLoopbackAddr(addr) {
+		errChan <- fmt.Errorf("grpc address %s is not loopback; refusing to expose an unauthenticated admin API", addr)
+		return
+	}
 
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -59,13 +65,12 @@ func ListConnections(grpcAddr string) error {
 		fmt.Println("no conn exist")
 		return nil
 	}
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"ConnId", "SrcRemoteAddr", "SrcLocalAddr", "DstRemoteAddr", "DstLocalAddr"})
+	table := tablewriter.NewTable(os.Stdout)
+	table.Header("ConnId", "SrcRemoteAddr", "SrcLocalAddr", "DstRemoteAddr", "DstLocalAddr")
 	for _, conn := range res.Conn {
-		table.Append([]string{strconv.Itoa(int(conn.ConnId)), conn.SrcRemoteAddr, conn.SrcLocalAddr, conn.DstRemoteAddr, conn.DstLocalAddr})
+		table.Append(strconv.Itoa(int(conn.ConnId)), conn.SrcRemoteAddr, conn.SrcLocalAddr, conn.DstRemoteAddr, conn.DstLocalAddr)
 	}
-	table.Render()
+	_ = table.Render()
 	return nil
 }
 
@@ -107,10 +112,9 @@ func ShowStatus(grpcAddr string) error {
 		return err
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"AgentId", "LocalAddr", "ServerAddr", "LastAckSend", "LastAckRcv"})
-	table.Append([]string{res.AgentId, res.LocalAddr, res.ServerAddr, res.LastAckSendTime, res.LastAckRcvTime})
-	table.Render()
+	table := tablewriter.NewTable(os.Stdout)
+	table.Header("AgentId", "LocalAddr", "ServerAddr", "LastAckSend", "LastAckRcv")
+	table.Append(res.AgentId, res.LocalAddr, res.ServerAddr, res.LastAckSendTime, res.LastAckRcvTime)
+	_ = table.Render()
 	return nil
 }

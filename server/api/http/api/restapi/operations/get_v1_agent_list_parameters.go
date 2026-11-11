@@ -13,7 +13,8 @@ import (
 )
 
 // NewGetV1AgentListParams creates a new GetV1AgentListParams object
-// no default values defined in spec.
+//
+// There are no default values defined in the spec.
 func NewGetV1AgentListParams() GetV1AgentListParams {
 
 	return GetV1AgentListParams{}

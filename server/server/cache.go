@@ -8,6 +8,7 @@ import (
 
 	"github.com/cntechpower/anywhere/constants"
 	"github.com/cntechpower/anywhere/model"
+	"github.com/cntechpower/anywhere/server/zone"
 )
 
 func SortDescAndLimitUsingHeap(a []*model.ProxyConfig, less func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool, limit int) []*model.ProxyConfig {
@@ -50,69 +51,101 @@ func SortDescAndLimit(a []*model.ProxyConfig, less func(p1 *model.ProxyConfig, p
 	return res
 }
 
-func (s *Server) RefreshSummaryLoop(ctx context.Context) {
-	h := log.NewHeader("RefreshSummaryLoop")
-	currentLoop := 0
-	shouldLog := func() bool {
-		if currentLoop == constants.CacheRefreshLogInhibition {
-			currentLoop = 0
-			return true
-		}
-		currentLoop++
-		return false
-	}
-	ticker := time.NewTicker(constants.CacheRefreshLoopTimeSeconds * time.Second)
+// maintenanceLoop periodically refreshes the summary cache, persists dirty
+// proxy counters and removes dead agents.
+func (s *Server) maintenanceLoop(ctx context.Context) {
+	defer s.wg.Done()
+	refreshTicker := time.NewTicker(constants.CacheRefreshLoopTimeSeconds * time.Second)
+	cleanupTicker := time.NewTicker(60 * time.Second)
+	defer refreshTicker.Stop()
+	defer cleanupTicker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
-			h.Infoc(ctx, "existing")
 			return
-		case <-ticker.C:
+		case <-s.closeCh:
+			return
+		case <-refreshTicker.C:
+			s.refreshSummary()
+			s.flushStats()
+		case <-cleanupTicker.C:
+			s.cleanupAgents()
 		}
+	}
+}
 
-		startTime := time.Now()
-		newCache := model.ServerSummary{}
-		allConfigList := make([]*model.ProxyConfig, 0, 100)
-		s.agentsRwMutex.Lock()
-		for _, groups := range s.zones {
-			for _, group := range groups {
-				configs := group.ListProxyConfigs()
-				newCache.ProxyConfigTotalCount += uint64(len(configs))
-				allConfigList = append(allConfigList, configs...)
-				newCache.AgentTotalCount++
-				for _, config := range configs {
-					newCache.NetworkFlowTotalCountInBytes += config.NetworkFlowRemoteToLocalInBytes
-					newCache.NetworkFlowTotalCountInBytes += config.NetworkFlowLocalToRemoteInBytes
-					newCache.ProxyConnectRejectCount += config.ProxyConnectRejectCount
-					newCache.ProxyConnectTotalCount += config.ProxyConnectCount
-				}
-			}
+func (s *Server) snapshotZones() []zone.IZone {
+	s.zonesMu.RLock()
+	defer s.zonesMu.RUnlock()
+	res := make([]zone.IZone, 0, len(s.zones))
+	for _, userZones := range s.zones {
+		for _, z := range userZones {
+			res = append(res, z)
 		}
-		s.agentsRwMutex.Unlock()
-		newCache.ProxyConnectRejectCountTop10 = SortDescAndLimitUsingHeap(allConfigList,
-			func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool {
-				return p1.ProxyConnectRejectCount > p2.ProxyConnectRejectCount
-			}, 10)
-		newCache.ProxyNetworkFlowTop10 = SortDescAndLimitUsingHeap(allConfigList,
-			func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool {
-				return (p1.NetworkFlowRemoteToLocalInBytes + p1.NetworkFlowLocalToRemoteInBytes) >
-					(p2.NetworkFlowRemoteToLocalInBytes + p2.NetworkFlowLocalToRemoteInBytes)
-			}, 10)
-		endTime := time.Now()
-		newCache.RefreshTime = endTime
-		s.statusRwMutex.Lock()
-		s.statusCache = newCache
-		s.allProxyConfigList = allConfigList
-		s.statusRwMutex.Unlock()
-		if shouldLog() {
-			log.Infof(h, "refresh done, microseconds used %+v", endTime.Sub(startTime).Microseconds())
+	}
+	return res
+}
+
+func (s *Server) flushStats() {
+	for _, z := range s.snapshotZones() {
+		z.FlushStats()
+	}
+}
+
+func (s *Server) cleanupAgents() {
+	timeout := time.Duration(constants.AgentHeartbeatTimeoutSeconds) * time.Second
+	for _, z := range s.snapshotZones() {
+		z.CleanupAgents(timeout)
+	}
+}
+
+func (s *Server) refreshSummary() {
+	h := log.NewHeader("RefreshSummaryLoop")
+	startTime := time.Now()
+	newCache := model.ServerSummary{}
+	allConfigList := make([]*model.ProxyConfig, 0, 100)
+
+	for _, z := range s.snapshotZones() {
+		configs := z.ListProxyConfigs()
+		newCache.ProxyConfigTotalCount += uint64(len(configs))
+		newCache.AgentTotalCount += uint64(z.Info().AgentsCount)
+		newCache.CurrentProxyConnectionCount += uint64(z.GetCurrentConnectionCount())
+		allConfigList = append(allConfigList, configs...)
+		for _, cfg := range configs {
+			newCache.NetworkFlowTotalCountInBytes += cfg.NetworkFlowRemoteToLocalInBytes
+			newCache.NetworkFlowTotalCountInBytes += cfg.NetworkFlowLocalToRemoteInBytes
+			newCache.ProxyConnectRejectCount += cfg.ProxyConnectRejectCount
+			newCache.ProxyConnectTotalCount += cfg.ProxyConnectCount
 		}
+	}
+
+	newCache.ProxyConnectRejectCountTop10 = SortDescAndLimitUsingHeap(allConfigList,
+		func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool {
+			return p1.ProxyConnectRejectCount > p2.ProxyConnectRejectCount
+		}, 10)
+	newCache.ProxyNetworkFlowTop10 = SortDescAndLimitUsingHeap(allConfigList,
+		func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool {
+			return (p1.NetworkFlowRemoteToLocalInBytes + p1.NetworkFlowLocalToRemoteInBytes) >
+				(p2.NetworkFlowRemoteToLocalInBytes + p2.NetworkFlowLocalToRemoteInBytes)
+		}, 10)
+
+	endTime := time.Now()
+	newCache.RefreshTime = endTime
+	s.statusRwMutex.Lock()
+	s.statusCache = newCache
+	s.statusRwMutex.Unlock()
+
+	if cost := endTime.Sub(startTime); cost > 500*time.Millisecond {
+		log.Infof(h, "refresh summary took %v (%d configs)", cost, len(allConfigList))
 	}
 }
 
 func (s *Server) GetSummary() model.ServerSummary {
 	s.statusRwMutex.RLock()
-	defer s.statusRwMutex.RUnlock()
-	return s.statusCache
+	res := s.statusCache
+	res.ProxyConnectRejectCountTop10 = append([]*model.ProxyConfig(nil), s.statusCache.ProxyConnectRejectCountTop10...)
+	res.ProxyNetworkFlowTop10 = append([]*model.ProxyConfig(nil), s.statusCache.ProxyNetworkFlowTop10...)
+	s.statusRwMutex.RUnlock()
+	return res
 }

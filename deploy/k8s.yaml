@@ -17,12 +17,23 @@ spec:
     spec:
       containers:
         - name: anywhere-agent
-          image: 10.0.0.4:5000/cntechpower/anywhere-agent:3bf53b8
+          # Replace with your registry/tag, or render this file with envsubst/kustomize.
+          image: registry.example.com/cntechpower/anywhere-agent:latest
+          imagePullPolicy: IfNotPresent
           env:
             - name: SERVER_ADDR
-              value: 47.103.62.227
-            - name: SERVER_ADDR
-              value: 47.103.62.227
+              value: anywhere.example.com
+            - name: ZONE_NAME
+              value: asia-shanghai
+            - name: USER_NAME
+              value: admin
+            - name: TLS_SERVER_NAME
+              value: anywhere.local
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: anywhere-agent
+                  key: password
           resources:
             limits:
               memory: 512Mi

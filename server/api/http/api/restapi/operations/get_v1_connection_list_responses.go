@@ -16,7 +16,8 @@ import (
 // GetV1ConnectionListOKCode is the HTTP code returned for type GetV1ConnectionListOK
 const GetV1ConnectionListOKCode int = 200
 
-/*GetV1ConnectionListOK A JSON array of connection
+/*
+GetV1ConnectionListOK A JSON array of connection
 
 swagger:response getV1ConnectionListOK
 */
@@ -60,7 +61,8 @@ func (o *GetV1ConnectionListOK) WriteResponse(rw http.ResponseWriter, producer r
 	}
 }
 
-/*GetV1ConnectionListDefault generic errors
+/*
+GetV1ConnectionListDefault generic errors
 
 swagger:response getV1ConnectionListDefault
 */

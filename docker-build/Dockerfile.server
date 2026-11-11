@@ -1,15 +1,11 @@
-From ubuntu:22.04
+FROM ubuntu:22.04
+
 COPY bin/* /usr/local/anywhere/bin/
 COPY credential/* /usr/local/anywhere/credential/
-COPY static/* /usr/local/anywhere/static/
-COPY docker-build/Dockerfile.server /docker-build/
-# Config files
+COPY static/ /usr/local/anywhere/static/
+# Test fixture config; mount a real anywhered.json in production.
 COPY test/config/anywhered.json /usr/local/anywhere/anywhered.json
-COPY test/config/proxy.json /usr/local/anywhere/proxy.json
-COPY test/config/proxy.db /usr/local/anywhere/proxy.db
-ENV TRACE_ADDR=10.0.0.4:6831
 
 WORKDIR /usr/local/anywhere/
 
-
-CMD ["./bin/anywhered","start"]
+CMD ["./bin/anywhered", "start"]

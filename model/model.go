@@ -79,16 +79,18 @@ type ServerSummary struct {
 	RefreshTime                  time.Time
 }
 
+// JoinedConnListItem describes one proxied connection. It lives in memory only.
 type JoinedConnListItem struct {
-	gorm.Model
-	UserName      string
-	ZoneName      string
-	SrcName       string
-	DstName       string
-	SrcRemoteAddr string
-	SrcLocalAddr  string
-	DstRemoteAddr string
-	DstLocalAddr  string
+	ID            uint      `json:"id"`
+	CreatedAt     time.Time `json:"created_at"`
+	UserName      string    `json:"user_name"`
+	ZoneName      string    `json:"zone_name"`
+	SrcName       string    `json:"src_name"`
+	DstName       string    `json:"dst_name"`
+	SrcRemoteAddr string    `json:"src_remote_addr"`
+	SrcLocalAddr  string    `json:"src_local_addr"`
+	DstRemoteAddr string    `json:"dst_remote_addr"`
+	DstLocalAddr  string    `json:"dst_local_addr"`
 }
 
 type GroupConnList struct {
@@ -120,14 +122,6 @@ func GetPersistModels() []interface{} {
 	res = append(res,
 		&ProxyConfig{},
 		&WhiteListDenyRecord{},
-	)
-	return res
-}
-
-func GetTmpModels() []interface{} {
-	res := make([]interface{}, 0)
-	res = append(res,
-		&JoinedConnListItem{},
 	)
 	return res
 }

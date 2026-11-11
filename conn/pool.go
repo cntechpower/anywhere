@@ -2,6 +2,7 @@ package conn
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -9,110 +10,214 @@ import (
 
 	"github.com/opentracing/opentracing-go/ext"
 
-	"github.com/cntechpower/utils/tracing"
-
+	"github.com/cntechpower/anywhere/internal/trace"
 	"github.com/cntechpower/utils/log"
 
 	"github.com/cntechpower/anywhere/constants"
 )
 
-var ErrConnectionPoolFull = fmt.Errorf("connection pool is full")
+var (
+	ErrConnectionPoolFull   = errors.New("connection pool is full")
+	ErrConnectionPoolClosed = errors.New("connection pool is closed")
+)
 
 type ConnectionPool interface {
 	Get(ctx context.Context, proxyAddr string) (*WrappedConn, error)
 	Put(ctx context.Context, proxyAddr string, connection *WrappedConn) error
+	Close()
 }
 
 type connectionPool struct {
-	mu                    sync.Mutex
-	pool                  map[string] /*localAddr*/ chan *WrappedConn
+	mu sync.Mutex
+	// pool maps a proxy local address to a buffered channel of ready connections.
+	pool map[string]chan *WrappedConn
+
 	idleTimeout           time.Duration
 	waitTimeout           time.Duration
 	newConnectionFn       func(proxyAddr string)
 	houseKeepLoopInterval time.Duration
+
+	closed    bool
+	closeCh   chan struct{}
+	closeOnce sync.Once
 }
 
 func NewConnectionPool(newConnectionFn func(proxyAddr string)) ConnectionPool {
 	p := &connectionPool{
-		mu:                    sync.Mutex{},
-		pool:                  make(map[string] /*localAddr*/ chan *WrappedConn),
+		pool:                  make(map[string]chan *WrappedConn),
 		idleTimeout:           constants.ProxyConnMaxIdleTimeout * time.Second,
 		waitTimeout:           constants.ProxyConnGetRetryMilliseconds * time.Millisecond,
 		newConnectionFn:       newConnectionFn,
 		houseKeepLoopInterval: 30 * time.Second,
+		closeCh:               make(chan struct{}),
 	}
 	go p.houseKeeper()
 	return p
 }
 
-func (p *connectionPool) Get(ctx context.Context, proxyAddr string) (c *WrappedConn, err error) {
-	span, ctxNew := tracing.New(ctx, "connectionPool.Get")
-	defer span.Finish()
+// channel returns the buffered channel for proxyAddr, creating it if needed.
+// It returns false once the pool is closed so callers cannot resurrect it.
+func (p *connectionPool) channel(proxyAddr string) (chan *WrappedConn, bool) {
 	p.mu.Lock()
-	if _, ok := p.pool[proxyAddr]; !ok {
-		p.pool[proxyAddr] = make(chan *WrappedConn, constants.ProxyConnBufferForEachAgent)
+	defer p.mu.Unlock()
+	if p.closed {
+		return nil, false
 	}
-	p.mu.Unlock()
+	ch, ok := p.pool[proxyAddr]
+	if !ok {
+		ch = make(chan *WrappedConn, constants.ProxyConnBufferForEachAgent)
+		p.pool[proxyAddr] = ch
+	}
+	return ch, true
+}
+
+func (p *connectionPool) isClosed() bool {
+	select {
+	case <-p.closeCh:
+		return true
+	default:
+		return false
+	}
+}
+
+func (p *connectionPool) Get(ctx context.Context, proxyAddr string) (c *WrappedConn, err error) {
+	span, ctxNew := trace.New(ctx, "connectionPool.Get")
+	defer span.Finish()
+
+	if p.isClosed() {
+		return nil, ErrConnectionPoolClosed
+	}
+	ch, ok := p.channel(proxyAddr)
+	if !ok {
+		return nil, ErrConnectionPoolClosed
+	}
+
 	for i := 0; i < constants.ProxyConnGetMaxRetryCount; i++ {
-		_ = tracing.Do(ctxNew, fmt.Sprintf("connectionPool.Get.Wait-%+v", i), func() error {
-			// get connection first
+		// Ask the agent for a fresh tunnel connection, then wait for it to be
+		// delivered by Put. Ask first so a prefetched connection still wins the
+		// race without wasting a request.
+		_ = trace.Do(ctxNew, fmt.Sprintf("connectionPool.Get.Wait-%d", i), func() error {
 			p.newConnectionFn(proxyAddr)
+			timer := time.NewTimer(p.waitTimeout)
+			defer timer.Stop()
 			select {
-			case c = <-p.pool[proxyAddr]:
+			case c = <-ch:
 				return nil
-			case <-time.After(p.waitTimeout):
+			case <-timer.C:
+			case <-ctxNew.Done():
+				err = ctxNew.Err()
+			case <-p.closeCh:
+				err = ErrConnectionPoolClosed
 			}
 			return nil
 		})
+		if err != nil {
+			return nil, err
+		}
 		if c != nil {
-			return
+			return c, nil
 		}
 	}
 	ext.HTTPStatusCode.Set(span, http.StatusRequestTimeout)
 	ext.Error.Set(span, true)
-	return nil, fmt.Errorf("timeout while waiting for proxy conn for %+v", proxyAddr)
+	return nil, fmt.Errorf("timeout while waiting for proxy conn for %s", proxyAddr)
 }
 
-func (p *connectionPool) Put(ctx context.Context, proxyAddr string, connection *WrappedConn) error {
-	span, _ := tracing.New(ctx, "connectionPool.Put")
-	defer span.Finish()
-	if _, ok := p.pool[proxyAddr]; !ok {
-		p.pool[proxyAddr] = make(chan *WrappedConn, constants.ProxyConnBufferForEachAgent)
+func (p *connectionPool) Put(_ context.Context, proxyAddr string, connection *WrappedConn) error {
+	if connection == nil {
+		return ErrNilConn
 	}
-	if len(p.pool[proxyAddr]) >= constants.ProxyConnBufferForEachAgent {
+	p.mu.Lock()
+	if p.closed {
+		p.mu.Unlock()
+		_ = connection.Close()
+		return ErrConnectionPoolClosed
+	}
+	ch, ok := p.pool[proxyAddr]
+	if !ok {
+		ch = make(chan *WrappedConn, constants.ProxyConnBufferForEachAgent)
+		p.pool[proxyAddr] = ch
+	}
+	select {
+	case ch <- connection:
+		p.mu.Unlock()
+		return nil
+	default:
+		// Never block the caller (the conn reader) on a full pool.
+		p.mu.Unlock()
 		_ = connection.Close()
 		return ErrConnectionPoolFull
 	}
-	p.pool[proxyAddr] <- connection
-	return nil
 }
 
 func (p *connectionPool) houseKeeper() {
 	h := log.NewHeader("connection_pool_housekeeper")
-	for range time.NewTicker(p.houseKeepLoopInterval).C {
-		p.mu.Lock()
-		for proxyAddr, pool := range p.pool {
-			if len(pool) == 0 {
+	ticker := time.NewTicker(p.houseKeepLoopInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-p.closeCh:
+			return
+		case <-ticker.C:
+			p.evictIdle(h)
+		}
+	}
+}
+
+// evictIdle scans every per-address channel once and closes connections that
+// exceeded the idle timeout. All connections are inspected, not just the head.
+func (p *connectionPool) evictIdle(h *log.Header) {
+	p.mu.Lock()
+	channels := make(map[string]chan *WrappedConn, len(p.pool))
+	for addr, ch := range p.pool {
+		channels[addr] = ch
+	}
+	p.mu.Unlock()
+
+	now := time.Now()
+	for addr, ch := range channels {
+		n := len(ch)
+	drain:
+		for i := 0; i < n; i++ {
+			var c *WrappedConn
+			select {
+			case c = <-ch:
+			default:
+				break drain
+			}
+			if c.CreateTime.Add(p.idleTimeout).Before(now) {
+				log.Infof(h, "connection for %s exceeded idle timeout, closing it", addr)
+				_ = c.Close()
 				continue
 			}
-			checkedMap := make(map[*WrappedConn]struct{}, len(pool))
 			select {
-			case c := <-p.pool[proxyAddr]:
-				// this connection is already checked
-				// because channel is FIFO, so that means all connection in channel has been checked.
-				if _, ok := checkedMap[c]; ok {
-					break
-				}
-				checkedMap[c] = struct{}{}
-				if c.CreateTime.Add(p.idleTimeout).Before(time.Now()) { // connection is exceeded idle timeout, closing it.
-					log.Infof(h, "connection for %+v is exceed idle timeout, will close it.", proxyAddr)
-					_ = c.Close()
-				} else {
-					p.pool[proxyAddr] <- c
-				}
+			case ch <- c:
 			default:
+				_ = c.Close()
 			}
 		}
-		p.mu.Unlock()
 	}
+}
+
+func (p *connectionPool) Close() {
+	p.closeOnce.Do(func() {
+		close(p.closeCh)
+		p.mu.Lock()
+		p.closed = true
+		defer p.mu.Unlock()
+		for addr, ch := range p.pool {
+			for {
+				select {
+				case c := <-ch:
+					if c != nil {
+						_ = c.Close()
+					}
+					continue
+				default:
+				}
+				break
+			}
+			delete(p.pool, addr)
+		}
+	})
 }

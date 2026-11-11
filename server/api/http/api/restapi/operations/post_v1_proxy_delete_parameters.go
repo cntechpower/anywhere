@@ -16,8 +16,16 @@ import (
 	"github.com/go-openapi/validate"
 )
 
+// PostV1ProxyDeleteMaxParseMemory sets the maximum size in bytes for
+// the multipart form parser for this operation.
+//
+// The default value is 32 MB.
+// The multipart parser stores up to this + 10MB.
+var PostV1ProxyDeleteMaxParseMemory int64 = 32 << 20
+
 // NewPostV1ProxyDeleteParams creates a new PostV1ProxyDeleteParams object
-// no default values defined in spec.
+//
+// There are no default values defined in the spec.
 func NewPostV1ProxyDeleteParams() PostV1ProxyDeleteParams {
 
 	return PostV1ProxyDeleteParams{}
@@ -48,7 +56,7 @@ func (o *PostV1ProxyDeleteParams) BindRequest(r *http.Request, route *middleware
 
 	o.HTTPRequest = r
 
-	if err := r.ParseMultipartForm(32 << 20); err != nil {
+	if err := r.ParseMultipartForm(PostV1ProxyDeleteMaxParseMemory); err != nil {
 		if err != http.ErrNotMultipart {
 			return errors.New(400, "%v", err)
 		} else if err := r.ParseForm(); err != nil {
@@ -61,7 +69,6 @@ func (o *PostV1ProxyDeleteParams) BindRequest(r *http.Request, route *middleware
 	if err := o.bindID(fdID, fdhkID, route.Formats); err != nil {
 		res = append(res, err)
 	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -71,7 +78,7 @@ func (o *PostV1ProxyDeleteParams) BindRequest(r *http.Request, route *middleware
 // bindID binds and validates parameter ID from formData.
 func (o *PostV1ProxyDeleteParams) bindID(rawData []string, hasKey bool, formats strfmt.Registry) error {
 	if !hasKey {
-		return errors.Required("id", "formData")
+		return errors.Required("id", "formData", rawData)
 	}
 	var raw string
 	if len(rawData) > 0 {

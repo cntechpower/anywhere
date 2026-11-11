@@ -2,138 +2,220 @@ package agent
 
 import (
 	"context"
-	_tls "crypto/tls"
+	"crypto/tls"
+	"fmt"
 	"net"
+	"sync"
 	"time"
-
-	"github.com/cntechpower/anywhere/util"
 
 	"github.com/cntechpower/utils/log"
 
 	"github.com/cntechpower/anywhere/conn"
 	"github.com/cntechpower/anywhere/model"
-	"github.com/cntechpower/anywhere/tls"
 )
 
-func (a *Agent) mustGetTlsConnToServer() *_tls.Conn {
-	h := log.NewHeader("mustGetTlsConnToServer")
-	var c *_tls.Conn
+const (
+	dialTimeout       = 5 * time.Second
+	handshakeTimeout  = 5 * time.Second
+	heartbeatInterval = time.Second
+	tunnelDialTimeout = 10 * time.Second
+)
+
+func (a *Agent) setStatus(status string) {
+	a.statusMu.Lock()
+	a.status = status
+	a.statusMu.Unlock()
+}
+
+// sleep waits for d or until the agent stops. It returns false when stopped.
+func (a *Agent) sleep(d time.Duration) bool {
+	t := time.NewTimer(d)
+	defer t.Stop()
+	select {
+	case <-a.ctx.Done():
+		return false
+	case <-t.C:
+		return true
+	}
+}
+
+// controlLoop keeps exactly one control connection alive. Reconnection is
+// handled here only, so there can never be two goroutines competing for the
+// same admin connection.
+func (a *Agent) controlLoop() {
+	defer a.wg.Done()
+	h := log.NewHeader("agentControlLoop")
+	wait := reconnectMinWait
 	for {
-		var err error
-		c, err = tls.DialTlsServer(a.addr.IP.String(), a.addr.Port, a.credential)
-		if err != nil {
-			h.Errorf("can not connect to server %+v, error: %+v", a.addr, err)
-			// sleep 5 second and retry
-			time.Sleep(5 * time.Second)
+		if a.ctx.Err() != nil {
+			return
+		}
+		if err := a.connectOnce(); err != nil {
+			h.Errorf("connect to server %s failed: %v, retry in %v", a.addr, err, wait)
+			if !a.sleep(wait) {
+				return
+			}
+			wait *= 2
+			if wait > reconnectMaxWait {
+				wait = reconnectMaxWait
+			}
 			continue
 		}
-		return c
-	}
-}
-
-func (a *Agent) newProxyConn(localAddr string) {
-	h := log.NewHeader("newProxyConn")
-	dst, err := net.Dial("tcp", localAddr)
-	if err != nil {
-		h.Errorf("error while dial to localAddr %+v", err)
-		return
-	}
-	// let server use this local connection
-	c := conn.NewWrappedConn("server", a.mustGetTlsConnToServer())
-	if err := c.Send(model.NewTunnelBeginMsg(a.user, a.zone, a.id, localAddr)); err != nil {
-		h.Errorf("error while send tunnel pkg : %+v", err)
-		_ = c.Close()
-		_ = dst.Close()
-	}
-	h.Infof("called newProxyConn for %+v", localAddr)
-	idx := a.joinedConn.Add(nil, c, conn.NewWrappedConn("server", dst))
-	conn.JoinConn(c.GetConn(), dst)
-	_ = a.joinedConn.Remove(idx)
-}
-
-func (a *Agent) initControlConn(dur int) {
-	h := log.NewHeader("initControlConn")
-	if a.adminConn == nil {
-		a.adminConn = conn.NewWrappedConn("", nil)
-	}
-CONNECT:
-	c := a.mustGetTlsConnToServer()
-	a.status = "INIT"
-	a.adminConn.ResetConn(c)
-	if err := a.SendControlConnRegisterPkg(); err != nil {
-		h.Errorf("can not send register pkg to server %+v, error: %+v", a.addr, err)
-		_ = c.Close()
-		time.Sleep(time.Duration(dur) * time.Second)
-		goto CONNECT
-	}
-	h.Infof("init control connection to server %+v success", a.addr)
-	a.status = "RUNNING"
-
-}
-
-func (a *Agent) ControlConnHeartBeatSendLoop(dur int, ctx context.Context) {
-	h := log.NewHeader("ControlConnHeartBeatSendLoop")
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-			}
-			if err := a.sendHeartBeatPkg(); err != nil {
-				_ = a.adminConn.Close()
-				h.Errorf("send heartbeat error: %+v, sleep %+v s and try again", err, dur)
-
-			} else {
-				a.lastAckSendTime = time.Now()
-				a.adminConn.SetAck(time.Now(), time.Now())
-			}
-			time.Sleep(time.Duration(dur) * time.Second)
+		wait = reconnectMinWait
+		a.runControlConn()
+		if a.ctx.Err() != nil {
+			return
 		}
+		h.Infof("control connection to %s lost, reconnecting", a.addr)
+		if !a.sleep(reconnectMinWait) {
+			return
+		}
+	}
+}
+
+func (a *Agent) connectOnce() error {
+	c, err := a.dialServer()
+	if err != nil {
+		return err
+	}
+	a.adminConn.ResetConn(c)
+	a.setStatus(statusInit)
+	if err := a.adminConn.Send(model.NewAgentRegisterMsg(a.zone, a.id, a.user, a.password)); err != nil {
+		_ = c.Close()
+		return fmt.Errorf("send register pkg: %w", err)
+	}
+	now := time.Now().UnixNano()
+	a.lastAckSend.Store(now)
+	a.lastAckRcv.Store(now)
+	a.setStatus(statusRunning)
+	log.Infof(log.NewHeader("agent"), "control connection to %s established", a.addr)
+	return nil
+}
+
+func (a *Agent) dialServer() (*tls.Conn, error) {
+	raw, err := net.DialTimeout("tcp", a.addr.String(), dialTimeout)
+	if err != nil {
+		return nil, err
+	}
+	if tc, ok := raw.(*net.TCPConn); ok {
+		_ = tc.SetKeepAlive(true)
+		_ = tc.SetKeepAlivePeriod(30 * time.Second)
+	}
+	tlsConn := tls.Client(raw, a.credential)
+	ctx, cancel := context.WithTimeout(a.ctx, handshakeTimeout)
+	defer cancel()
+	if err := tlsConn.HandshakeContext(ctx); err != nil {
+		_ = raw.Close()
+		return nil, fmt.Errorf("tls handshake: %w", err)
+	}
+	return tlsConn, nil
+}
+
+func (a *Agent) runControlConn() {
+	connCtx, cancel := context.WithCancel(a.ctx)
+	defer cancel()
+
+	var hb sync.WaitGroup
+	hb.Add(1)
+	go func() {
+		defer hb.Done()
+		a.heartbeatLoop(connCtx)
 	}()
 
+	h := log.NewHeader("agentControlConn")
+	msg := &model.RequestMsg{}
+loop:
+	for {
+		if connCtx.Err() != nil {
+			break
+		}
+		if err := a.adminConn.Receive(msg); err != nil {
+			if connCtx.Err() == nil {
+				h.Infof("receive from admin conn error: %v", err)
+			}
+			break
+		}
+		switch msg.ReqType {
+		case model.PkgTunnelBegin:
+			m, err := model.ParseTunnelBeginPkg(msg.Message)
+			if err != nil {
+				h.Errorf("corrupted tunnel begin pkg: %v", err)
+				continue
+			}
+			go a.newProxyConn(m.LocalAddr, m.Token)
+		case model.PkgReqHeartBeatPong:
+			a.lastAckRcv.Store(time.Now().UnixNano())
+		case model.PkgAuthenticationFail:
+			m, _ := model.ParseAuthenticationFailMsg(msg.Message)
+			h.Errorf("authentication failed: %s, stopping agent", m.ErrorMsg)
+			a.setStatus(statusStopped)
+			cancel()
+			a.cancel()
+			break loop
+		case model.PkgUDPData:
+			m, err := model.ParseUDPDataMsg(msg.Message)
+			if err != nil {
+				h.Errorf("corrupted udp data pkg: %v", err)
+				continue
+			}
+			a.udp.Handle(m)
+		default:
+			h.Errorf("unknown message type %s", msg.ReqType)
+		}
+	}
+
+	cancel()
+	_ = a.adminConn.Close()
+	hb.Wait()
 }
 
-func (a *Agent) handleAdminConnection(ctx context.Context) {
-	h := log.NewHeader("handleAdminConnection")
-	if !a.adminConn.IsValid() {
-		h.Errorf("admin connection is invalid")
-		return
-	}
-	msg := &model.RequestMsg{}
+func (a *Agent) heartbeatLoop(ctx context.Context) {
+	ticker := time.NewTicker(heartbeatInterval)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		default:
-		}
-		if err := a.adminConn.Receive(&msg); err != nil {
-			h.Errorf("receive from admin conn error: %+v, call reconnecting", err)
-			_ = a.adminConn.Close()
-			time.Sleep(time.Second)
-			a.initControlConn(1)
-			continue
-		}
-		switch msg.ReqType {
-		case model.PkgTunnelBegin:
-			m, _ := model.ParseTunnelBeginPkg(msg.Message)
-			h.Infof("got PkgDataConnTunnel for : %+v", m.LocalAddr)
-			go a.newProxyConn(m.LocalAddr)
-		case model.PkgReqHeartBeatPong:
-			a.lastAckRcvTime = time.Now()
-
-		case model.PkgAuthenticationFail:
-			m, _ := model.ParseAuthenticationFailMsg(msg.Message)
-			h.Fatalf("authentication fail: %+v", m)
-
-		case model.PkgUDPData:
-			err := util.SendUDP(msg.To, msg.Message)
-			if err != nil {
-				h.Errorf("send udp data to %+v error: %+v", msg.To, err)
+		case <-ticker.C:
+			if err := a.adminConn.Send(model.NewHeartBeatPingMsg(
+				a.adminConn.GetLocalAddr(), a.adminConn.GetRemoteAddr(), a.zone, a.id)); err != nil {
+				log.Infof(log.NewHeader("agentHeartbeat"), "send heartbeat error: %v", err)
+				// Closing unblocks the reader, which triggers a reconnect.
+				_ = a.adminConn.Close()
+				return
 			}
-		default:
-			h.Errorf("got unknown ReqType: %+v, message is: %+v", msg.ReqType, string(msg.Message))
-			_ = a.adminConn.Close()
+			a.lastAckSend.Store(time.Now().UnixNano())
 		}
+	}
+}
+
+// newProxyConn opens the local service connection and attaches it to the
+// server side connection pool.
+func (a *Agent) newProxyConn(localAddr, token string) {
+	h := log.NewHeader("agentNewProxyConn")
+	dst, err := net.DialTimeout("tcp", localAddr, tunnelDialTimeout)
+	if err != nil {
+		h.Errorf("dial localAddr %s error: %v", localAddr, err)
+		return
+	}
+
+	c, err := a.dialServer()
+	if err != nil {
+		h.Errorf("dial server for tunnel error: %v", err)
+		_ = dst.Close()
+		return
+	}
+	wc := conn.NewWrappedConn("server", c)
+	if err := wc.Send(model.NewTunnelBeginMsg(a.user, a.zone, a.id, localAddr, token)); err != nil {
+		h.Errorf("send tunnel begin pkg error: %v", err)
+		_ = wc.Close()
+		_ = dst.Close()
+		return
+	}
+
+	idx := a.joinedConn.Add(context.Background(), wc, conn.NewWrappedConn("server", dst))
+	conn.JoinConn(wc.GetConn(), dst)
+	if err := a.joinedConn.Remove(idx); err != nil {
+		h.Infof("remove joined conn %d: %v", idx, err)
 	}
 }

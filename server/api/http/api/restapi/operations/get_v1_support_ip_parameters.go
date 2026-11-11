@@ -13,7 +13,8 @@ import (
 )
 
 // NewGetV1SupportIPParams creates a new GetV1SupportIPParams object
-// no default values defined in spec.
+//
+// There are no default values defined in the spec.
 func NewGetV1SupportIPParams() GetV1SupportIPParams {
 
 	return GetV1SupportIPParams{}

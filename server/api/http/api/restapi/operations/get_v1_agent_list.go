@@ -29,10 +29,10 @@ func NewGetV1AgentList(ctx *middleware.Context, handler GetV1AgentListHandler) *
 	return &GetV1AgentList{Context: ctx, Handler: handler}
 }
 
-/*GetV1AgentList swagger:route GET /v1/agent/list getV1AgentList
+/*
+	GetV1AgentList swagger:route GET /v1/agent/list getV1AgentList
 
 Returns a list of all agent.
-
 */
 type GetV1AgentList struct {
 	Context *middleware.Context
@@ -42,17 +42,15 @@ type GetV1AgentList struct {
 func (o *GetV1AgentList) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	route, rCtx, _ := o.Context.RouteInfo(r)
 	if rCtx != nil {
-		r = rCtx
+		*r = *rCtx
 	}
 	var Params = NewGetV1AgentListParams()
-
 	if err := o.Context.BindValidRequest(r, route, &Params); err != nil { // bind params
 		o.Context.Respond(rw, r, route.Produces, route, err)
 		return
 	}
 
 	res := o.Handler.Handle(Params) // actually handle the request
-
 	o.Context.Respond(rw, r, route.Produces, route, res)
 
 }

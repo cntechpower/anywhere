@@ -16,6 +16,13 @@ import (
 	"github.com/go-openapi/validate"
 )
 
+// PostV1ProxyAddMaxParseMemory sets the maximum size in bytes for
+// the multipart form parser for this operation.
+//
+// The default value is 32 MB.
+// The multipart parser stores up to this + 10MB.
+var PostV1ProxyAddMaxParseMemory int64 = 32 << 20
+
 // NewPostV1ProxyAddParams creates a new PostV1ProxyAddParams object
 // with the default values initialized.
 func NewPostV1ProxyAddParams() PostV1ProxyAddParams {
@@ -90,7 +97,7 @@ func (o *PostV1ProxyAddParams) BindRequest(r *http.Request, route *middleware.Ma
 
 	o.HTTPRequest = r
 
-	if err := r.ParseMultipartForm(32 << 20); err != nil {
+	if err := r.ParseMultipartForm(PostV1ProxyAddMaxParseMemory); err != nil {
 		if err != http.ErrNotMultipart {
 			return errors.New(400, "%v", err)
 		} else if err := r.ParseForm(); err != nil {
@@ -133,7 +140,6 @@ func (o *PostV1ProxyAddParams) BindRequest(r *http.Request, route *middleware.Ma
 	if err := o.bindZoneName(fdZoneName, fdhkZoneName, route.Formats); err != nil {
 		res = append(res, err)
 	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -153,7 +159,6 @@ func (o *PostV1ProxyAddParams) bindListenType(rawData []string, hasKey bool, for
 		// Default values have been previously initialized by NewPostV1ProxyAddParams()
 		return nil
 	}
-
 	o.ListenType = &raw
 
 	return nil
@@ -162,7 +167,7 @@ func (o *PostV1ProxyAddParams) bindListenType(rawData []string, hasKey bool, for
 // bindLocalAddr binds and validates parameter LocalAddr from formData.
 func (o *PostV1ProxyAddParams) bindLocalAddr(rawData []string, hasKey bool, formats strfmt.Registry) error {
 	if !hasKey {
-		return errors.Required("local_addr", "formData")
+		return errors.Required("local_addr", "formData", rawData)
 	}
 	var raw string
 	if len(rawData) > 0 {
@@ -174,7 +179,6 @@ func (o *PostV1ProxyAddParams) bindLocalAddr(rawData []string, hasKey bool, form
 	if err := validate.RequiredString("local_addr", "formData", raw); err != nil {
 		return err
 	}
-
 	o.LocalAddr = raw
 
 	return nil
@@ -183,7 +187,7 @@ func (o *PostV1ProxyAddParams) bindLocalAddr(rawData []string, hasKey bool, form
 // bindRemotePort binds and validates parameter RemotePort from formData.
 func (o *PostV1ProxyAddParams) bindRemotePort(rawData []string, hasKey bool, formats strfmt.Registry) error {
 	if !hasKey {
-		return errors.Required("remote_port", "formData")
+		return errors.Required("remote_port", "formData", rawData)
 	}
 	var raw string
 	if len(rawData) > 0 {
@@ -208,7 +212,7 @@ func (o *PostV1ProxyAddParams) bindRemotePort(rawData []string, hasKey bool, for
 // bindUserName binds and validates parameter UserName from formData.
 func (o *PostV1ProxyAddParams) bindUserName(rawData []string, hasKey bool, formats strfmt.Registry) error {
 	if !hasKey {
-		return errors.Required("user_name", "formData")
+		return errors.Required("user_name", "formData", rawData)
 	}
 	var raw string
 	if len(rawData) > 0 {
@@ -220,7 +224,6 @@ func (o *PostV1ProxyAddParams) bindUserName(rawData []string, hasKey bool, forma
 	if err := validate.RequiredString("user_name", "formData", raw); err != nil {
 		return err
 	}
-
 	o.UserName = raw
 
 	return nil
@@ -229,7 +232,7 @@ func (o *PostV1ProxyAddParams) bindUserName(rawData []string, hasKey bool, forma
 // bindWhiteListEnable binds and validates parameter WhiteListEnable from formData.
 func (o *PostV1ProxyAddParams) bindWhiteListEnable(rawData []string, hasKey bool, formats strfmt.Registry) error {
 	if !hasKey {
-		return errors.Required("white_list_enable", "formData")
+		return errors.Required("white_list_enable", "formData", rawData)
 	}
 	var raw string
 	if len(rawData) > 0 {
@@ -264,7 +267,6 @@ func (o *PostV1ProxyAddParams) bindWhiteListIps(rawData []string, hasKey bool, f
 		// Default values have been previously initialized by NewPostV1ProxyAddParams()
 		return nil
 	}
-
 	o.WhiteListIps = &raw
 
 	return nil
@@ -273,7 +275,7 @@ func (o *PostV1ProxyAddParams) bindWhiteListIps(rawData []string, hasKey bool, f
 // bindZoneName binds and validates parameter ZoneName from formData.
 func (o *PostV1ProxyAddParams) bindZoneName(rawData []string, hasKey bool, formats strfmt.Registry) error {
 	if !hasKey {
-		return errors.Required("zone_name", "formData")
+		return errors.Required("zone_name", "formData", rawData)
 	}
 	var raw string
 	if len(rawData) > 0 {
@@ -285,7 +287,6 @@ func (o *PostV1ProxyAddParams) bindZoneName(rawData []string, hasKey bool, forma
 	if err := validate.RequiredString("zone_name", "formData", raw); err != nil {
 		return err
 	}
-
 	o.ZoneName = raw
 
 	return nil
