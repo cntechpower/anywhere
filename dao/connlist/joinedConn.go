@@ -3,24 +3,30 @@ package connlist
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
-
-	"github.com/cntechpower/utils/tracing"
+	"sync/atomic"
+	"time"
 
 	"github.com/cntechpower/anywhere/conn"
-
-	"github.com/cntechpower/anywhere/dao"
-
-	"github.com/cntechpower/utils/log"
-
+	"github.com/cntechpower/anywhere/internal/trace"
 	"github.com/cntechpower/anywhere/model"
 )
 
+// connID is process wide so an ID returned by one zone never collides with an
+// ID of another zone. The server uses that to kill a connection by ID without
+// knowing its zone.
+var connID atomic.Uint64
+
 type joinedConn struct {
-	src *conn.WrappedConn
-	dst *conn.WrappedConn
+	item *model.JoinedConnListItem
+	src  *conn.WrappedConn
+	dst  *conn.WrappedConn
 }
 
+// JoinedConnList tracks the proxied connections of one (user, zone) pair.
+// It is intentionally in-memory only: these records are ephemeral and writing
+// two rows to SQLite per connection was a significant bottleneck at scale.
 type JoinedConnList struct {
 	userName string
 	zoneName string
@@ -37,102 +43,94 @@ func NewJoinedConnList(userName, zoneName string) *JoinedConnList {
 }
 
 func (l *JoinedConnList) Add(ctx context.Context, src, dst *conn.WrappedConn) uint {
+	if src == nil || dst == nil {
+		return 0
+	}
 	if ctx != nil {
-		span, _ := tracing.New(ctx, "JoinedConnList.Add")
+		span, _ := trace.New(ctx, "JoinedConnList.Add")
 		defer span.Finish()
 	}
-	l.listMu.Lock()
-	defer l.listMu.Unlock()
-	if l.list == nil {
-		l.list = make(map[uint]*joinedConn)
-	}
+
 	item := &model.JoinedConnListItem{
+		ID:            uint(connID.Add(1)),
+		CreatedAt:     time.Now(),
 		UserName:      l.userName,
 		ZoneName:      l.zoneName,
 		SrcName:       src.RemoteName,
 		DstName:       dst.RemoteName,
-		SrcRemoteAddr: src.Conn.RemoteAddr().String(),
-		SrcLocalAddr:  src.Conn.LocalAddr().String(),
-		DstRemoteAddr: dst.Conn.RemoteAddr().String(),
-		DstLocalAddr:  dst.Conn.LocalAddr().String(),
-	}
-	err := dao.MemDB().Create(&item).Error
-
-	if err != nil {
-		log.NewHeader("JoinedConnList").Errorf("add error: %+v", err)
+		SrcRemoteAddr: src.GetRemoteAddr(),
+		SrcLocalAddr:  src.GetLocalAddr(),
+		DstRemoteAddr: dst.GetRemoteAddr(),
+		DstLocalAddr:  dst.GetLocalAddr(),
 	}
 
-	l.list[item.ID] = &joinedConn{
-		src: src,
-		dst: dst,
-	}
-	return item.ID // return index
-
-}
-
-func (l *JoinedConnList) KillById(id uint) (err error) {
 	l.listMu.Lock()
-	defer l.listMu.Unlock()
-	if c, exist := l.list[id]; !exist {
-		return fmt.Errorf("no such id %+v", id)
-	} else {
-		_ = c.src.Close()
-		_ = c.dst.Close()
-	}
-	err = dao.MemDB().Delete(&model.JoinedConnListItem{}, "id = ?", id).Error
-	return err
+	l.list[item.ID] = &joinedConn{item: item, src: src, dst: dst}
+	l.listMu.Unlock()
+	return item.ID
 }
 
-func (l *JoinedConnList) Remove(id uint) (err error) {
+// KillById closes the connections and removes the entry.
+func (l *JoinedConnList) KillById(id uint) error {
+	l.listMu.Lock()
+	c, exist := l.list[id]
+	if !exist {
+		l.listMu.Unlock()
+		return fmt.Errorf("no such id %d", id)
+	}
+	delete(l.list, id)
+	l.listMu.Unlock()
+
+	_ = c.src.Close()
+	_ = c.dst.Close()
+	return nil
+}
+
+// Remove forgets an entry without closing its connections (the caller owns
+// the connection lifecycle, e.g. after JoinConn already closed them).
+func (l *JoinedConnList) Remove(id uint) error {
 	l.listMu.Lock()
 	defer l.listMu.Unlock()
 	if _, exist := l.list[id]; !exist {
-		return fmt.Errorf("no such id %+v", id)
-	} else {
-		delete(l.list, id)
+		return fmt.Errorf("no such id %d", id)
 	}
-	err = dao.MemDB().Delete(&model.JoinedConnListItem{}, "id = ?", id).Error
-	return err
+	delete(l.list, id)
+	return nil
 }
 
+// Flush closes and forgets every connection of this list.
 func (l *JoinedConnList) Flush() {
 	l.listMu.Lock()
-	defer l.listMu.Unlock()
-	dao.MemDB().Delete(&model.JoinedConnListItem{}, "user_name = ?", l.userName).Where("zone_name = ?", l.zoneName)
-	for _, joinedConn := range l.list {
-		_ = joinedConn.src.Close()
-		_ = joinedConn.dst.Close()
+	conns := make([]*joinedConn, 0, len(l.list))
+	for id, c := range l.list {
+		conns = append(conns, c)
+		delete(l.list, id)
+	}
+	l.listMu.Unlock()
+
+	for _, c := range conns {
+		_ = c.src.Close()
+		_ = c.dst.Close()
 	}
 }
 
-func (l *JoinedConnList) List() (res []*model.JoinedConnListItem, err error) {
-	l.listMu.Lock()
-	defer l.listMu.Unlock()
-	res = make([]*model.JoinedConnListItem, 0)
-	err = dao.MemDB().Find(&res, "user_name = ?", l.userName).Where("zone_name = ?", l.zoneName).Error
-	return
-}
-
-func (l *JoinedConnList) Count() (count int64, err error) {
-	err = dao.MemDB().Model(&model.JoinedConnListItem{}).Count(&count).Error
-	return
-}
-
-func GetJoinedConnList(userName, zoneName string) (res []*model.JoinedConnListItem, err error) {
-	res = make([]*model.JoinedConnListItem, 0)
-	db := dao.MemDB()
-	if userName != "" {
-		db = db.Where("user_name = ?", userName)
+// List returns a snapshot ordered by ID (newest first).
+func (l *JoinedConnList) List() []*model.JoinedConnListItem {
+	l.listMu.RLock()
+	res := make([]*model.JoinedConnListItem, 0, len(l.list))
+	for _, c := range l.list {
+		item := *c.item
+		res = append(res, &item)
 	}
-	if zoneName != "" {
-		db = db.Where("zone_name = ?", zoneName)
-	}
-	err = db.Find(&res).Error
-	return
+	l.listMu.RUnlock()
+
+	sort.Slice(res, func(i, j int) bool { return res[i].ID > res[j].ID })
+	return res
 }
 
-func GetJoinedConnById(id int64) (res *model.JoinedConnListItem, err error) {
-	res = &model.JoinedConnListItem{}
-	err = dao.MemDB().First(res, "id = ?", id).Error
-	return
+// Count returns the number of connections of this list.
+func (l *JoinedConnList) Count() int {
+	l.listMu.RLock()
+	defer l.listMu.RUnlock()
+	return len(l.list)
 }

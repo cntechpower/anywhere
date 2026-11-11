@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
-	xos "os"
+	"errors"
+	"net/http"
+	"os"
+	"time"
 
 	"github.com/cntechpower/utils/log"
-	"github.com/cntechpower/utils/os"
+	xos "github.com/cntechpower/utils/os"
 	"github.com/cntechpower/utils/tracing"
 
 	"github.com/cntechpower/anywhere/dao"
@@ -14,13 +17,15 @@ import (
 	"github.com/cntechpower/anywhere/server/cmd"
 	"github.com/cntechpower/anywhere/server/conf"
 	"github.com/cntechpower/anywhere/server/server"
-	"github.com/cntechpower/anywhere/tls"
+	tlsutil "github.com/cntechpower/anywhere/tls"
 
 	"github.com/spf13/cobra"
 )
 
 const (
 	app = "main.anywhered"
+	// shutdownTimeout bounds the graceful shutdown of listeners and tunnels.
+	shutdownTimeout = 10 * time.Second
 )
 
 // server global config
@@ -28,7 +33,7 @@ var version string
 
 func main() {
 	// init log
-	esAddr := xos.Getenv("ES_ADDR")
+	esAddr := os.Getenv("ES_ADDR")
 	logOptions := make([]log.Option, 0)
 	logOptions = append(logOptions, log.WithStd(log.OutputTypeText))
 	if esAddr != "" {
@@ -37,13 +42,11 @@ func main() {
 	log.Init(logOptions...)
 	defer log.Close()
 
-	// init conf
-	conf.Init()
-	dao.Init(model.GetPersistModels(), model.GetTmpModels())
+	dao.Init(model.GetPersistModels())
 	defer dao.Close()
 
 	// init trace
-	traceAddr := xos.Getenv("TRACE_ADDR")
+	traceAddr := os.Getenv("TRACE_ADDR")
 	if traceAddr != "" {
 		tracing.Init(app, traceAddr)
 		defer tracing.Close()
@@ -60,7 +63,7 @@ func main() {
 		Long:  "anywhere server Version 0.0.1 -" + version,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := run(cmd, args); err != nil {
-				log.Fatalf(log.NewHeader("serverMain"), err.Error())
+				log.Fatalf(log.NewHeader("serverMain"), "%s", err.Error())
 			}
 		},
 	}
@@ -85,36 +88,57 @@ func main() {
 
 func run(_ *cobra.Command, _ []string) error {
 	h := log.NewHeader("serverMain")
-	s := server.InitServerInstance(conf.Conf.ServerId, conf.Conf.MainPort, conf.Conf.User)
+	if err := conf.Init(); err != nil {
+		return err
+	}
+	s, err := server.New(
+		conf.Conf.ServerId,
+		conf.Conf.MainPort,
+		conf.Conf.User,
+		time.Duration(conf.Conf.ProxyConnIdleTimeoutSeconds)*time.Second,
+	)
+	if err != nil {
+		return err
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	tlsConfig, err := tls.ParseTlsConfig(conf.Conf.AgentSsl.CertFile, conf.Conf.AgentSsl.KeyFile, conf.Conf.AgentSsl.CaFile)
+
+	tlsConfig, err := tlsutil.ParseServerTlsConfig(conf.Conf.AgentSsl.CertFile, conf.Conf.AgentSsl.KeyFile, conf.Conf.AgentSsl.CaFile)
 	if err != nil {
 		return err
 	}
 	s.SetCredentials(tlsConfig)
 
-	// start main service
-	s.Start(ctx)
+	if err := s.Start(ctx); err != nil {
+		return err
+	}
 
 	// start api
-	apiExitChan := make(chan error)
-	err = api.Start(s, tlsConfig, apiExitChan)
-	if err != nil {
-		panic(err)
+	apiExitChan := make(chan error, 2)
+	if err := api.Start(ctx, s, tlsConfig, apiExitChan); err != nil {
+		return err
 	}
 
-	// wait for os kill signal. TODO: graceful shutdown
-	go os.ListenTTINSignalLoop()
+	go xos.ListenTTINSignalLoop()
+	serverExitChan := xos.ListenKillSignal()
 
-	serverExitChan := os.ListenKillSignal()
 	select {
 	case <-serverExitChan:
-		log.Infof(h, "Server Existing")
+		h.Infof("shutdown signal received")
 	case err := <-apiExitChan:
-		log.Fatalf(h, "api server exit with error: %+v", err)
-	case err := <-s.ExitChan:
-		log.Fatalf(h, "anywhere server exit with error: %+v", err)
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			h.Errorf("api server exited unexpectedly: %v", err)
+		}
 	}
+
+	cancel()
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer shutdownCancel()
+	if err := s.Shutdown(shutdownCtx); err != nil {
+		h.Errorf("graceful shutdown error: %v", err)
+		return err
+	}
+	h.Infof("server stopped")
 	return nil
 }

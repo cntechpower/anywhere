@@ -29,10 +29,10 @@ func NewPostV1ProxyAdd(ctx *middleware.Context, handler PostV1ProxyAddHandler) *
 	return &PostV1ProxyAdd{Context: ctx, Handler: handler}
 }
 
-/*PostV1ProxyAdd swagger:route POST /v1/proxy/add postV1ProxyAdd
+/*
+	PostV1ProxyAdd swagger:route POST /v1/proxy/add postV1ProxyAdd
 
 PostV1ProxyAdd post v1 proxy add API
-
 */
 type PostV1ProxyAdd struct {
 	Context *middleware.Context
@@ -42,17 +42,15 @@ type PostV1ProxyAdd struct {
 func (o *PostV1ProxyAdd) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	route, rCtx, _ := o.Context.RouteInfo(r)
 	if rCtx != nil {
-		r = rCtx
+		*r = *rCtx
 	}
 	var Params = NewPostV1ProxyAddParams()
-
 	if err := o.Context.BindValidRequest(r, route, &Params); err != nil { // bind params
 		o.Context.Respond(rw, r, route.Produces, route, err)
 		return
 	}
 
 	res := o.Handler.Handle(Params) // actually handle the request
-
 	o.Context.Respond(rw, r, route.Produces, route, res)
 
 }

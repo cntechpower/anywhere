@@ -13,7 +13,8 @@ import (
 )
 
 // NewGetV1ProxyListParams creates a new GetV1ProxyListParams object
-// no default values defined in spec.
+//
+// There are no default values defined in the spec.
 func NewGetV1ProxyListParams() GetV1ProxyListParams {
 
 	return GetV1ProxyListParams{}

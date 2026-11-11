@@ -16,7 +16,8 @@ import (
 // GetV1WhitelistDenysOKCode is the HTTP code returned for type GetV1WhitelistDenysOK
 const GetV1WhitelistDenysOKCode int = 200
 
-/*GetV1WhitelistDenysOK A JSON array of connection
+/*
+GetV1WhitelistDenysOK A JSON array of connection
 
 swagger:response getV1WhitelistDenysOK
 */
@@ -60,7 +61,8 @@ func (o *GetV1WhitelistDenysOK) WriteResponse(rw http.ResponseWriter, producer r
 	}
 }
 
-/*GetV1WhitelistDenysDefault generic errors
+/*
+GetV1WhitelistDenysDefault generic errors
 
 swagger:response getV1WhitelistDenysDefault
 */

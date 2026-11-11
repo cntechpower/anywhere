@@ -13,10 +13,6 @@ import (
 	"github.com/cntechpower/anywhere/util"
 )
 
-var (
-	ErrServerNotInit = fmt.Errorf("anywhere server not init")
-)
-
 type RpcHandlers struct {
 	s         *server.Server
 	logHeader *log.Header
@@ -31,10 +27,7 @@ func GetRpcHandlers(s *server.Server) *RpcHandlers {
 }
 
 func (h *RpcHandlers) ListAgent(_ context.Context, _ *pb.Empty) (*pb.Agents, error) {
-	s := server.GetServerInstance()
-	if s == nil {
-		return &pb.Agents{}, ErrServerNotInit
-	}
+	s := h.s
 	res := &pb.Agents{
 		Agent: make([]*pb.Agent, 0),
 	}
@@ -57,10 +50,7 @@ func (h *RpcHandlers) AddProxyConfig(_ context.Context, input *pb.AddProxyConfig
 	if input.Config == nil {
 		return nil, fmt.Errorf("config not vaild: nil")
 	}
-	s := server.GetServerInstance()
-	if s == nil {
-		return &pb.Empty{}, ErrServerNotInit
-	}
+	s := h.s
 	config := input.Config
 
 	if err := util.CheckPortValid(int(config.RemotePort)); err != nil {
@@ -76,10 +66,7 @@ func (h *RpcHandlers) AddProxyConfig(_ context.Context, input *pb.AddProxyConfig
 }
 
 func (h *RpcHandlers) ListProxyConfigs(_ context.Context, _ *pb.Empty) (*pb.ListProxyConfigsOutput, error) {
-	s := server.GetServerInstance()
-	if s == nil {
-		return nil, ErrServerNotInit
-	}
+	s := h.s
 	res := &pb.ListProxyConfigsOutput{
 		Config: make([]*pb.ProxyConfig, 0),
 	}
@@ -102,27 +89,15 @@ func (h *RpcHandlers) ListProxyConfigs(_ context.Context, _ *pb.Empty) (*pb.List
 }
 
 func (h *RpcHandlers) RemoveProxyConfig(_ context.Context, input *pb.RemoveProxyConfigInput) (*pb.Empty, error) {
-	s := server.GetServerInstance()
-	if s == nil {
-		return &pb.Empty{}, ErrServerNotInit
-	}
+	s := h.s
 	return &pb.Empty{}, s.RemoveProxyConfigById(uint(input.Id))
 }
 
 func (h *RpcHandlers) LoadProxyConfigFile(_ context.Context, _ *pb.Empty) (*pb.Empty, error) {
-
-	s := server.GetServerInstance()
-	if s == nil {
-		return &pb.Empty{}, ErrServerNotInit
-	}
-	return &pb.Empty{}, s.LoadProxyConfigFile()
+	return &pb.Empty{}, h.s.LoadProxyConfigFile()
 }
 
 func (h *RpcHandlers) SaveProxyConfigToFile(_ context.Context, _ *pb.Empty) (*pb.Empty, error) {
-	s := server.GetServerInstance()
-	if s == nil {
-		return &pb.Empty{}, ErrServerNotInit
-	}
 	return &pb.Empty{}, nil
 }
 

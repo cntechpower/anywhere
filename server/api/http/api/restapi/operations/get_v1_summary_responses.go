@@ -16,7 +16,8 @@ import (
 // GetV1SummaryOKCode is the HTTP code returned for type GetV1SummaryOK
 const GetV1SummaryOKCode int = 200
 
-/*GetV1SummaryOK get anywhere statistic summary
+/*
+GetV1SummaryOK get anywhere statistic summary
 
 swagger:response getV1SummaryOK
 */
@@ -57,7 +58,8 @@ func (o *GetV1SummaryOK) WriteResponse(rw http.ResponseWriter, producer runtime.
 	}
 }
 
-/*GetV1SummaryDefault generic errors
+/*
+GetV1SummaryDefault generic errors
 
 swagger:response getV1SummaryDefault
 */

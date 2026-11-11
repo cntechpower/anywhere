@@ -2,7 +2,7 @@ package config
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"fmt"
 	"os"
 
 	"github.com/cntechpower/anywhere/constants"
@@ -10,13 +10,9 @@ import (
 )
 
 func parseProxyConfigFile() (*model.ProxyConfigs, error) {
-	file, err := os.Open(constants.ProxyConfigFileName)
+	content, err := os.ReadFile(constants.ProxyConfigFileName)
 	if err != nil {
-		return nil, err
-	}
-	content, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("read %s: %w", constants.ProxyConfigFileName, err)
 	}
 	config := &model.ProxyConfigs{}
 	if err := json.Unmarshal(content, config); err != nil {

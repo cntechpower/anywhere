@@ -4,11 +4,13 @@ import (
 	"bufio"
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cntechpower/utils/log"
 	"github.com/olekukonko/tablewriter"
@@ -18,16 +20,29 @@ import (
 	pb "github.com/cntechpower/anywhere/server/api/rpc/definitions"
 	"github.com/cntechpower/anywhere/server/conf"
 	"github.com/cntechpower/anywhere/server/server"
+	tlsutil "github.com/cntechpower/anywhere/tls"
 	"github.com/cntechpower/anywhere/util"
 )
 
-var grpcAddress string
-
-func init() {
-	grpcAddress, _ = conf.GetGrpcAddr()
+// ensureConf loads anywhered.json on demand for CLI commands.
+func ensureConf() error {
+	if conf.Conf != nil {
+		return nil
+	}
+	return conf.Init()
 }
 
-func StartRpcServer(s *server.Server, addr string, tlsConfig *tls.Config, errChan chan error) {
+// grpcAddr resolves the management gRPC address lazily. Reading the config in
+// a package init() ran before conf.Init and failed silently.
+func grpcAddr() string {
+	if conf.Conf != nil && conf.Conf.UiConfig != nil {
+		return conf.Conf.UiConfig.GrpcAddr
+	}
+	addr, _ := conf.GetGrpcAddr()
+	return addr
+}
+
+func StartRpcServer(ctx context.Context, s *server.Server, addr string, tlsConfig *tls.Config, errChan chan error) {
 	if err := util.CheckAddrValid(addr); err != nil {
 		errChan <- err
 		return
@@ -39,14 +54,30 @@ func StartRpcServer(s *server.Server, addr string, tlsConfig *tls.Config, errCha
 	}
 	grpcServer := grpc.NewServer(grpc.Creds(credentials.NewTLS(tlsConfig)))
 	pb.RegisterAnywhereServerServer(grpcServer, GetRpcHandlers(s))
-	if err := grpcServer.Serve(l); err != nil {
+	go func() {
+		<-ctx.Done()
+		stopped := make(chan struct{})
+		go func() {
+			grpcServer.GracefulStop()
+			close(stopped)
+		}()
+		select {
+		case <-stopped:
+		case <-time.After(5 * time.Second):
+			grpcServer.Stop()
+		}
+	}()
+	if err := grpcServer.Serve(l); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
 		errChan <- err
 	}
 }
 
 func NewClient(silenceOutput bool) (pb.AnywhereServerClient, error) {
+	if err := ensureConf(); err != nil {
+		return nil, err
+	}
 	h := log.NewHeader("grpc")
-	cc, err := grpc.Dial(grpcAddress, grpc.WithInsecure(),
+	opts := []grpc.DialOption{
 		grpc.WithUnaryInterceptor(func(ctx context.Context, method string, req, reply interface{},
 			cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 			if !silenceOutput {
@@ -58,7 +89,22 @@ func NewClient(silenceOutput bool) (pb.AnywhereServerClient, error) {
 				log.Infof(h, "called %+v, error: %+v", method, err)
 			}
 			return err
-		}))
+		}),
+	}
+
+	if conf.Conf.UiConfig.GrpcInsecure {
+		opts = append(opts, grpc.WithInsecure())
+	} else {
+		clientTLS, err := tlsutil.ParseClientTlsConfig(
+			conf.Conf.AgentSsl.CertFile, conf.Conf.AgentSsl.KeyFile, conf.Conf.AgentSsl.CaFile,
+			"anywhere.local", false)
+		if err != nil {
+			return nil, fmt.Errorf("build grpc client tls config: %w", err)
+		}
+		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(clientTLS)))
+	}
+
+	cc, err := grpc.Dial(grpcAddr(), opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -74,13 +120,12 @@ func ListAgent() error {
 	if err != nil {
 		return err
 	}
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"UserName", "ZoneName", "AgentId", "AgentAddr", "LastAckSend", "LastAckRcv"})
+	table := tablewriter.NewTable(os.Stdout)
+	table.Header("UserName", "ZoneName", "AgentId", "AgentAddr", "LastAckSend", "LastAckRcv")
 	for _, agent := range res.Agent {
-		table.Append([]string{agent.UserName, agent.ZoneName, agent.Id, agent.RemoteAddr, agent.LastAckSend, agent.LastAckRcv})
+		table.Append(agent.UserName, agent.ZoneName, agent.Id, agent.RemoteAddr, agent.LastAckSend, agent.LastAckRcv)
 	}
-	table.Render()
+	_ = table.Render()
 	return nil
 }
 
@@ -115,18 +160,17 @@ func ListProxyConfigs() error {
 	if err != nil {
 		return fmt.Errorf("list proxy config error: %+v", err)
 	}
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"UserName", "ZoneName", "ServerPort", "LocalAddr", "IsWhiteListOn", "IpWhiteList", "ConnectCount", "ConnectRejectCount", "TotalNetFlowsInMB"})
+	table := tablewriter.NewTable(os.Stdout)
+	table.Header("UserName", "ZoneName", "ServerPort", "LocalAddr", "IsWhiteListOn", "IpWhiteList", "ConnectCount", "ConnectRejectCount", "TotalNetFlowsInMB")
 	for _, config := range configs.Config {
-		table.Append([]string{
+		table.Append(
 			config.Username, config.ZoneName, strconv.FormatInt(config.RemotePort, 10),
 			config.LocalAddr, util.BoolToString(config.IsWhiteListOn), config.WhiteCidrList,
 			strconv.FormatInt(config.ProxyConnectCount, 10), strconv.FormatInt(config.ProxyConnectRejectCount, 10),
 			strconv.FormatFloat(float64(config.NetworkFlowRemoteToLocalInBytes+config.NetworkFlowLocalToRemoteInBytes)/1024/1024, 'f', 5, 64),
-		})
+		)
 	}
-	table.Render()
+	_ = table.Render()
 	return nil
 }
 
@@ -189,13 +233,12 @@ func ListConns(zoneName string) error {
 		fmt.Println("no conn exist")
 		return nil
 	}
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetAutoFormatHeaders(false)
-	table.SetHeader([]string{"UserName", "ZoneName", "AgentId", "ConnId", "SrcRemoteAddr", "SrcLocalAddr", "DstRemoteAddr", "DstLocalAddr"})
+	table := tablewriter.NewTable(os.Stdout)
+	table.Header("UserName", "ZoneName", "AgentId", "ConnId", "SrcRemoteAddr", "SrcLocalAddr", "DstRemoteAddr", "DstLocalAddr")
 	for _, conn := range res.Conn {
-		table.Append([]string{conn.UserName, conn.ZoneName, conn.AgentId, strconv.Itoa(int(conn.ConnId)), conn.SrcRemoteAddr, conn.SrcLocalAddr, conn.DstRemoteAddr, conn.DstLocalAddr})
+		table.Append(conn.UserName, conn.ZoneName, conn.AgentId, strconv.Itoa(int(conn.ConnId)), conn.SrcRemoteAddr, conn.SrcLocalAddr, conn.DstRemoteAddr, conn.DstLocalAddr)
 	}
-	table.Render()
+	_ = table.Render()
 	return nil
 }
 

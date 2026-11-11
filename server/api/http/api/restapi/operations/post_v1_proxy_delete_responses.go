@@ -16,7 +16,8 @@ import (
 // PostV1ProxyDeleteOKCode is the HTTP code returned for type PostV1ProxyDeleteOK
 const PostV1ProxyDeleteOKCode int = 200
 
-/*PostV1ProxyDeleteOK A JSON array of user names
+/*
+PostV1ProxyDeleteOK A JSON array of user names
 
 swagger:response postV1ProxyDeleteOK
 */
@@ -57,7 +58,8 @@ func (o *PostV1ProxyDeleteOK) WriteResponse(rw http.ResponseWriter, producer run
 	}
 }
 
-/*PostV1ProxyDeleteDefault generic errors
+/*
+PostV1ProxyDeleteDefault generic errors
 
 swagger:response postV1ProxyDeleteDefault
 */

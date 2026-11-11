@@ -16,7 +16,8 @@ import (
 // GetV1SupportIPOKCode is the HTTP code returned for type GetV1SupportIPOK
 const GetV1SupportIPOKCode int = 200
 
-/*GetV1SupportIPOK A JSON array of user names
+/*
+GetV1SupportIPOK A JSON array of user names
 
 swagger:response getV1SupportIpOK
 */
@@ -55,7 +56,8 @@ func (o *GetV1SupportIPOK) WriteResponse(rw http.ResponseWriter, producer runtim
 	}
 }
 
-/*GetV1SupportIPDefault generic errors
+/*
+GetV1SupportIPDefault generic errors
 
 swagger:response getV1SupportIpDefault
 */

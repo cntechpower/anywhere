@@ -1,14 +1,39 @@
-pkg/*
-/bin/gocode.exe
+# build artifacts
 /bin/*
-/.idea/*
-.idea/*
-bin/*
 bin
-credential
-static/*
-*.tar.gz
-.scannerwork/
-front-end/node_modules/
+bin/*
 _build/*
 _build
+static
+static/*
+*.tar.gz
+pkg/*
+/bin/gocode.exe
+
+# local credentials and runtime data
+credential
+proxy.db
+*.db
+*.db-shm
+*.db-wal
+anywhered.local.json
+
+# editor / os
+.DS_Store
+/.idea/*
+.idea/*
+
+# coverage / analysis
+.scannerwork/
+coverage.out
+coverage.html
+
+# frontend
+front-end/node_modules/
+front-end/build/
+front-end/.env.local
+front-end/.env.*.local
+front-end/coverage/
+
+# generated at runtime by `anywhered config reset`
+anywhered.json

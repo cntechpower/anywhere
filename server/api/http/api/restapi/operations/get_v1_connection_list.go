@@ -29,10 +29,10 @@ func NewGetV1ConnectionList(ctx *middleware.Context, handler GetV1ConnectionList
 	return &GetV1ConnectionList{Context: ctx, Handler: handler}
 }
 
-/*GetV1ConnectionList swagger:route GET /v1/connection/list getV1ConnectionList
+/*
+	GetV1ConnectionList swagger:route GET /v1/connection/list getV1ConnectionList
 
 Returns a list of all conection.
-
 */
 type GetV1ConnectionList struct {
 	Context *middleware.Context
@@ -42,17 +42,15 @@ type GetV1ConnectionList struct {
 func (o *GetV1ConnectionList) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	route, rCtx, _ := o.Context.RouteInfo(r)
 	if rCtx != nil {
-		r = rCtx
+		*r = *rCtx
 	}
 	var Params = NewGetV1ConnectionListParams()
-
 	if err := o.Context.BindValidRequest(r, route, &Params); err != nil { // bind params
 		o.Context.Respond(rw, r, route.Produces, route, err)
 		return
 	}
 
 	res := o.Handler.Handle(Params) // actually handle the request
-
 	o.Context.Respond(rw, r, route.Produces, route, res)
 
 }

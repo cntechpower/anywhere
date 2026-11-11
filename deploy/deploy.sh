@@ -1,35 +1,52 @@
 #!/bin/bash
-set -e
+# Deploy a built artifact to a remote host and roll the Kubernetes agent image.
+#
+# Required environment:
+#   DEPLOY_HOST    ssh target, e.g. root@server.example.com
+#   ARTIFACT       local path to anywhere-latest.tar.gz
+#   AGENT_IMAGE    full image reference, e.g. registry.example.com/anywhere-agent:abc123
+# Optional:
+#   REMOTE_DIR     install directory on the host (default /usr/local/anywhere)
+#   K8S_NAMESPACE  namespace of the agent deployment (default private)
+set -euo pipefail
 
+: "${DEPLOY_HOST:?set DEPLOY_HOST}"
+: "${ARTIFACT:?set ARTIFACT}"
+: "${AGENT_IMAGE:?set AGENT_IMAGE}"
+
+REMOTE_DIR=${REMOTE_DIR:-/usr/local/anywhere}
+K8S_NAMESPACE=${K8S_NAMESPACE:-private}
 timestamp=$(date +%Y%m%d%H%M%S)
-curr_version=$(git rev-parse --short HEAD)
 
-## Stopping Services
-ssh aliyun "kill \$(pgrep anywhere)||true"
+echo "Rolling agent image to ${AGENT_IMAGE}"
+kubectl -n "${K8S_NAMESPACE}" set image deployment/anywhere-agent anywhere-agent="${AGENT_IMAGE}"
 
-## Upgrading Services
-# Aliyun Agent
-kubectl -n private set image deployment/anywhere-agent anywhere-agent=10.0.0.4:5000/cntechpower/anywhere-agent:$curr_version
+echo "Uploading ${ARTIFACT} to ${DEPLOY_HOST}"
+scp "${ARTIFACT}" "${DEPLOY_HOST}:/tmp/anywhere-latest.tar.gz"
 
-echo "K8s Agent Upgrade Success"
+echo "Installing on ${DEPLOY_HOST}:${REMOTE_DIR}"
+ssh "${DEPLOY_HOST}" REMOTE_DIR="${REMOTE_DIR}" TIMESTAMP="${timestamp}" 'bash -s' <<'EOF'
+set -euo pipefail
+if [ -d "${REMOTE_DIR}" ]; then
+  mv "${REMOTE_DIR}" "${REMOTE_DIR}_${TIMESTAMP}"
+  mkdir -p "${REMOTE_DIR}"
+  # Keep runtime state across upgrades.
+  cp "${REMOTE_DIR}_${TIMESTAMP}/anywhered.json" "${REMOTE_DIR}/anywhered.json" 2>/dev/null || true
+  cp "${REMOTE_DIR}_${TIMESTAMP}/proxy.db" "${REMOTE_DIR}/proxy.db" 2>/dev/null || true
+fi
+mkdir -p "${REMOTE_DIR}"
+tar -xf /tmp/anywhere-latest.tar.gz -C "${REMOTE_DIR}"
+rm -f /tmp/anywhere-latest.tar.gz
+EOF
 
+echo "Restarting the server"
+ssh "${DEPLOY_HOST}" REMOTE_DIR="${REMOTE_DIR}" 'bash -s' <<'EOF'
+set -euo pipefail
+cd "${REMOTE_DIR}"
+pkill -f "bin/anywhered start" || true
+nohup ./bin/anywhered start > anywhered.log 2>&1 &
+EOF
 
-# Aliyun
-# shellcheck disable=SC2029
-ssh aliyun "mv /usr/local/anywhere  /usr/local/anywhere_$timestamp"
-ssh aliyun "mkdir -p /usr/local/anywhere"
-wget -q ftp://ftp:ftp@10.0.0.4/ci/anywhere/anywhere-latest.tar.gz
-scp anywhere-latest.tar.gz aliyun:/usr/local/anywhere
-ssh aliyun "cd /usr/local/anywhere && tar -xf anywhere-latest.tar.gz && rm -rf anywhere-latest.tar.gz"
-ssh aliyun "cd /usr/local/anywhere && rm -rf bin/anywhere && rm -rf bin/test"
-# shellcheck disable=SC2029
-ssh aliyun "cp /usr/local/anywhere_$timestamp/proxy.db /usr/local/anywhere/proxy.db"
-# shellcheck disable=SC2029
-ssh aliyun "cp /usr/local/anywhere_$timestamp/anywhered.json /usr/local/anywhere/anywhered.json"
-ssh aliyun 'cd /usr/local/anywhere; ES_ADDR=http://127.0.0.1:9200 TRACE_ADDR=127.0.0.1:6831 nohup ./bin/anywhered start > anywhered.log 2>&1 &'
-echo "Aliyun Upgrade Success"
-
-echo "QingCloud Upgrade Success"
-# sleep 5 to wait agent
+echo "Waiting for the agent to reconnect"
 sleep 5
-ssh aliyun "cd /usr/local/anywhere; ./bin/anywhered agent list"
+ssh "${DEPLOY_HOST}" "cd '${REMOTE_DIR}' && ./bin/anywhered agent list"

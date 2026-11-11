@@ -1,36 +1,46 @@
 {
-  "name": "anywhere",
-  "version": "0.1.0",
+  "name": "anywhere-console",
+  "version": "0.2.0",
   "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts,.tsx",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\""
+  },
   "dependencies": {
-    "@ant-design/icons": "^4.6.2",
-    "@testing-library/jest-dom": "^5.11.4",
-    "@testing-library/react": "^11.1.0",
-    "@testing-library/user-event": "^12.1.10",
-    "antd": "^4.16.2",
+    "@ant-design/icons": "^4.8.3",
+    "antd": "^4.24.16",
     "axios": "^1.12.1",
-    "husky": "^6.0.0",
-    "lint-staged": "^11.0.0",
-    "prettier": "^2.3.1",
-    "qs": "^6.10.1",
+    "qs": "^6.13.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-draggable": "^4.4.3",
-    "react-router-dom": "^5.2.0",
-    "react-scripts": "^5.0.1",
-    "web-vitals": "^1.0.1"
+    "react-router-dom": "^5.3.4"
   },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "node --openssl-legacy-provider node_modules/.bin/react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^12.1.5",
+    "@types/node": "^22.10.1",
+    "@types/qs": "^6.9.16",
+    "@types/react": "^17.0.83",
+    "@types/react-dom": "^17.0.25",
+    "@types/react-router-dom": "^5.3.3",
+    "@typescript-eslint/eslint-plugin": "^8.15.0",
+    "@typescript-eslint/parser": "^8.15.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "jsdom": "^31.0.0",
+    "prettier": "^2.8.8",
+    "typescript": "^5.6.3",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
   },
   "browserslist": {
     "production": [
@@ -44,11 +54,7 @@
       "last 1 safari version"
     ]
   },
-  "devDependencies": {
-    "@svgr/plugin-svgo": "^8.1.0",
-    "@svgr/webpack": "^8.1.0",
-    "postcss": "^8.5.6",
-    "resolve-url-loader": "^5.0.0",
-    "svgo": "^4.0.0"
+  "engines": {
+    "node": ">=20"
   }
 }

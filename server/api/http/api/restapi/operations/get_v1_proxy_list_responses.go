@@ -16,7 +16,8 @@ import (
 // GetV1ProxyListOKCode is the HTTP code returned for type GetV1ProxyListOK
 const GetV1ProxyListOKCode int = 200
 
-/*GetV1ProxyListOK A JSON array of user names
+/*
+GetV1ProxyListOK A JSON array of user names
 
 swagger:response getV1ProxyListOK
 */
@@ -60,7 +61,8 @@ func (o *GetV1ProxyListOK) WriteResponse(rw http.ResponseWriter, producer runtim
 	}
 }
 
-/*GetV1ProxyListDefault generic errors
+/*
+GetV1ProxyListDefault generic errors
 
 swagger:response getV1ProxyListDefault
 */

@@ -2,11 +2,9 @@ package util
 
 import (
 	"fmt"
-	"math/rand"
 	"net"
 	"os"
 	"strconv"
-	"time"
 )
 
 func genErrInvalidIp(ip string) error {
@@ -43,12 +41,14 @@ func GetAddrByIpPort(ip string, port int) (*net.TCPAddr, error) {
 	return net.ResolveTCPAddr("tcp", addrString)
 }
 
-func GetIpPortByAddr(addr string) (string, int, error) {
-	rAddr, err := net.ResolveTCPAddr("tcp", addr)
+// IsLoopbackAddr reports whether addr is bound to a loopback IP.
+func IsLoopbackAddr(addr string) bool {
+	host, _, err := net.SplitHostPort(addr)
 	if err != nil {
-		return "", 0, err
+		return false
 	}
-	return rAddr.IP.String(), rAddr.Port, nil
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 func ListenTcp(addr string) (*net.TCPListener, error) {
@@ -75,26 +75,6 @@ func ListenUdp(addr string) (*net.UDPConn, error) {
 	return ln, err
 }
 
-func SendUDP(addr string, data []byte) error {
-	rAddr, err := net.ResolveUDPAddr("udp", addr)
-	if err != nil {
-		return err
-	}
-	c, err := net.DialUDP("udp", nil, rAddr)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = c.Close()
-	}()
-	_, err = c.Write(data)
-	return err
-}
-
-func FormatTimestampForFileName() string {
-	return time.Now().Format("2006_01_02_15_04")
-}
-
 func CheckPathExist(path string) bool {
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
@@ -102,34 +82,6 @@ func CheckPathExist(path string) bool {
 		}
 	}
 	return true
-}
-
-func MkdirIfNotExist(path string) error {
-	if s, err := os.Stat(path); err != nil {
-		if os.IsNotExist(err) {
-			return os.Mkdir(path, 0755)
-		}
-		return err
-	} else if s.IsDir() {
-		return nil
-	} else {
-		return fmt.Errorf("%s exists, but is not a directory", path)
-	}
-}
-
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-func RandString(n int) string {
-	rand.Seed(time.Now().UnixNano())
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-	return string(b)
-}
-
-func RandInt(n int) int {
-	return rand.Intn(n)
 }
 
 func StringNvl(s *string) string {

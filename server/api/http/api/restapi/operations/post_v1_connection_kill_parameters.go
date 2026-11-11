@@ -16,8 +16,16 @@ import (
 	"github.com/go-openapi/validate"
 )
 
+// PostV1ConnectionKillMaxParseMemory sets the maximum size in bytes for
+// the multipart form parser for this operation.
+//
+// The default value is 32 MB.
+// The multipart parser stores up to this + 10MB.
+var PostV1ConnectionKillMaxParseMemory int64 = 32 << 20
+
 // NewPostV1ConnectionKillParams creates a new PostV1ConnectionKillParams object
-// no default values defined in spec.
+//
+// There are no default values defined in the spec.
 func NewPostV1ConnectionKillParams() PostV1ConnectionKillParams {
 
 	return PostV1ConnectionKillParams{}
@@ -48,7 +56,7 @@ func (o *PostV1ConnectionKillParams) BindRequest(r *http.Request, route *middlew
 
 	o.HTTPRequest = r
 
-	if err := r.ParseMultipartForm(32 << 20); err != nil {
+	if err := r.ParseMultipartForm(PostV1ConnectionKillMaxParseMemory); err != nil {
 		if err != http.ErrNotMultipart {
 			return errors.New(400, "%v", err)
 		} else if err := r.ParseForm(); err != nil {
@@ -61,7 +69,6 @@ func (o *PostV1ConnectionKillParams) BindRequest(r *http.Request, route *middlew
 	if err := o.bindID(fdID, fdhkID, route.Formats); err != nil {
 		res = append(res, err)
 	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -71,7 +78,7 @@ func (o *PostV1ConnectionKillParams) BindRequest(r *http.Request, route *middlew
 // bindID binds and validates parameter ID from formData.
 func (o *PostV1ConnectionKillParams) bindID(rawData []string, hasKey bool, formats strfmt.Registry) error {
 	if !hasKey {
-		return errors.Required("id", "formData")
+		return errors.Required("id", "formData", rawData)
 	}
 	var raw string
 	if len(rawData) > 0 {

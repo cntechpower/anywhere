@@ -15,7 +15,8 @@ import (
 )
 
 // NewGetV1ConnectionListParams creates a new GetV1ConnectionListParams object
-// no default values defined in spec.
+//
+// There are no default values defined in the spec.
 func NewGetV1ConnectionListParams() GetV1ConnectionListParams {
 
 	return GetV1ConnectionListParams{}
@@ -60,7 +61,6 @@ func (o *GetV1ConnectionListParams) BindRequest(r *http.Request, route *middlewa
 	if err := o.bindZoneName(qZoneName, qhkZoneName, route.Formats); err != nil {
 		res = append(res, err)
 	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -76,10 +76,10 @@ func (o *GetV1ConnectionListParams) bindUserName(rawData []string, hasKey bool, 
 
 	// Required: false
 	// AllowEmptyValue: false
+
 	if raw == "" { // empty values pass all other validations
 		return nil
 	}
-
 	o.UserName = &raw
 
 	return nil
@@ -94,10 +94,10 @@ func (o *GetV1ConnectionListParams) bindZoneName(rawData []string, hasKey bool, 
 
 	// Required: false
 	// AllowEmptyValue: false
+
 	if raw == "" { // empty values pass all other validations
 		return nil
 	}
-
 	o.ZoneName = &raw
 
 	return nil

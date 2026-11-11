@@ -29,10 +29,10 @@ func NewGetV1WhitelistDenys(ctx *middleware.Context, handler GetV1WhitelistDenys
 	return &GetV1WhitelistDenys{Context: ctx, Handler: handler}
 }
 
-/*GetV1WhitelistDenys swagger:route GET /v1/whitelist/denys getV1WhitelistDenys
+/*
+	GetV1WhitelistDenys swagger:route GET /v1/whitelist/denys getV1WhitelistDenys
 
 Returns a list of white list deny record.
-
 */
 type GetV1WhitelistDenys struct {
 	Context *middleware.Context
@@ -42,17 +42,15 @@ type GetV1WhitelistDenys struct {
 func (o *GetV1WhitelistDenys) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	route, rCtx, _ := o.Context.RouteInfo(r)
 	if rCtx != nil {
-		r = rCtx
+		*r = *rCtx
 	}
 	var Params = NewGetV1WhitelistDenysParams()
-
 	if err := o.Context.BindValidRequest(r, route, &Params); err != nil { // bind params
 		o.Context.Respond(rw, r, route.Produces, route, err)
 		return
 	}
 
 	res := o.Handler.Handle(Params) // actually handle the request
-
 	o.Context.Respond(rw, r, route.Produces, route, res)
 
 }

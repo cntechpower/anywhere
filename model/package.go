@@ -16,6 +16,7 @@ const (
 	PkgReqHeartBeatPong    ReqType = "4"
 	PkgAuthenticationFail  ReqType = "5"
 	PkgUDPData             ReqType = "6"
+	PkgUDPDataResp         ReqType = "7"
 )
 
 type AgentRegisterMsg struct {
@@ -23,6 +24,7 @@ type AgentRegisterMsg struct {
 	AgentId    string
 	UserName   string
 	PassWord   string
+	Version    string
 }
 
 func NewAgentRegisterMsg(group, id, userName, password string) *RequestMsg {
@@ -31,6 +33,7 @@ func NewAgentRegisterMsg(group, id, userName, password string) *RequestMsg {
 		AgentId:    id,
 		UserName:   userName,
 		PassWord:   password,
+		Version:    constants.AnywhereVersion,
 	})
 }
 
@@ -57,17 +60,6 @@ func newRequestMsg(t ReqType, fromGroup, from, to string, msg interface{}) *Requ
 		FromId:    from,
 		To:        to,
 		Message:   j,
-	}
-}
-
-func newUdpDataMsg(t ReqType, fromGroup, from, to string, data []byte) *RequestMsg {
-	return &RequestMsg{
-		Version:   constants.AnywhereVersion,
-		ReqType:   t,
-		FromGroup: fromGroup,
-		FromId:    from,
-		To:        to,
-		Message:   data,
 	}
 }
 
@@ -110,36 +102,43 @@ type TunnelBeginMsg struct {
 	AgentGroup string
 	AgentId    string
 	LocalAddr  string
+	// Token is a short lived, single use token issued by the server when it
+	// asks the agent for a tunnel. It binds a data connection to an
+	// authenticated control connection and prevents arbitrary clients from
+	// injecting themselves into the proxy connection pool.
+	Token string
 }
 
-func NewTunnelBeginMsg(userName, group, id, addr string) *RequestMsg {
-	return newRequestMsg(PkgTunnelBegin, group, id, "", &TunnelBeginMsg{UserName: userName, AgentGroup: group, AgentId: id, LocalAddr: addr})
+func NewTunnelBeginMsg(userName, group, id, addr, token string) *RequestMsg {
+	return newRequestMsg(PkgTunnelBegin, group, id, "", &TunnelBeginMsg{
+		UserName:   userName,
+		AgentGroup: group,
+		AgentId:    id,
+		LocalAddr:  addr,
+		Token:      token,
+	})
 }
 
 func ParseHeartBeatPkg(data []byte) (*HeartBeatMsg, error) {
 	msg := &HeartBeatMsg{}
-	err := json.Unmarshal(data, msg)
-	if err != nil {
-		return &HeartBeatMsg{}, err
+	if err := json.Unmarshal(data, msg); err != nil {
+		return nil, err
 	}
 	return msg, nil
-
 }
 
 func ParseControlRegisterPkg(data []byte) (*AgentRegisterMsg, error) {
 	msg := &AgentRegisterMsg{}
-	err := json.Unmarshal(data, msg)
-	if err != nil {
-		return &AgentRegisterMsg{}, err
+	if err := json.Unmarshal(data, msg); err != nil {
+		return nil, err
 	}
 	return msg, nil
 }
 
 func ParseTunnelBeginPkg(data []byte) (*TunnelBeginMsg, error) {
 	msg := &TunnelBeginMsg{}
-	err := json.Unmarshal(data, msg)
-	if err != nil {
-		return &TunnelBeginMsg{}, err
+	if err := json.Unmarshal(data, msg); err != nil {
+		return nil, err
 	}
 	return msg, nil
 }
@@ -149,21 +148,50 @@ type AuthenticationFailMsg struct {
 }
 
 func NewAuthenticationFailMsg(errMsg string) *RequestMsg {
-	return newRequestMsg(PkgAuthenticationFail, "", "", "", &AuthenticationFailMsg{
-		ErrorMsg: errMsg,
-	})
-
+	return newRequestMsg(PkgAuthenticationFail, "", "", "", &AuthenticationFailMsg{ErrorMsg: errMsg})
 }
 
 func ParseAuthenticationFailMsg(data []byte) (*AuthenticationFailMsg, error) {
 	msg := &AuthenticationFailMsg{}
-	err := json.Unmarshal(data, msg)
-	if err != nil {
-		return &AuthenticationFailMsg{}, err
+	if err := json.Unmarshal(data, msg); err != nil {
+		return nil, err
 	}
 	return msg, nil
 }
 
-func NewUDPDataMsg(localAddr, group, id string, data []byte) *RequestMsg {
-	return newUdpDataMsg(PkgUDPData, group, id, localAddr, data)
+// UDPDataMsg carries one UDP datagram in either direction.
+type UDPDataMsg struct {
+	// SessionID identifies a client endpoint on the server side so replies can
+	// be routed back to the right client socket.
+	SessionID uint32 `json:"session_id"`
+	LocalAddr string `json:"local_addr"`
+	Data      []byte `json:"data"`
+}
+
+func NewUDPDataMsg(sessionID uint32, localAddr string, data []byte) *RequestMsg {
+	body, _ := json.Marshal(&UDPDataMsg{SessionID: sessionID, LocalAddr: localAddr, Data: data})
+	return &RequestMsg{
+		Version: constants.AnywhereVersion,
+		ReqType: PkgUDPData,
+		To:      localAddr,
+		Message: body,
+	}
+}
+
+func NewUDPDataRespMsg(sessionID uint32, localAddr string, data []byte) *RequestMsg {
+	body, _ := json.Marshal(&UDPDataMsg{SessionID: sessionID, LocalAddr: localAddr, Data: data})
+	return &RequestMsg{
+		Version: constants.AnywhereVersion,
+		ReqType: PkgUDPDataResp,
+		To:      localAddr,
+		Message: body,
+	}
+}
+
+func ParseUDPDataMsg(data []byte) (*UDPDataMsg, error) {
+	msg := &UDPDataMsg{}
+	if err := json.Unmarshal(data, msg); err != nil {
+		return nil, err
+	}
+	return msg, nil
 }

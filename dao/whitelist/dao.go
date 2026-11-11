@@ -4,8 +4,6 @@ import (
 	"github.com/cntechpower/anywhere/model"
 
 	"github.com/cntechpower/anywhere/dao"
-
-	_ "github.com/go-sql-driver/mysql"
 )
 
 func AddWhiteListDenyIp(remotePort int, userName, zoneName, localAddr, ip string) (err error) {

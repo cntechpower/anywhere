@@ -1,72 +1,94 @@
-version: '3'
 services:
-# Anywhere Proxy
   anywhered:
-    image: "anywhered-test-image:latest"
+    image: anywhered-test-image:latest
+    hostname: anywhered
     networks:
       anywhere_test_net:
         ipv4_address: 172.90.101.11
     ports:
       - "1114:1114"
+      - "18080:18080"
+      - "18090:18090/udp"
+      - "13306:13306"
   anywhere-1:
-    image: "anywhere-test-image:latest"
+    image: anywhere-test-image:latest
+    hostname: anywhere-1
+    environment:
+      - SERVER_ADDR=172.90.101.11
+      - ZONE_NAME=asia-shanghai
+      - USER_NAME=admin
+      - PASSWORD=${AGENT_PASSWORD:-admin}
+      - TLS_SERVER_NAME=anywhere.local
+      - AGENT_ID=anywhere-1
+    depends_on:
+      - anywhered
     networks:
       anywhere_test_net:
         ipv4_address: 172.90.101.12
+
+  anywhere-2:
+    image: anywhere-test-image:latest
+    hostname: anywhere-2
     environment:
       - SERVER_ADDR=172.90.101.11
-      - AGENT_ID=anywhere-agent-1
+      - ZONE_NAME=asia-shanghai
+      - USER_NAME=admin
+      - PASSWORD=${AGENT_PASSWORD:-admin}
+      - TLS_SERVER_NAME=anywhere.local
+      - AGENT_ID=anywhere-2
     depends_on:
       - anywhered
-  anywhere-2:
-    image: "anywhere-test-image:latest"
     networks:
       anywhere_test_net:
         ipv4_address: 172.90.101.13
+
+  anywhere-3:
+    image: anywhere-test-image:latest
+    hostname: anywhere-3
     environment:
       - SERVER_ADDR=172.90.101.11
-      - AGENT_ID=anywhere-agent-2
+      - ZONE_NAME=asia-shanghai
+      - USER_NAME=admin
+      - PASSWORD=${AGENT_PASSWORD:-admin}
+      - TLS_SERVER_NAME=anywhere.local
+      - AGENT_ID=anywhere-3
     depends_on:
       - anywhered
-  anywhere-3:
-    image: "anywhere-test-image:latest"
     networks:
       anywhere_test_net:
         ipv4_address: 172.90.101.14
-    environment:
-      - SERVER_ADDR=172.90.101.11
-      - AGENT_ID=anywhere-agent-3
-    depends_on:
-      - anywhered
 
-# Services
-  mysql-8.0:
-    image: "10.0.0.4:5000/mysql/mysql:8.0.19"
-    command: --default-authentication-plugin=mysql_native_password
-    environment:
-      MYSQL_ROOT_PASSWORD: "root"
+  http-target:
+    image: node:22-alpine
+    hostname: http-target
+    command: ["node", "-e", "require('http').createServer((req,res)=>res.end('anywhere-http-ok')).listen(8080,'0.0.0.0')"]
     networks:
       anywhere_test_net:
         ipv4_address: 172.90.101.21
-  mysql-5.7:
-    image: "10.0.0.4:5000/mysql/mysql:5.7.29"
-    command: --default-authentication-plugin=mysql_native_password
-    environment:
-      MYSQL_ROOT_PASSWORD: "root"
+
+  udp-target:
+    image: node:22-alpine
+    hostname: udp-target
+    command: ["node", "-e", "const s=require('dgram').createSocket('udp4');s.bind(9090,()=>{});s.on('message',(m,r)=>s.send(m,r.port,r.address))"]
     networks:
       anywhere_test_net:
         ipv4_address: 172.90.101.22
-  nginx-1.17:
-    image: "10.0.0.4:5000/cntechpower/nginx:1.17.6"
+
+  mysql:
+    image: mysql:8.0
+    hostname: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: e2e
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --silent"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
     networks:
       anywhere_test_net:
         ipv4_address: 172.90.101.23
-  sshd:
-    image: "10.0.0.4:5000/cntechpwer/centos-systemd:7"
-    privileged: true
-    networks:
-      anywhere_test_net:
-        ipv4_address: 172.90.101.24
+
 networks:
   anywhere_test_net:
     driver: bridge

@@ -1,0 +1,12 @@
+.git
+.github
+.idea
+front-end/node_modules
+front-end/build
+front-end/src
+front-end/public
+docs
+design-system
+*.tar.gz
+*.log
+proxy.db
