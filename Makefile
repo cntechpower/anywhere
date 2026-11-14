@@ -3,6 +3,10 @@ DOCKER ?= docker
 GO_PKG := ./...
 GO_BASE ?= golang:1.22
 GO_IMAGE ?= golang:1.22
+# 目标平台。默认 linux/amd64（云服务器基本都是 x86_64）；
+# 在 Apple Silicon 上不加这个会构建出 arm64 二进制，传到 x86 服务器直接
+# `Syntax error: word unexpected`（2026-11-14 踩过）。
+GO_PLATFORM ?= linux/amd64
 GO_MOD_CACHE_VOLUME ?= anywhere-go-mod-cache
 GOPROXY ?= https://goproxy.cn,direct
 E2E_PROJECT ?= anywhere-e2e
@@ -115,7 +119,7 @@ ui:
 # driver, so the build runs inside the official Go Debian image.
 build_linux:
 	@mkdir -p bin/linux
-	$(DOCKER) run --rm -v "$(CURDIR)":/src -w /src \
+	$(DOCKER) run --rm --platform $(GO_PLATFORM) -v "$(CURDIR)":/src -w /src \
 		-e GOPROXY=$(GOPROXY) -e GOSUMDB=off \
 		-v $(GO_MOD_CACHE_VOLUME):/go/pkg/mod \
 		-v anywhere-go-build-cache:/root/.cache/go-build \
