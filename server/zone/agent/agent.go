@@ -156,14 +156,26 @@ func (a *Agent) AskProxyConn(proxyAddr string) error {
 }
 
 func (a *Agent) storeToken(proxyAddr, token string) {
+	now := time.Now()
 	a.tokenMu.Lock()
 	defer a.tokenMu.Unlock()
+	// Prune expired tokens so failed local dials never leak memory.
+	for addr, tokens := range a.tokens {
+		for tok, exp := range tokens {
+			if !exp.After(now) {
+				delete(tokens, tok)
+			}
+		}
+		if len(tokens) == 0 {
+			delete(a.tokens, addr)
+		}
+	}
 	m, ok := a.tokens[proxyAddr]
 	if !ok {
 		m = make(map[string]time.Time)
 		a.tokens[proxyAddr] = m
 	}
-	m[token] = time.Now().Add(constants.ProxyTokenTTLSeconds * time.Second)
+	m[token] = now.Add(constants.ProxyTokenTTLSeconds * time.Second)
 }
 
 func (a *Agent) dropToken(proxyAddr, token string) {

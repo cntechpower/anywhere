@@ -4,28 +4,31 @@ import (
 	"io"
 	"net"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
-// deadlineConn refreshes the per-operation deadline before every read/write,
-// which turns a blocking io.Copy into an idle-timeout aware copy.
-type deadlineConn struct {
+// activityConn updates a shared last-active timestamp on every successful read
+// or write, so unidirectional traffic keeps the tunnel alive.
+type activityConn struct {
 	net.Conn
-	idle time.Duration
+	lastActive *atomic.Int64
 }
 
-func (d *deadlineConn) Read(p []byte) (int, error) {
-	if d.idle > 0 {
-		_ = d.Conn.SetReadDeadline(time.Now().Add(d.idle))
+func (a *activityConn) Read(p []byte) (int, error) {
+	n, err := a.Conn.Read(p)
+	if n > 0 {
+		a.lastActive.Store(time.Now().UnixNano())
 	}
-	return d.Conn.Read(p)
+	return n, err
 }
 
-func (d *deadlineConn) Write(p []byte) (int, error) {
-	if d.idle > 0 {
-		_ = d.Conn.SetWriteDeadline(time.Now().Add(d.idle))
+func (a *activityConn) Write(p []byte) (int, error) {
+	n, err := a.Conn.Write(p)
+	if n > 0 {
+		a.lastActive.Store(time.Now().UnixNano())
 	}
-	return d.Conn.Write(p)
+	return n, err
 }
 
 // JoinConn bridges two connections and returns the number of bytes copied
@@ -36,16 +39,42 @@ func JoinConn(remote, local net.Conn) (localToRemoteBytes, remoteToLocalBytes ui
 }
 
 // JoinConnWithIdleTimeout is JoinConn with an optional idle timeout: if no data
-// flows in a direction for longer than idle, the connection is closed. A zero
-// or negative idle disables the timeout (long lived tunnels such as SSH).
+// flows in either direction for longer than idle, both connections are closed.
+// A zero or negative idle disables the timeout (long lived tunnels such as SSH).
 func JoinConnWithIdleTimeout(remote, local net.Conn, idle time.Duration) (localToRemoteBytes, remoteToLocalBytes uint64) {
 	if remote == nil || local == nil {
 		return 0, 0
 	}
 	remoteC, localC := remote, local
+	var done chan struct{}
 	if idle > 0 {
-		remoteC = &deadlineConn{Conn: remote, idle: idle}
-		localC = &deadlineConn{Conn: local, idle: idle}
+		var lastActive atomic.Int64
+		lastActive.Store(time.Now().UnixNano())
+		remoteC = &activityConn{Conn: remote, lastActive: &lastActive}
+		localC = &activityConn{Conn: local, lastActive: &lastActive}
+		done = make(chan struct{})
+		interval := idle / 4
+		if interval < 5*time.Millisecond {
+			interval = 5 * time.Millisecond
+		} else if interval > time.Second {
+			interval = time.Second
+		}
+		go func() {
+			ticker := time.NewTicker(interval)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-done:
+					return
+				case <-ticker.C:
+					if time.Since(time.Unix(0, lastActive.Load())) >= idle {
+						_ = remote.Close()
+						_ = local.Close()
+						return
+					}
+				}
+			}
+		}()
 	}
 
 	var wg sync.WaitGroup
@@ -67,6 +96,9 @@ func JoinConnWithIdleTimeout(remote, local net.Conn, idle time.Duration) (localT
 	go copyDir(remoteC, localC, &localToRemote)
 	go copyDir(localC, remoteC, &remoteToLocal)
 	wg.Wait()
+	if done != nil {
+		close(done)
+	}
 
 	mu.Lock()
 	defer mu.Unlock()

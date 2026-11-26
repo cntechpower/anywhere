@@ -12,10 +12,17 @@ import (
 )
 
 func SortDescAndLimitUsingHeap(a []*model.ProxyConfig, less func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool, limit int) []*model.ProxyConfig {
+	if limit <= 0 {
+		return nil
+	}
 	res := make([]*model.ProxyConfig, 0, limit)
 	ph := model.InitProxyConfigHeap(a, less, limit)
 	for !ph.IsEmpty() {
 		res = append(res, ph.Pop())
+	}
+	// Min-heap pops smallest first; reverse to return descending order (top-K).
+	for i, j := 0, len(res)-1; i < j; i, j = i+1, j-1 {
+		res[i], res[j] = res[j], res[i]
 	}
 	return res
 }
@@ -122,11 +129,11 @@ func (s *Server) refreshSummary() {
 
 	newCache.ProxyConnectRejectCountTop10 = SortDescAndLimitUsingHeap(allConfigList,
 		func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool {
-			return p1.ProxyConnectRejectCount > p2.ProxyConnectRejectCount
+			return p1.ProxyConnectRejectCount < p2.ProxyConnectRejectCount
 		}, 10)
 	newCache.ProxyNetworkFlowTop10 = SortDescAndLimitUsingHeap(allConfigList,
 		func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool {
-			return (p1.NetworkFlowRemoteToLocalInBytes + p1.NetworkFlowLocalToRemoteInBytes) >
+			return (p1.NetworkFlowRemoteToLocalInBytes + p1.NetworkFlowLocalToRemoteInBytes) <
 				(p2.NetworkFlowRemoteToLocalInBytes + p2.NetworkFlowLocalToRemoteInBytes)
 		}, 10)
 

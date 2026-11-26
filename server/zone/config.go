@@ -43,11 +43,16 @@ type ProxyConfigStats struct {
 }
 
 func newProxyConfigStats(cfg *model.ProxyConfig, acl *auth.WhiteListValidator) *ProxyConfigStats {
-	return &ProxyConfigStats{
+	p := &ProxyConfigStats{
 		ProxyConfig: cfg,
 		acl:         acl,
 		closeChan:   make(chan struct{}),
 	}
+	p.flowLocalToRemote.Store(cfg.NetworkFlowLocalToRemoteInBytes)
+	p.flowRemoteToLocal.Store(cfg.NetworkFlowRemoteToLocalInBytes)
+	p.connectCount.Store(cfg.ProxyConnectCount)
+	p.rejectCount.Store(cfg.ProxyConnectRejectCount)
+	return p
 }
 
 // Close stops the listener and the UDP session manager. Closing the listener

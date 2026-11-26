@@ -49,8 +49,21 @@ func (v *JwtValidator) Generate(userName string) (string, error) {
 }
 
 func (v *JwtValidator) Validate(userName, tokenString string) bool {
-	if tokenString == "" {
+	gotUser, ok := v.ParseUser(tokenString)
+	if !ok {
 		return false
+	}
+	if userName != "" && gotUser != userName {
+		log.Infof(v.logHeader, "expected user %q, got %q", userName, gotUser)
+		return false
+	}
+	return true
+}
+
+// ParseUser validates tokenString and returns the authenticated username.
+func (v *JwtValidator) ParseUser(tokenString string) (string, bool) {
+	if tokenString == "" {
+		return "", false
 	}
 	claims := jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
@@ -61,22 +74,18 @@ func (v *JwtValidator) Validate(userName, tokenString string) bool {
 	})
 	if err != nil {
 		log.Infof(v.logHeader, "parse jwt error: %v", err)
-		return false
+		return "", false
 	}
 	if !token.Valid {
-		return false
+		return "", false
 	}
 	userNameI, ok := claims["user"]
 	if !ok {
-		return false
+		return "", false
 	}
 	userNameStr, ok := userNameI.(string)
 	if !ok || userNameStr == "" {
-		return false
+		return "", false
 	}
-	if userName != "" && userNameStr != userName {
-		log.Infof(v.logHeader, "expected user %q, got %q", userName, userNameStr)
-		return false
-	}
-	return true
+	return userNameStr, true
 }

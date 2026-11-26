@@ -84,6 +84,15 @@ func (v *UserValidator) ValidateOtp(userName, otpCode string) bool {
 	return totp.Validate(otpCode, user.OtpCode)
 }
 
+// IsAdmin reports whether userName is configured as an administrator.
+func (v *UserValidator) IsAdmin(userName string) bool {
+	if v == nil {
+		return false
+	}
+	user, ok := v.userPassMap[userName]
+	return ok && user.IsAdmin
+}
+
 // Authenticate validates both the password and (when enabled) the OTP code.
 // Both factors are required; skipping the password is no longer possible.
 func (v *UserValidator) Authenticate(userName, password, otpCode string) bool {

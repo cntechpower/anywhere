@@ -84,8 +84,9 @@ func (a *API) SessionFilter(c *gin.Context) {
 
 	session := sessions.Default(c)
 	tokenString, _ := session.Get("auth").(string)
-	if tokenString == "" || !a.jwt.Validate("", tokenString) {
-		h.Warnf("unauthorized request to %s from %s", path, c.ClientIP())
+	userName, ok := a.jwt.ParseUser(tokenString)
+	if !ok {
+		h.Warnf("unauthorized request to %s from %s", path, c.RemoteIP())
 		if strings.HasPrefix(path, "/api/") {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"code": apiUnauthorizedCode,
@@ -96,13 +97,14 @@ func (a *API) SessionFilter(c *gin.Context) {
 		redirectToLogin(c)
 		return
 	}
+	c.Request = c.Request.WithContext(withAuthUser(c.Request.Context(), userName))
 	c.Next()
 }
 
 // UserLogin authenticates username + password and, when enabled for the user,
 // a TOTP code. Both factors are mandatory.
 func (a *API) UserLogin(c *gin.Context) {
-	ip := c.ClientIP()
+	ip := c.RemoteIP()
 	if !allowLogin(ip) {
 		c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
 			"code": http.StatusTooManyRequests,

@@ -148,6 +148,7 @@ func (a *API) StartUIAndAPIService(ctx context.Context, restHandler http.Handler
 		gin.SetMode(gin.ReleaseMode)
 	}
 	router := gin.New()
+	_ = router.SetTrustedProxies(nil)
 
 	options := []mhttp.GinMiddlewareOption{
 		mhttp.WithLog(true, true),

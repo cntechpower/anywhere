@@ -137,12 +137,14 @@ func (s *Server) handleNewServerConnection(c net.Conn) {
 	h := log.NewHeader("handleNewServerConnection")
 
 	wc := conn.NewWrappedConn(s.serverId, c)
+	_ = c.SetReadDeadline(time.Now().Add(10 * time.Second))
 	var msg model.RequestMsg
 	if err := wc.Receive(&msg); err != nil {
 		h.Errorf("unmarshal init pkg from %s error: %v", c.RemoteAddr(), err)
 		_ = c.Close()
 		return
 	}
+	_ = c.SetReadDeadline(time.Time{})
 
 	switch msg.ReqType {
 	case model.PkgControlConnRegister:

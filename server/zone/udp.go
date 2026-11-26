@@ -12,15 +12,22 @@ import (
 	"github.com/cntechpower/anywhere/model"
 )
 
+// nextUDPSessionID allocates process-wide unique UDP session IDs so multiple
+// UDP proxy configs in the same zone never collide on the agent side.
+var nextUDPSessionID atomic.Uint32
+
 type udpOutbound struct {
-	sessionID uint32
-	payload   []byte
+	session *udpSession
+	payload []byte
 }
 
 type udpSession struct {
 	id         uint32
 	clientAddr *net.UDPAddr
 	lastActive atomic.Int64 // unix nano
+
+	agentMu sync.Mutex
+	agentID string
 }
 
 func (s *udpSession) touch() { s.lastActive.Store(time.Now().UnixNano()) }
@@ -29,25 +36,36 @@ func (s *udpSession) idleSince() time.Duration {
 	return time.Since(time.Unix(0, s.lastActive.Load()))
 }
 
+func (s *udpSession) getAgentID() string {
+	s.agentMu.Lock()
+	defer s.agentMu.Unlock()
+	return s.agentID
+}
+
+func (s *udpSession) setAgentID(id string) {
+	s.agentMu.Lock()
+	s.agentID = id
+	s.agentMu.Unlock()
+}
+
 // udpProxy keeps the state of one UDP listener: which client endpoint maps to
 // which session ID and how to send datagrams towards the agent.
 type udpProxy struct {
 	cfg      *ProxyConfigStats
 	listener *net.UDPConn
-	sendFn   func(sessionID uint32, data []byte) error
+	sendFn   func(preferredAgentID string, sessionID uint32, data []byte) (string, error)
 	h        *log.Header
 
 	mu     sync.Mutex
 	byID   map[uint32]*udpSession
 	byAddr map[string]*udpSession
-	nextID atomic.Uint32
 
 	queue     chan udpOutbound
 	done      chan struct{}
 	closeOnce sync.Once
 }
 
-func newUDPProxy(cfg *ProxyConfigStats, listener *net.UDPConn, sendFn func(sessionID uint32, data []byte) error) *udpProxy {
+func newUDPProxy(cfg *ProxyConfigStats, listener *net.UDPConn, sendFn func(preferredAgentID string, sessionID uint32, data []byte) (string, error)) *udpProxy {
 	p := &udpProxy{
 		cfg:      cfg,
 		listener: listener,
@@ -71,7 +89,10 @@ func (p *udpProxy) session(client *net.UDPAddr) *udpSession {
 		s.touch()
 		return s
 	}
-	id := p.nextID.Add(1)
+	id := nextUDPSessionID.Add(1)
+	if id == 0 {
+		id = nextUDPSessionID.Add(1)
+	}
 	s := &udpSession{id: id, clientAddr: client}
 	s.touch()
 	p.byID[id] = s
@@ -80,12 +101,20 @@ func (p *udpProxy) session(client *net.UDPAddr) *udpSession {
 	return s
 }
 
+func (p *udpProxy) hasSession(id uint32) bool {
+	p.mu.Lock()
+	_, ok := p.byID[id]
+	p.mu.Unlock()
+	return ok
+}
+
 func (p *udpProxy) handleDatagram(data []byte, client *net.UDPAddr) {
 	s := p.session(client)
 	payload := make([]byte, len(data))
 	copy(payload, data)
 	select {
-	case p.queue <- udpOutbound{sessionID: s.id, payload: payload}:
+	case p.queue <- udpOutbound{session: s, payload: payload}:
+		p.cfg.AddNetworkFlow(0, uint64(len(data)))
 	default:
 		// UDP is lossy by design; never block the reader.
 		p.cfg.AddConnectRejectedCount(1)
@@ -104,7 +133,9 @@ func (p *udpProxy) handleResponse(msg *model.UDPDataMsg) {
 	s.touch()
 	if _, err := p.listener.WriteToUDP(msg.Data, s.clientAddr); err != nil {
 		p.h.Errorf("write udp response to %s error: %v", s.clientAddr, err)
+		return
 	}
+	p.cfg.AddNetworkFlow(uint64(len(msg.Data)), 0)
 }
 
 func (p *udpProxy) writeLoop() {
@@ -113,8 +144,14 @@ func (p *udpProxy) writeLoop() {
 		case <-p.done:
 			return
 		case pkt := <-p.queue:
-			if err := p.sendFn(pkt.sessionID, pkt.payload); err != nil {
+			preferred := pkt.session.getAgentID()
+			usedAgent, err := p.sendFn(preferred, pkt.session.id, pkt.payload)
+			if err != nil {
 				p.h.Errorf("send udp datagram to agent error: %v", err)
+				continue
+			}
+			if usedAgent != "" && usedAgent != preferred {
+				pkt.session.setAgentID(usedAgent)
 			}
 		}
 	}
