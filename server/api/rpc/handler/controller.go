@@ -95,9 +95,13 @@ func NewClient(silenceOutput bool) (pb.AnywhereServerClient, error) {
 	if conf.Conf.UiConfig.GrpcInsecure {
 		opts = append(opts, grpc.WithInsecure())
 	} else {
+		serverName := os.Getenv("ANYWHERE_TLS_SERVER_NAME")
+		if serverName == "" {
+			serverName = "anywhere.local"
+		}
 		clientTLS, err := tlsutil.ParseClientTlsConfig(
 			conf.Conf.AgentSsl.CertFile, conf.Conf.AgentSsl.KeyFile, conf.Conf.AgentSsl.CaFile,
-			"anywhere.local", false)
+			serverName, false)
 		if err != nil {
 			return nil, fmt.Errorf("build grpc client tls config: %w", err)
 		}
@@ -203,7 +207,7 @@ func SaveProxyConfigToFile() error {
 	return err
 }
 
-func UpdateProxyConfigWhiteList(userName, zoneName, localAddr, whiteCidrs string, whiteListEnable bool) error {
+func UpdateProxyConfigWhiteList(userName, zoneName string, remotePort int, localAddr, whiteCidrs string, whiteListEnable bool) error {
 	client, err := NewClient(true)
 	if err != nil {
 		return err
@@ -211,6 +215,7 @@ func UpdateProxyConfigWhiteList(userName, zoneName, localAddr, whiteCidrs string
 	_, err = client.UpdateProxyConfigWhiteList(context.Background(), &pb.UpdateProxyConfigWhiteListInput{
 		UserName:        userName,
 		ZoneName:        zoneName,
+		RemotePort:      int64(remotePort),
 		LocalAddr:       localAddr,
 		WhiteCidrs:      whiteCidrs,
 		WhiteListEnable: whiteListEnable,

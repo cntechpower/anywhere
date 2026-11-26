@@ -26,10 +26,14 @@ import {
 import type { AgentInfo } from "../../types";
 
 const { Search } = Input;
-const HEALTHY_WINDOW_MS = 60 * 1000;
+const HEALTHY_WINDOW_MS = 30 * 1000;
 
 function zoneKey(record: AgentInfo): string {
   return `${record.userName ?? ""}/${record.zoneName ?? ""}`;
+}
+
+function agentKey(record: AgentInfo): string {
+  return `${record.userName ?? ""}/${record.zoneName ?? ""}/${record.agentId ?? ""}`;
 }
 
 function isHealthy(record: AgentInfo, now: number): boolean {
@@ -115,7 +119,7 @@ export default function AgentList() {
   const renderMobileCards = () => (
     <div className="stack">
       {filtered.map((record) => (
-        <article className="conn-card" key={record.agentId}>
+        <article className="conn-card" key={agentKey(record)}>
           <div className="row-between">
             <span className="cell-primary">{record.agentId}</span>
             <StatusBadge tone={isHealthy(record, now) ? "ok" : "bad"}>
@@ -149,7 +153,7 @@ export default function AgentList() {
       <PageHeader
         eyebrow="Agents"
         title="节点"
-        description="Agent 通过 mTLS 长连接接入，每秒上报心跳。超过 60 秒未上报将被标记为心跳超时。"
+        description="Agent 通过 mTLS 长连接接入，每秒上报心跳。超过 30 秒未上报将被标记为心跳超时。"
         actions={
           <Button icon={<ReloadOutlined />} onClick={reload} loading={loading}>
             刷新
@@ -230,7 +234,7 @@ export default function AgentList() {
                 <div className="panel-body">{renderMobileCards()}</div>
               ) : (
                 <Table<AgentInfo>
-                  rowKey={(record) => record.agentId ?? ""}
+                  rowKey={agentKey}
                   columns={columns}
                   dataSource={filtered}
                   pagination={false}

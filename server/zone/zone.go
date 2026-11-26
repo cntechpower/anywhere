@@ -138,12 +138,12 @@ func (z *Zone) AddProxyConfig(cfg *model.ProxyConfig) error {
 		if err != nil {
 			return fmt.Errorf("listen udp on port %d: %w", cfg.RemotePort, err)
 		}
-		p.udp = newUDPProxy(p, ln, func(sessionID uint32, data []byte) error {
-			a := z.chooseAgent()
+		p.udp = newUDPProxy(p, ln, func(preferredAgentID string, sessionID uint32, data []byte) (string, error) {
+			a := z.chooseAgentPrefer(preferredAgentID)
 			if a == nil {
-				return errNoHealthyAgent
+				return "", errNoHealthyAgent
 			}
-			return a.SendUDPData(sessionID, p.LocalAddr, data)
+			return a.Info().Id, a.SendUDPData(sessionID, p.LocalAddr, data)
 		})
 		z.proxyConfigs[key] = p
 		z.wg.Add(1)
@@ -227,11 +227,12 @@ func (z *Zone) UpdateProxyConfigWhiteListConfig(remotePort int, localAddr, white
 	if !ok {
 		return fmt.Errorf("no such proxy config %s in zone %s", localAddr, z.zoneName)
 	}
-	// acl is immutable after construction and internally locked.
-	c.acl.SetEnable(whiteListEnable)
+	// Validate and parse CIDRs before toggling enable so an invalid input
+	// never leaves the ACL in a half-updated state.
 	if err := c.acl.UpdateCidrs(whiteCidrs); err != nil {
 		return err
 	}
+	c.acl.SetEnable(whiteListEnable)
 	c.updateWhiteList(whiteListEnable, whiteCidrs)
 	return nil
 }
@@ -377,9 +378,17 @@ func (z *Zone) HandleUDPResponse(msg *model.UDPDataMsg) {
 	z.proxyConfigMutex.RLock()
 	var target *ProxyConfigStats
 	for _, p := range z.proxyConfigs {
-		if p.udp != nil && p.LocalAddr == msg.LocalAddr {
+		if p.udp != nil && p.udp.hasSession(msg.SessionID) {
 			target = p
 			break
+		}
+	}
+	if target == nil {
+		for _, p := range z.proxyConfigs {
+			if p.udp != nil && p.LocalAddr == msg.LocalAddr {
+				target = p
+				break
+			}
 		}
 	}
 	z.proxyConfigMutex.RUnlock()
@@ -392,10 +401,19 @@ func (z *Zone) HandleUDPResponse(msg *model.UDPDataMsg) {
 // ---- agent selection ----
 
 func (z *Zone) chooseAgent() zoneagent.IAgent {
+	return z.chooseAgentPrefer("")
+}
+
+func (z *Zone) chooseAgentPrefer(preferredID string) zoneagent.IAgent {
 	z.agentsRwMutex.RLock()
 	defer z.agentsRwMutex.RUnlock()
 	if len(z.agents) == 0 {
 		return nil
+	}
+	if preferredID != "" {
+		if a, ok := z.agents[preferredID]; ok && a.IsHealthy() {
+			return a
+		}
 	}
 	healthy := make([]zoneagent.IAgent, 0, len(z.agents))
 	for _, a := range z.agents {

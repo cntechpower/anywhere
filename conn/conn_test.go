@@ -220,3 +220,44 @@ func TestJoinConnIdleTimeout(t *testing.T) {
 		t.Fatal("JoinConnWithIdleTimeout did not enforce idle timeout")
 	}
 }
+
+func TestJoinConnUnidirectionalTrafficDoesNotIdleTimeout(t *testing.T) {
+	a1, a2 := net.Pipe()
+	b1, b2 := net.Pipe()
+	defer a2.Close()
+	defer b2.Close()
+
+	done := make(chan struct{})
+	go func() {
+		JoinConnWithIdleTimeout(a1, b1, 80*time.Millisecond)
+		close(done)
+	}()
+
+	// Drain b2 so writes on a2 succeed; send only in one direction for 150ms.
+	go func() {
+		buf := make([]byte, 64)
+		for {
+			if _, err := b2.Read(buf); err != nil {
+				return
+			}
+		}
+	}()
+
+	for i := 0; i < 6; i++ {
+		if _, err := a2.Write([]byte("x")); err != nil {
+			t.Fatalf("unidirectional write #%d failed prematurely: %v", i, err)
+		}
+		select {
+		case <-done:
+			t.Fatalf("connection closed during active unidirectional traffic at step %d", i)
+		case <-time.After(25 * time.Millisecond):
+		}
+	}
+
+	// Now stop sending and verify it closes after the idle timeout.
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("connection did not close after traffic stopped")
+	}
+}

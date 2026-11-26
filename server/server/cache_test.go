@@ -51,20 +51,32 @@ func TestServer_Cache(t *testing.T) {
 }
 
 func TestServer_Cache_Heap(t *testing.T) {
-	origin := make([]*model.ProxyConfig, 0)
+	origin := make([]*model.ProxyConfig, 0, proxyConfigLength)
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	var maxFlow uint64
 	for i := proxyConfigLength; i > 0; i-- {
+		v := rng.Uint64()
+		if v > maxFlow {
+			maxFlow = v
+		}
 		origin = append(origin, &model.ProxyConfig{
-			NetworkFlowRemoteToLocalInBytes: rand.New(rand.NewSource(time.Now().UnixNano())).Uint64(),
+			NetworkFlowRemoteToLocalInBytes: v,
 		})
 	}
 	t.Logf("Before sorting, len is %+v", len(origin))
 	printProxyConfig(t, origin)
 	after := SortDescAndLimitUsingHeap(origin, func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool {
-		return p1.NetworkFlowRemoteToLocalInBytes > p2.NetworkFlowRemoteToLocalInBytes
+		return p1.NetworkFlowRemoteToLocalInBytes < p2.NetworkFlowRemoteToLocalInBytes
 	}, 10)
 	t.Logf("After sorting, len is %+v", len(after))
 	printProxyConfig(t, after)
 	checkSort(t, after)
+	if len(after) != 10 {
+		t.Fatalf("len(after) = %d, want 10", len(after))
+	}
+	if after[0].NetworkFlowRemoteToLocalInBytes != maxFlow {
+		t.Fatalf("top element = %d, want global max %d", after[0].NetworkFlowRemoteToLocalInBytes, maxFlow)
+	}
 }
 
 // GOPATH=/Users/dujinyang/code/cntechpower/anywhere/ go test -run=^$ -bench=BenchmarkServer_Cache  -benchtime="3s" -cpuprofile profile_cpu.out
@@ -95,7 +107,7 @@ func BenchmarkServer_Heap_Cache(b *testing.B) {
 			})
 		}
 		res := SortDescAndLimitUsingHeap(origin, func(p1 *model.ProxyConfig, p2 *model.ProxyConfig) bool {
-			return p1.NetworkFlowRemoteToLocalInBytes > p2.NetworkFlowRemoteToLocalInBytes
+			return p1.NetworkFlowRemoteToLocalInBytes < p2.NetworkFlowRemoteToLocalInBytes
 		}, 10)
 		checkSort(b, res)
 	}

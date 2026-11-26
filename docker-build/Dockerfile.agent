@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 # Linux binaries are produced by `make build_linux` (golang:1.22 builder).
 COPY bin/linux/* /usr/local/anywhere/bin/
-COPY credential/* /usr/local/anywhere/credential/
+COPY credential/ca.crt credential/client.crt credential/client.key /usr/local/anywhere/credential/
 
 WORKDIR /usr/local/anywhere/
 

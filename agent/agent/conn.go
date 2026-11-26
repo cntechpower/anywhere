@@ -18,6 +18,7 @@ const (
 	dialTimeout       = 5 * time.Second
 	handshakeTimeout  = 5 * time.Second
 	heartbeatInterval = time.Second
+	heartbeatTimeout  = 30 * time.Second
 	tunnelDialTimeout = 10 * time.Second
 )
 
@@ -177,6 +178,11 @@ func (a *Agent) heartbeatLoop(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+			if time.Since(time.Unix(0, a.lastAckRcv.Load())) > heartbeatTimeout {
+				log.Infof(log.NewHeader("agentHeartbeat"), "heartbeat pong timeout after %v, closing admin conn", heartbeatTimeout)
+				_ = a.adminConn.Close()
+				return
+			}
 			if err := a.adminConn.Send(model.NewHeartBeatPingMsg(
 				a.adminConn.GetLocalAddr(), a.adminConn.GetRemoteAddr(), a.zone, a.id)); err != nil {
 				log.Infof(log.NewHeader("agentHeartbeat"), "send heartbeat error: %v", err)

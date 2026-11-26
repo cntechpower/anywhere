@@ -267,3 +267,121 @@ func TestConcurrentConfigAccess(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func TestProxyConfigStatsRestoresCounters(t *testing.T) {
+	cfg := &model.ProxyConfig{
+		UserName:                        "user",
+		ZoneName:                        "zone",
+		RemotePort:                      8080,
+		LocalAddr:                       "127.0.0.1:80",
+		NetworkFlowRemoteToLocalInBytes: 100,
+		NetworkFlowLocalToRemoteInBytes: 200,
+		ProxyConnectCount:               5,
+		ProxyConnectRejectCount:         2,
+	}
+	stats := newProxyConfigStats(cfg, nil)
+	stats.AddNetworkFlow(10, 20)
+	stats.AddConnectCount(1)
+	stats.AddConnectRejectedCount(1)
+
+	snap := stats.snapshot()
+	if snap.NetworkFlowRemoteToLocalInBytes != 110 || snap.NetworkFlowLocalToRemoteInBytes != 220 {
+		t.Fatalf("flow counters = (%d, %d), want (110, 220)", snap.NetworkFlowRemoteToLocalInBytes, snap.NetworkFlowLocalToRemoteInBytes)
+	}
+	if snap.ProxyConnectCount != 6 || snap.ProxyConnectRejectCount != 3 {
+		t.Fatalf("connect/reject = (%d, %d), want (6, 3)", snap.ProxyConnectCount, snap.ProxyConnectRejectCount)
+	}
+}
+
+func TestUpdateWhiteListAtomicOnInvalidCIDR(t *testing.T) {
+	z := newTestZone(t)
+	port := freeTCPPort(t)
+	cfg := &model.ProxyConfig{
+		UserName:      "user",
+		ZoneName:      "zone",
+		RemotePort:    port,
+		LocalAddr:     "127.0.0.1:9",
+		ListenType:    model.ListenTypeTCP,
+		IsWhiteListOn: false,
+	}
+	if err := z.AddProxyConfig(cfg); err != nil {
+		t.Fatal(err)
+	}
+	if err := z.UpdateProxyConfigWhiteListConfig(port, "127.0.0.1:9", "not-a-cidr", true); err == nil {
+		t.Fatal("expected error for invalid CIDR")
+	}
+	// Verify ACL was not accidentally enabled on error.
+	p := z.(*Zone).proxyConfigs[z.(*Zone).getProxyConfigMapKey(port, "127.0.0.1:9")]
+	if !p.acl.IpInWhiteList(context.Background(), "1.2.3.4") {
+		t.Fatal("ACL must remain disabled when CIDR update fails")
+	}
+}
+
+func TestMultiUDPSessionIsolationAndFlow(t *testing.T) {
+	z := newTestZone(t)
+	port1 := freeUDPPort(t)
+	port2 := freeUDPPort(t)
+	const sharedLocal = "127.0.0.1:9999"
+
+	for _, port := range []int{port1, port2} {
+		if err := z.AddProxyConfig(&model.ProxyConfig{
+			UserName:   "user",
+			ZoneName:   "zone",
+			RemotePort: port,
+			LocalAddr:  sharedLocal,
+			ListenType: model.ListenTypeUDP,
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	server, peer := net.Pipe()
+	defer peer.Close()
+	z.RegisterAgent("agent-udp", server)
+
+	go func() {
+		wc := conn.NewWrappedConn("test", peer)
+		for {
+			var m model.RequestMsg
+			if err := wc.Receive(&m); err != nil {
+				return
+			}
+			if m.ReqType != model.PkgUDPData {
+				continue
+			}
+			msg, err := model.ParseUDPDataMsg(m.Message)
+			if err != nil {
+				continue
+			}
+			_ = wc.Send(model.NewUDPDataRespMsg(msg.SessionID, msg.LocalAddr, msg.Data))
+		}
+	}()
+
+	for i, port := range []int{port1, port2} {
+		c, err := net.DialUDP("udp", nil, &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: port})
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = c.SetDeadline(time.Now().Add(3 * time.Second))
+		payload := []byte{byte('a' + i), 'b', 'c'}
+		if _, err := c.Write(payload); err != nil {
+			t.Fatal(err)
+		}
+		buf := make([]byte, 32)
+		n, err := c.Read(buf)
+		_ = c.Close()
+		if err != nil {
+			t.Fatalf("udp port %d read error: %v", port, err)
+		}
+		if string(buf[:n]) != string(payload) {
+			t.Fatalf("udp port %d got %q, want %q", port, string(buf[:n]), string(payload))
+		}
+	}
+
+	for _, cfg := range z.ListProxyConfigs() {
+		if cfg.NetworkFlowLocalToRemoteInBytes == 0 || cfg.NetworkFlowRemoteToLocalInBytes == 0 {
+			t.Fatalf("expected non-zero UDP flow stats for port %d, got in=%d out=%d",
+				cfg.RemotePort, cfg.NetworkFlowRemoteToLocalInBytes, cfg.NetworkFlowLocalToRemoteInBytes)
+		}
+	}
+}
