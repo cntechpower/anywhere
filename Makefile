@@ -1,8 +1,12 @@
 GO ?= go
 DOCKER ?= docker
 GO_PKG := ./...
-GO_BASE ?= golang:1.22
-GO_IMAGE ?= golang:1.22
+GO_BASE ?= golang:1.22-bullseye
+# 构建镜像必须用 bullseye（glibc 2.31）而不是默认的 bookworm（glibc 2.36）：
+# CGO_ENABLED=1 编出的二进制会动态链接 glibc，bookworm 产物要求 GLIBC_2.32+，
+# 在 Ubuntu 20.04（glibc 2.31）的云服务器上直接 `version GLIBC_2.34 not found`
+# 启动失败（2026-11-27 踩过，回滚后换 bullseye 才成功）。
+GO_IMAGE ?= golang:1.22-bullseye
 # 目标平台。默认 linux/amd64（云服务器基本都是 x86_64）；
 # 在 Apple Silicon 上不加这个会构建出 arm64 二进制，传到 x86 服务器直接
 # `Syntax error: word unexpected`（2026-11-14 踩过）。
