@@ -131,11 +131,12 @@ func (p *udpProxy) handleResponse(msg *model.UDPDataMsg) {
 		return
 	}
 	s.touch()
+	// 先记账再回写：客户端可能在 WriteToUDP 返回的同一瞬间读到数据并断言统计，
+	// 放在写之后会让测试/调用方看到“已收到响应但流量为 0”的瞬态。
+	p.cfg.AddNetworkFlow(uint64(len(msg.Data)), 0)
 	if _, err := p.listener.WriteToUDP(msg.Data, s.clientAddr); err != nil {
 		p.h.Errorf("write udp response to %s error: %v", s.clientAddr, err)
-		return
 	}
-	p.cfg.AddNetworkFlow(uint64(len(msg.Data)), 0)
 }
 
 func (p *udpProxy) writeLoop() {

@@ -378,10 +378,27 @@ func TestMultiUDPSessionIsolationAndFlow(t *testing.T) {
 		}
 	}
 
-	for _, cfg := range z.ListProxyConfigs() {
-		if cfg.NetworkFlowLocalToRemoteInBytes == 0 || cfg.NetworkFlowRemoteToLocalInBytes == 0 {
-			t.Fatalf("expected non-zero UDP flow stats for port %d, got in=%d out=%d",
-				cfg.RemotePort, cfg.NetworkFlowRemoteToLocalInBytes, cfg.NetworkFlowLocalToRemoteInBytes)
+	// 流量统计在转发 goroutine 里累加，客户端读完响应时可能还没落账；
+	// 这里轮询等待，避免 CI 上偶发“已经收到响应但计数仍为 0”。
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		all := true
+		for _, cfg := range z.ListProxyConfigs() {
+			if cfg.NetworkFlowLocalToRemoteInBytes == 0 || cfg.NetworkFlowRemoteToLocalInBytes == 0 {
+				all = false
+				break
+			}
 		}
+		if all {
+			break
+		}
+		if time.Now().After(deadline) {
+			for _, cfg := range z.ListProxyConfigs() {
+				t.Logf("port %d in=%d out=%d", cfg.RemotePort,
+					cfg.NetworkFlowRemoteToLocalInBytes, cfg.NetworkFlowLocalToRemoteInBytes)
+			}
+			t.Fatal("expected non-zero UDP flow stats on both ports within 2s")
+		}
+		time.Sleep(10 * time.Millisecond)
 	}
 }
